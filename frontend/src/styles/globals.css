@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 導入衝擊波動畫樣式 */
+@import './shockwave-animations.css';
+
 /* 全域樣式 */
 * {
   box-sizing: border-box;

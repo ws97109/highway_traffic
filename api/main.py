@@ -16,7 +16,7 @@ from src.detection.final_optimized_detector import FinalOptimizedShockDetector
 from src.prediction.realtime_shock_predictor import RealtimeShockPredictor
 
 # 導入 API 路由
-from routes import traffic, shockwave, prediction, websocket, location, admin, smart
+from api.routes import traffic, shockwave, prediction, websocket, location, admin, smart
 
 # 建立 FastAPI 應用
 app = FastAPI(

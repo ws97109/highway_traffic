@@ -12,6 +12,8 @@ import {
   UserGroupIcon
 } from '@heroicons/react/24/outline';
 import TrafficMap from '../../components/maps/TrafficMap';
+import { useShockwaveData } from '../../hooks/useShockwaveData';
+import { useTrafficData } from '../../hooks/useTrafficData';
 
 interface ControlCenterProps {}
 
@@ -65,6 +67,10 @@ const ControlCenter: React.FC<ControlCenterProps> = () => {
   const [recommendedActions, setRecommendedActions] = useState<RecommendedAction[]>([]);
   const [selectedView, setSelectedView] = useState<'overview' | 'shockwaves' | 'predictions' | 'control'>('overview');
   const [autoRefresh, setAutoRefresh] = useState(true);
+
+  // 使用 hooks 獲取即時資料
+  const { trafficData } = useTrafficData();
+  const { shockwaves, predictions, alerts } = useShockwaveData(); // 管理者介面不需要位置限制
 
   // 模擬即時資料更新
   useEffect(() => {
@@ -304,7 +310,7 @@ const ControlCenter: React.FC<ControlCenterProps> = () => {
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">活躍震波</span>
                   <span className="font-bold text-lg text-red-600">
-                    {systemStatus.activeShockwaves}
+                    {shockwaves.length}
                   </span>
                 </div>
                 
@@ -457,6 +463,9 @@ const ControlCenter: React.FC<ControlCenterProps> = () => {
               <div style={{ height: 'calc(100% - 73px)' }}>
                 <TrafficMap
                   center={{ lat: 25.0330, lng: 121.5654 }}
+                  trafficData={trafficData}
+                  shockwaves={shockwaves as any}
+                  predictions={predictions}
                   showTrafficLayer={true}
                   showShockwaveOverlay={true}
                   zoom={9}

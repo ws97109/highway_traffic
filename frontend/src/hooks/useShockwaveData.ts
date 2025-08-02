@@ -206,15 +206,19 @@ function generateAlerts(shockwaves: ShockwaveData[], userLocation?: { lat: numbe
       distance = R * c;
     }
     
-    // 只對附近的震波生成警告（50km內）
-    if (!distance || distance <= 50) {
+    // 如果沒有用戶位置（管理者介面），顯示所有警告
+    // 如果有用戶位置，只對附近的震波生成警告（50km內）
+    if (!userLocation || !distance || distance <= 50) {
       const timeToArrival = Math.max(0, (sw.estimatedArrivalTime.getTime() - Date.now()) / (1000 * 60));
       
-      if (timeToArrival <= 60) { // 60分鐘內會到達
+      // 管理者介面顯示所有衝擊波，使用者介面只顯示60分鐘內會到達的
+      if (!userLocation || timeToArrival <= 60) {
         alerts.push({
           id: `alert-${sw.id}`,
-          title: `${sw.location} 震波警報`,
-          description: `預計 ${Math.round(timeToArrival)} 分鐘後到達您的位置`,
+          title: userLocation ? `${sw.location} 震波警報` : `${sw.location} 衝擊波監測`,
+          description: userLocation ? 
+            `預計 ${Math.round(timeToArrival)} 分鐘後到達您的位置` :
+            `強度 ${sw.intensity.toFixed(1)}，影響範圍 ${sw.affectedArea.toFixed(1)} km`,
           level: sw.severity === 'critical' || sw.severity === 'high' ? 'high' : 
                  sw.severity === 'medium' ? 'medium' : 'low',
           estimatedImpact: `車速可能下降至 ${Math.max(10, 80 - sw.intensity * 8)} km/h`,

@@ -33,6 +33,8 @@ interface ShockwaveData {
   propagationSpeed: number;
   estimatedArrival: Date;
   affectedArea: number;
+  severity?: 'low' | 'medium' | 'high' | 'critical';
+  description?: string;
 }
 
 interface PredictionData {
@@ -163,23 +165,201 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
     shockwaveOverlays.forEach(overlay => overlay.setMap(null));
 
     // 建立新覆蓋層
-    const newOverlays = shockwaves.map(shockwave => {
-      const circle = new google.maps.Circle({
-        strokeColor: '#FF0000',
-        strokeOpacity: 0.8,
-        strokeWeight: 2,
-        fillColor: '#FF0000',
-        fillOpacity: 0.2,
+    const newOverlays: google.maps.Circle[] = [];
+    
+    shockwaves.forEach(shockwave => {
+      // 驗證座標是否在有效範圍內（台灣地區）
+      if (!isValidCoordinate(shockwave.lat, shockwave.lng)) {
+        console.warn(`無效的衝擊波座標: ${shockwave.lat}, ${shockwave.lng}`);
+        return;
+      }
+
+      const { color, opacity, strokeWeight } = getShockwaveStyle(shockwave);
+      const radius = calculateShockwaveRadius(shockwave);
+      const severity = shockwave.severity || determineSeverityFromIntensity(shockwave.intensity);
+
+      // 主要衝擊波圓圈 - 調整為更小的顯示
+      const mainCircle = new google.maps.Circle({
+        strokeColor: color,
+        strokeOpacity: opacity,
+        strokeWeight: strokeWeight,
+        fillColor: color,
+        fillOpacity: opacity * 0.2, // 降低填充透明度
         map,
         center: { lat: shockwave.lat, lng: shockwave.lng },
-        radius: shockwave.affectedArea * 1000, // 轉換為公尺
+        radius: radius,
+        clickable: true,
       });
 
-      return circle;
+      // 添加點擊事件顯示詳細資訊
+      mainCircle.addListener('click', () => {
+        const infoWindow = new google.maps.InfoWindow({
+          content: createShockwaveInfoContent(shockwave),
+          position: { lat: shockwave.lat, lng: shockwave.lng },
+        });
+        infoWindow.open(map);
+      });
+
+      newOverlays.push(mainCircle);
+
+      // 創建水波紋效果 - 改進的動畫效果
+      if (severity === 'high' || severity === 'critical') {
+        // 創建多個水波紋圓圈，每個都有不同的延遲和大小
+        for (let i = 1; i <= 4; i++) {
+          const rippleRadius = radius + (i * radius * 0.5); // 逐漸增大的半徑
+          const rippleOpacity = Math.max(0.05, opacity * (0.8 - i * 0.15)); // 逐漸減少的透明度
+          
+          const rippleCircle = new google.maps.Circle({
+            strokeColor: color,
+            strokeOpacity: rippleOpacity,
+            strokeWeight: Math.max(1, strokeWeight - i),
+            fillColor: 'transparent',
+            map,
+            center: { lat: shockwave.lat, lng: shockwave.lng },
+            radius: rippleRadius,
+            clickable: false,
+          });
+          
+          newOverlays.push(rippleCircle);
+        }
+      }
+
+      // 為中等嚴重程度也添加簡單的水波紋
+      if (severity === 'medium') {
+        for (let i = 1; i <= 2; i++) {
+          const rippleRadius = radius + (i * radius * 0.3);
+          const rippleOpacity = Math.max(0.1, opacity * (0.6 - i * 0.2));
+          
+          const rippleCircle = new google.maps.Circle({
+            strokeColor: color,
+            strokeOpacity: rippleOpacity,
+            strokeWeight: Math.max(1, strokeWeight - i),
+            fillColor: 'transparent',
+            map,
+            center: { lat: shockwave.lat, lng: shockwave.lng },
+            radius: rippleRadius,
+            clickable: false,
+          });
+          
+          newOverlays.push(rippleCircle);
+        }
+      }
     });
 
     setShockwaveOverlays(newOverlays);
   }, [map, shockwaves, showShockwaveOverlay]);
+
+  // 驗證座標是否在台灣範圍內
+  const isValidCoordinate = (lat: number, lng: number): boolean => {
+    // 台灣地區的大致範圍
+    const taiwanBounds = {
+      north: 25.3,
+      south: 21.9,
+      east: 122.0,
+      west: 119.3
+    };
+    
+    return lat >= taiwanBounds.south && lat <= taiwanBounds.north &&
+           lng >= taiwanBounds.west && lng <= taiwanBounds.east;
+  };
+
+  // 根據衝擊波嚴重程度獲取樣式
+  const getShockwaveStyle = (shockwave: ShockwaveData) => {
+    const severity = shockwave.severity || determineSeverityFromIntensity(shockwave.intensity);
+    
+    switch (severity) {
+      case 'critical':
+        return {
+          color: '#DC2626', // 深紅色
+          opacity: 0.9,
+          strokeWeight: 4
+        };
+      case 'high':
+        return {
+          color: '#EF4444', // 紅色
+          opacity: 0.8,
+          strokeWeight: 3
+        };
+      case 'medium':
+        return {
+          color: '#F59E0B', // 橙色
+          opacity: 0.7,
+          strokeWeight: 2
+        };
+      case 'low':
+      default:
+        return {
+          color: '#10B981', // 綠色
+          opacity: 0.6,
+          strokeWeight: 2
+        };
+    }
+  };
+
+  // 根據強度判斷嚴重程度
+  const determineSeverityFromIntensity = (intensity: number): 'low' | 'medium' | 'high' | 'critical' => {
+    if (intensity >= 8) return 'critical';
+    if (intensity >= 6) return 'high';
+    if (intensity >= 4) return 'medium';
+    return 'low';
+  };
+
+  // 計算衝擊波半徑 - 調整為更明顯的大小
+  const calculateShockwaveRadius = (shockwave: ShockwaveData): number => {
+    // 基礎半徑：增加顯示範圍讓衝擊波更明顯
+    const baseRadius = Math.min(shockwave.affectedArea * 400, 2000); // 最大2km顯示
+    
+    // 根據強度調整大小
+    const intensityMultiplier = 0.8 + (shockwave.intensity / 10) * 0.4;
+    
+    // 最終半徑，確保足夠明顯
+    return Math.max(baseRadius * intensityMultiplier, 300); // 最小300m
+  };
+
+  // 創建衝擊波資訊窗口內容
+  const createShockwaveInfoContent = (shockwave: ShockwaveData): string => {
+    const severity = shockwave.severity || determineSeverityFromIntensity(shockwave.intensity);
+    const severityText = {
+      'critical': '極危險',
+      'high': '高危險',
+      'medium': '中等',
+      'low': '輕微'
+    }[severity];
+
+    const severityColor = getShockwaveStyle(shockwave).color;
+
+    return `
+      <div style="padding: 12px; min-width: 250px; font-family: Arial, sans-serif;">
+        <h3 style="margin: 0 0 10px 0; color: #333; font-size: 16px;">🌊 交通衝擊波</h3>
+        <div style="margin-bottom: 8px;">
+          <strong>位置:</strong> ${shockwave.lat.toFixed(4)}, ${shockwave.lng.toFixed(4)}
+        </div>
+        <div style="margin-bottom: 8px;">
+          <strong>強度:</strong> ${shockwave.intensity.toFixed(1)}
+        </div>
+        <div style="margin-bottom: 8px;">
+          <strong>嚴重程度:</strong> 
+          <span style="color: ${severityColor}; font-weight: bold; padding: 2px 6px; background: ${severityColor}20; border-radius: 4px;">
+            ${severityText}
+          </span>
+        </div>
+        <div style="margin-bottom: 8px;">
+          <strong>傳播速度:</strong> ${shockwave.propagationSpeed.toFixed(1)} km/h
+        </div>
+        <div style="margin-bottom: 8px;">
+          <strong>影響範圍:</strong> ${shockwave.affectedArea.toFixed(1)} km
+        </div>
+        <div style="margin-bottom: 8px;">
+          <strong>預估到達:</strong> ${shockwave.estimatedArrival.toLocaleString('zh-TW')}
+        </div>
+        ${shockwave.description ? `
+          <div style="margin-top: 10px; padding: 8px; background: #f3f4f6; border-radius: 4px; font-size: 12px;">
+            ${shockwave.description}
+          </div>
+        ` : ''}
+      </div>
+    `;
+  };
 
   // 工具函數
   const getStatusColor = (status: string): string => {
@@ -294,18 +474,43 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
       <div className="absolute bottom-4 left-4 bg-white rounded-lg shadow-lg p-3">
         <h4 className="font-semibold mb-2 text-sm">圖例</h4>
         <div className="space-y-1 text-xs">
-          <div className="flex items-center">
-            <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
-            <span>順暢</span>
+          <div className="mb-2">
+            <div className="text-xs font-medium text-gray-600 mb-1">交通狀況</div>
+            <div className="flex items-center mb-1">
+              <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+              <span>順暢</span>
+            </div>
+            <div className="flex items-center mb-1">
+              <div className="w-3 h-3 rounded-full bg-orange-500 mr-2"></div>
+              <span>壅塞</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+              <span>阻塞</span>
+            </div>
           </div>
-          <div className="flex items-center">
-            <div className="w-3 h-3 rounded-full bg-orange-500 mr-2"></div>
-            <span>壅塞</span>
-          </div>
-          <div className="flex items-center">
-            <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
-            <span>阻塞</span>
-          </div>
+          
+          {showShockwaveOverlay && (
+            <div className="border-t pt-2">
+              <div className="text-xs font-medium text-gray-600 mb-1">衝擊波嚴重程度</div>
+              <div className="flex items-center mb-1">
+                <div className="w-3 h-3 rounded-full bg-green-500 mr-2 opacity-60"></div>
+                <span>輕微</span>
+              </div>
+              <div className="flex items-center mb-1">
+                <div className="w-3 h-3 rounded-full bg-yellow-500 mr-2 opacity-70"></div>
+                <span>中等</span>
+              </div>
+              <div className="flex items-center mb-1">
+                <div className="w-3 h-3 rounded-full bg-red-500 mr-2 opacity-80"></div>
+                <span>高危險</span>
+              </div>
+              <div className="flex items-center">
+                <div className="w-3 h-3 rounded-full bg-red-700 mr-2 opacity-90"></div>
+                <span>極危險</span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

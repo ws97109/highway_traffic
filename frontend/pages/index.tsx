@@ -16,7 +16,7 @@ import {
 
 export default function Home() {
   const router = useRouter()
-  const [currentTime, setCurrentTime] = useState(new Date())
+  const [currentTime, setCurrentTime] = useState<Date | null>(null)
   const [systemStats, setSystemStats] = useState({
     activeUsers: 1247,
     monitoringStations: 62,
@@ -25,6 +25,9 @@ export default function Home() {
   })
 
   useEffect(() => {
+    // 初始化時間，避免 hydration 錯誤
+    setCurrentTime(new Date())
+    
     const timer = setInterval(() => {
       setCurrentTime(new Date())
     }, 1000)
@@ -85,14 +88,14 @@ export default function Home() {
             
             <div className="flex items-center space-x-4">
               <div className="text-sm text-gray-600">
-                {currentTime.toLocaleString('zh-TW', {
+                {currentTime ? currentTime.toLocaleString('zh-TW', {
                   year: 'numeric',
                   month: '2-digit',
                   day: '2-digit',
                   hour: '2-digit',
                   minute: '2-digit',
                   second: '2-digit'
-                })}
+                }) : '載入中...'}
               </div>
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
             </div>
@@ -235,7 +238,7 @@ export default function Home() {
                 <span className="text-sm font-medium text-gray-700">系統運行正常</span>
               </div>
               <div className="text-sm text-gray-500">
-                最後更新: {currentTime.toLocaleTimeString('zh-TW')}
+                最後更新: {currentTime ? currentTime.toLocaleTimeString('zh-TW') : '載入中...'}
               </div>
             </div>
             

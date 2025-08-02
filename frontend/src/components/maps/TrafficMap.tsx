@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
+import RadarWave from './RadarWave2';
 
 // 類型定義
 interface TrafficMapProps {
@@ -61,6 +62,7 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
   const [markers, setMarkers] = useState<google.maps.Marker[]>([]);
   const [trafficLayer, setTrafficLayer] = useState<google.maps.TrafficLayer | null>(null);
   const [shockwaveOverlays, setShockwaveOverlays] = useState<google.maps.Circle[]>([]);
+  const [radarWaves, setRadarWaves] = useState<{ id: string; component: React.ReactElement }[]>([]);
 
   // Google Maps API 載入
   useEffect(() => {
@@ -157,15 +159,20 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
     setMarkers(newMarkers);
   }, [map, trafficData]);
 
-  // 更新衝擊波覆蓋層
+  // 更新衝擊波覆蓋層 - 使用真正的雷達式水波效果
   useEffect(() => {
-    if (!map || !showShockwaveOverlay) return;
+    if (!map || !showShockwaveOverlay) {
+      // 清理現有的雷達波
+      setRadarWaves([]);
+      return;
+    }
 
     // 清除現有覆蓋層
     shockwaveOverlays.forEach(overlay => overlay.setMap(null));
 
-    // 建立新覆蓋層
+    // 建立新覆蓋層和雷達波
     const newOverlays: google.maps.Circle[] = [];
+    const newRadarWaves: { id: string; component: React.ReactElement }[] = [];
     
     shockwaves.forEach(shockwave => {
       // 驗證座標是否在有效範圍內（台灣地區）
@@ -178,21 +185,24 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
       const radius = calculateShockwaveRadius(shockwave);
       const severity = shockwave.severity || determineSeverityFromIntensity(shockwave.intensity);
 
-      // 主要衝擊波圓圈 - 調整為更小的顯示
-      const mainCircle = new google.maps.Circle({
-        strokeColor: color,
-        strokeOpacity: opacity,
-        strokeWeight: strokeWeight,
-        fillColor: color,
-        fillOpacity: opacity * 0.2, // 降低填充透明度
+      // 添加中心點標記
+      const centerMarker = new google.maps.Marker({
+        position: { lat: shockwave.lat, lng: shockwave.lng },
         map,
-        center: { lat: shockwave.lat, lng: shockwave.lng },
-        radius: radius,
-        clickable: true,
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 6,
+          fillColor: color,
+          fillOpacity: 1,
+          strokeColor: '#ffffff',
+          strokeWeight: 2,
+        },
+        title: `衝擊波中心 - 強度: ${shockwave.intensity}`,
+        zIndex: 1000
       });
 
       // 添加點擊事件顯示詳細資訊
-      mainCircle.addListener('click', () => {
+      centerMarker.addListener('click', () => {
         const infoWindow = new google.maps.InfoWindow({
           content: createShockwaveInfoContent(shockwave),
           position: { lat: shockwave.lat, lng: shockwave.lng },
@@ -200,53 +210,46 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
         infoWindow.open(map);
       });
 
-      newOverlays.push(mainCircle);
+      // 創建雷達波組件
+      const radarWave = (
+        <RadarWave
+          key={shockwave.id}
+          lat={shockwave.lat}
+          lng={shockwave.lng}
+          map={map}
+          severity={severity}
+          intensity={shockwave.intensity}
+          radius={radius}
+          onRemove={() => {
+            // 當雷達波被移除時的回調
+            setRadarWaves(prev => prev.filter(wave => wave.id !== shockwave.id));
+          }}
+        />
+      );
 
-      // 創建水波紋效果 - 改進的動畫效果
-      if (severity === 'high' || severity === 'critical') {
-        // 創建多個水波紋圓圈，每個都有不同的延遲和大小
-        for (let i = 1; i <= 4; i++) {
-          const rippleRadius = radius + (i * radius * 0.5); // 逐漸增大的半徑
-          const rippleOpacity = Math.max(0.05, opacity * (0.8 - i * 0.15)); // 逐漸減少的透明度
-          
-          const rippleCircle = new google.maps.Circle({
-            strokeColor: color,
-            strokeOpacity: rippleOpacity,
-            strokeWeight: Math.max(1, strokeWeight - i),
-            fillColor: 'transparent',
-            map,
-            center: { lat: shockwave.lat, lng: shockwave.lng },
-            radius: rippleRadius,
-            clickable: false,
-          });
-          
-          newOverlays.push(rippleCircle);
-        }
-      }
+      newRadarWaves.push({
+        id: shockwave.id,
+        component: radarWave
+      });
 
-      // 為中等嚴重程度也添加簡單的水波紋
-      if (severity === 'medium') {
-        for (let i = 1; i <= 2; i++) {
-          const rippleRadius = radius + (i * radius * 0.3);
-          const rippleOpacity = Math.max(0.1, opacity * (0.6 - i * 0.2));
-          
-          const rippleCircle = new google.maps.Circle({
-            strokeColor: color,
-            strokeOpacity: rippleOpacity,
-            strokeWeight: Math.max(1, strokeWeight - i),
-            fillColor: 'transparent',
-            map,
-            center: { lat: shockwave.lat, lng: shockwave.lng },
-            radius: rippleRadius,
-            clickable: false,
-          });
-          
-          newOverlays.push(rippleCircle);
-        }
-      }
+      // 保留一個靜態的半透明圓圈作為影響範圍指示
+      const staticCircle = new google.maps.Circle({
+        strokeColor: color,
+        strokeOpacity: 0.3,
+        strokeWeight: 1,
+        fillColor: color,
+        fillOpacity: 0.1,
+        map,
+        center: { lat: shockwave.lat, lng: shockwave.lng },
+        radius: radius,
+        clickable: false,
+      });
+
+      newOverlays.push(staticCircle);
     });
 
     setShockwaveOverlays(newOverlays);
+    setRadarWaves(newRadarWaves);
   }, [map, shockwaves, showShockwaveOverlay]);
 
   // 驗證座標是否在台灣範圍內
@@ -513,6 +516,9 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
           )}
         </div>
       </div>
+
+      {/* 渲染雷達波組件 */}
+      {radarWaves.map(wave => wave.component)}
     </div>
   );
 };

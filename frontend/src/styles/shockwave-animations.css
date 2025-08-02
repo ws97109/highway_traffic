@@ -1,4 +1,21 @@
-/* 衝擊波水波紋動畫效果 - 真正的水波擴散效果 */
+/* 衝擊波水波紋動畫效果 - 真正的雷達式水波擴散效果 */
+
+/* 真正的雷達式水波紋動畫 */
+@keyframes radar-wave {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+  }
+  5% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0;
+  }
+}
+
+/* 改良的水波紋擴散動畫 - 更真實的物理效果 */
 @keyframes ripple-expand {
   0% {
     transform: scale(0);
@@ -26,6 +43,7 @@
   }
 }
 
+/* 大範圍水波紋 - 用於高危險等級 */
 @keyframes ripple-expand-large {
   0% {
     transform: scale(0);
@@ -57,6 +75,7 @@
   }
 }
 
+/* 快速小範圍水波紋 */
 @keyframes ripple-expand-small {
   0% {
     transform: scale(0);
@@ -80,6 +99,7 @@
   }
 }
 
+/* 中心點脈衝動畫 */
 @keyframes pulse-center {
   0% {
     transform: scale(0.95);
@@ -95,6 +115,7 @@
   }
 }
 
+/* 發光效果 */
 @keyframes shockwave-glow {
   0% {
     filter: drop-shadow(0 0 3px rgba(239, 68, 68, 0.4));

@@ -1,4 +1,4 @@
-# 🚀 高速公路智慧交通震波預警決策支援系統
+#  高速公路智慧交通震波預警決策支援系統
 **Highway Intelligent Traffic Shockwave Warning and Decision Support System**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -8,28 +8,28 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 [![TensorFlow](https://img.shields.io/badge/TensorFlow-2.x-orange.svg)](https://tensorflow.org/)
 
-> 🎯 **基於深度學習的創新交通震波預警系統** - 結合地震學理論、傳統交通分析與先進深度學習技術，提供精確的高速公路交通震波檢測、多時步預測與智慧決策支援
+>  **基於深度學習的創新交通震波預警系統** - 結合地震學理論、傳統交通分析與先進深度學習技術，提供精確的高速公路交通震波檢測、多時步預測與智慧決策支援
 
-## 📋 專案概述
+## 專案概述
 
 本系統是一個完整的端到端智慧交通管理解決方案，融合理論創新與工程實踐：
 
-### 🔬 核心技術創新
-- **🌊 交通震波檢測** - 首創將地震學震波傳播理論應用於交通流分析
-- **� MT-STNet深度學習** - 多任務時空神經網路，同步預測流量/速度/密度
-- **📊 17種基準模型** - 包含AGCRN、ASTGCN、DCRNN、Graph-WaveNet等主流時空預測模型
-- **� 混合預測架構** - 傳統物理模型與深度學習模型的智慧融合
-- **⚡ 毫秒級響應** - 即時震波檢測與多時步預測系統
+### 核心技術創新
+- ** 交通震波檢測** - 首創將地震學震波傳播理論應用於交通流分析
+- ** MT-STNet深度學習** - 多任務時空神經網路，同步預測流量/速度/密度
+- ** 17種基準模型** - 包含AGCRN、ASTGCN、DCRNN、Graph-WaveNet等主流時空預測模型
+- ** 混合預測架構** - 傳統物理模型與深度學習模型的智慧融合
+- ** 毫秒級響應** - 即時震波檢測與多時步預測系統
 
-### � 應用場景
-- **� 智慧導航系統** - 為駕駛者提供即時震波預警與路線優化
-- **🎛️ 交通管制中心** - 為管理者提供AI決策支援與預防性管制策略
-- **📊 學術研究平台** - 支援交通流理論研究與深度學習模型比較
-- **🏗️ 智慧城市建設** - 可整合至更大規模的城市交通管理系統
+###  應用場景
+- ** 智慧導航系統** - 為駕駛者提供即時震波預警與路線優化
+- ** 交通管制中心** - 為管理者提供AI決策支援與預防性管制策略
+- ** 學術研究平台** - 支援交通流理論研究與深度學習模型比較
+- ** 智慧城市建設** - 可整合至更大規模的城市交通管理系統
 
-## 🚀 快速開始
+## 快速開始
 
-### 📋 系統需求
+### 系統需求
 - **Python**: 3.8+ (建議 3.9+)
 - **Node.js**: 18.0+
 - **npm**: 8.0+
@@ -91,7 +91,7 @@ npm install
 cd ..
 ```
 
-### 🚀 啟動系統
+### 啟動系統
 
 #### 方法一：使用一鍵部署腳本（推薦）
 ```bash
@@ -109,17 +109,17 @@ chmod +x deploy.sh
 cd api
 python main.py
 ```
-> 🌐 後端服務運行在: http://localhost:8000  
-> 📚 API文檔: http://localhost:8000/docs
+> 後端服務運行在: http://localhost:8000  
+> API文檔: http://localhost:8000/docs
 
 **啟動前端應用：**
 ```bash
 cd frontend
 npm run dev
 ```
-> 🌐 前端應用運行在: http://localhost:3000
+> 前端應用運行在: http://localhost:3000
 
-### 🌐 系統訪問地址
+### 系統訪問地址
 
 | 功能 | URL | 說明 |
 |------|-----|------|
@@ -128,9 +128,9 @@ npm run dev
 | 📚 API文檔 | http://localhost:8000/docs | 完整的API說明文檔 |
 | 💊 健康檢查 | http://localhost:8000/health | 系統狀態檢查 |
 
-## 🧠 核心技術架構
+## 核心技術架構
 
-### 🌊 創新震波檢測技術
+### 創新震波檢測技術
 
 **理論基礎：**
 本系統首創將地震學中的震波傳播理論應用於交通流分析，參考Indiana州的震波研究案例：
@@ -159,7 +159,7 @@ for shock in shockwaves:
     print(f"傳播速度: {shock.propagation_speed} km/h")
 ```
 
-### 🤖 MT-STNet深度學習預測系統
+### MT-STNet深度學習預測系統
 
 **模型特色：**
 - **多任務學習**: 同時預測流量(flow)、速度(speed)、密度(density)
@@ -189,7 +189,7 @@ speed_pred = predictions['speed']    # 車速預測
 density_pred = predictions['density'] # 密度預測
 ```
 
-### � 17種基準模型比較
+### 17種基準模型比較
 
 本系統整合了當前最先進的時空預測模型，提供完整的性能比較：
 
@@ -224,7 +224,7 @@ for model, metrics in results.items():
     print(f"{model}: MAE={metrics['MAE']:.3f}, RMSE={metrics['RMSE']:.3f}")
 ```
 
-### 🔄 混合預測架構
+### 混合預測架構
 
 結合傳統物理模型與深度學習模型的優勢：
 
@@ -249,11 +249,11 @@ traffic_prediction = hybrid_result['traffic']
 confidence_score = hybrid_result['confidence']
 ```
 
-## 🎯 系統功能
+## 系統功能
 
-### � 駕駛者功能
+### 駕駛者功能
 
-#### 🗺️ 智慧導航系統
+#### 智慧導航系統
 - **震波覆蓋層顯示**: 即時顯示交通震波位置、強度和影響範圍
 - **動態路況預測**: AI驅動的未來30-60分鐘交通狀況預測
 - **替代路線建議**: 基於震波預測的智慧路線規劃
@@ -268,7 +268,7 @@ confidence_score = hybrid_result['confidence']
 - **影響評估**: 量化震波對行程時間和油耗的影響
 - **個人化通知**: 基於用戶位置和路線的客製化警報
 
-#### 🎯 智慧出發時間優化
+#### 智慧出發時間優化
 ```typescript
 // 前端使用範例
 import { DepartureTimeOptimizer } from '@/components/smart/DepartureTimeOptimizer';
@@ -286,15 +286,15 @@ const optimizer = new DepartureTimeOptimizer({
 const suggestions = await optimizer.getOptimalDepartureTimes();
 ```
 
-### 📊 管理者功能
+### 管理者功能
 
-#### 🎛️ 專業監控中心
+#### 專業監控中心
 - **大屏幕設計**: 支援4K顯示器和多螢幕部署
 - **即時交通監控**: 全路網交通流量、速度、密度監控
 - **系統健康狀態**: API服務、資料源、模型狀態即時監控
 - **效能指標儀表板**: 系統響應時間、預測準確度、用戶活躍度
 
-#### 🤖 AI決策支援系統
+#### AI決策支援系統
 ```python
 # 後端AI決策範例
 from api.routes.admin import AIDecisionSupport
@@ -315,7 +315,7 @@ recommendations = decision_engine.get_traffic_management_advice(
 # - 執行時機建議
 ```
 
-## 📊 系統效能指標
+## 系統效能指標
 
 ### ⚡ 即時性能
 - **API響應時間**: < 200ms (95th percentile)
@@ -324,7 +324,7 @@ recommendations = decision_engine.get_traffic_management_advice(
 - **前端載入時間**: < 3秒 (首次載入)
 - **資料更新頻率**: 30秒 (震波) / 5分鐘 (交通)
 
-### 🎯 預測準確度
+### 預測準確度
 | 預測類型 | MAE | RMSE | MAPE | 備註 |
 |---------|-----|------|------|------|
 | 震波檢測 | - | - | 87% | 準確率 |
@@ -333,18 +333,11 @@ recommendations = decision_engine.get_traffic_management_advice(
 | 密度預測 | 8.9 | 13.4 | 11.2% | veh/km |
 | 到達時間 | 2.1 | 3.8 | 4.2% | 分鐘 |
 
-### 📈 系統容量
-- **併發用戶**: 1000+ 同時在線用戶
-- **資料處理**: 10,000+ 資料點/秒
-- **模型推理**: 毫秒級響應
-- **歷史資料**: 支援TB級資料存儲
-- **API呼叫**: 100,000+ 請求/天
-
-## 🔧 API 文檔
+## API 文檔
 
 ### 核心API端點
 
-#### 🚦 交通資料API
+#### 交通資料API
 ```http
 GET /api/traffic/current
 # 回應: 即時交通資料
@@ -371,7 +364,7 @@ POST /api/traffic/query
 }
 ```
 
-#### ⚡ 震波檢測API
+#### 震波檢測API
 ```http
 GET /api/shockwave/active
 # 回應: 當前活躍震波
@@ -396,7 +389,7 @@ POST /api/shockwave/predict
 }
 ```
 
-#### 🤖 AI預測API
+#### AI預測API
 ```http
 POST /api/prediction/traffic
 # 請求: 交通預測
@@ -417,23 +410,23 @@ GET /api/prediction/models/status
 }
 ```
 
-## 🔒 資料安全與隱私
+## 資料安全與隱私
 
-### 🛡️ 安全措施
+### 安全措施
 - **環境變數保護**: 敏感資訊使用`.env`檔案管理，不進入版本控制
 - **API憑證加密**: 使用`python-jose`進行憑證加密存儲
 - **輸入驗證**: Pydantic模型確保API輸入的安全性
 - **CORS設定**: 嚴格控制跨域資源共享
 - **錯誤處理**: 安全的錯誤訊息，避免資訊洩露
 
-### 🔐 隱私保護
+### 隱私保護
 - **資料匿名化**: 交通資料不包含個人識別資訊
 - **本地處理**: 位置資料在客戶端處理，不上傳伺服器
 - **資料保留期限**: 設定合理的資料保留和清理策略
 
-## 🧪 測試與驗證
+## 測試與驗證
 
-### 🔍 環境檢查
+### 環境檢查
 ```bash
 # 執行完整環境檢查
 python check_environment.py
@@ -458,88 +451,19 @@ npm test
 python tests/performance_test.py
 ```
 
-## 🚀 部署指南
-
-### 🐳 Docker部署
-```bash
-# 構建Docker映像
-docker build -t highway-traffic-system .
-
-# 運行容器
-docker run -d \
-  -p 8000:8000 \
-  -p 3000:3000 \
-  --env-file .env \
-  --name traffic-system \
-  highway-traffic-system
-
-# 檢查容器狀態
-docker logs traffic-system
-```
-
-### ☁️ 雲端部署
-
-**AWS部署：**
-```bash
-# 使用AWS ECS
-aws ecs create-cluster --cluster-name highway-traffic
-aws ecs register-task-definition --cli-input-json file://task-definition.json
-
-# 或使用AWS Lambda (API部分)
-pip install zappa
-zappa init
-zappa deploy production
-```
-
-**Google Cloud部署：**
-```bash
-# 使用Google Cloud Run
-gcloud builds submit --tag gcr.io/PROJECT_ID/highway-traffic
-gcloud run deploy --image gcr.io/PROJECT_ID/highway-traffic --platform managed
-```
-
-### 🔧 生產環境配置
-```bash
-# 生產環境變數
-export NODE_ENV=production
-export PYTHONPATH="${PYTHONPATH}:/path/to/project"
-
-# 啟動生產服務
-gunicorn api.main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker
-npm run build && npm start
-```
-
-## 📚 學術研究支援
-
-### 🔬 引用資訊
-如果您在學術研究中使用本系統，請引用以下論文：
-
-```bibtex
-@ARTICLE{zou2024mt-stnet,
-  author={Zou, Guojian and Lai, Ziliang and Wang, Ting and Liu, Zongshi and Li, Ye},
-  journal={IEEE Transactions on Intelligent Transportation Systems}, 
-  title={MT-STNet: A Novel Multi-Task Spatiotemporal Network for Highway Traffic Flow Prediction}, 
-  year={2024},
-  volume={},
-  number={},
-  pages={1-16},
-  doi={10.1109/TITS.2024.3411638}
-}
-```
-
-### 📖 相關研究
+### 相關研究
 - **MT-STNet論文**: [IEEE Xplore](https://ieeexplore.ieee.org/document/10559778)
 - **交通震波理論**: 參考`Reference/`目錄中的學術文獻
 - **基準模型比較**: 詳見`src/models/mt_stnet/baselines/`
 
-### 🎓 資料集
+### 資料集
 系統使用台灣高速公路局提供的真實交通資料：
 - **資料來源**: 交通部TDX平台
 - **時間範圍**: 2020-2024年
 - **空間範圍**: 台灣高速公路網
 - **更新頻率**: 每30秒
 
-## 🤝 開發貢獻
+## 開發貢獻
 
 ### �️ 開發環境設定
 ```bash
@@ -556,27 +480,27 @@ npm install --include=dev
 npm run dev
 ```
 
-### 📝 程式碼規範
+### 程式碼規範
 - **Python**: 遵循PEP 8，使用black進行格式化
 - **TypeScript**: 使用ESLint和Prettier
 - **提交訊息**: 採用Conventional Commits格式
 - **測試覆蓋**: 新功能必須包含對應測試
 
-### 🐛 問題回報
+### 問題回報
 請透過GitHub Issues回報問題，並包含：
 1. 詳細的問題描述和重現步驟
 2. 系統環境資訊 (`python check_environment.py`)
 3. 相關日誌檔案 (`data/logs/`)
 4. 預期行為與實際行為的差異
 
-## � 聯絡資訊與支援
+## 聯絡資訊與支援
 
 - **專案首頁**: [GitHub Repository](https://github.com/timwei0801/Highway_trafficwave)
 - **問題回報**: [GitHub Issues](https://github.com/timwei0801/Highway_trafficwave/issues)
 - **開發者**: timwei0801
 - **許可證**: MIT License
 
-## 🙏 致謝
+##  致謝
 
 感謝以下開源專案和研究團隊的貢獻：
 - **MT-STNet研究團隊** - 深度學習模型核心
@@ -589,7 +513,7 @@ npm run dev
 
 <div align="center">
 
-**🚀 體驗革命性的智慧交通管理系統！**
+** 體驗革命性的智慧交通管理系統！**
 
 [![GitHub stars](https://img.shields.io/github/stars/timwei0801/Highway_trafficwave.svg?style=social&label=Star)](https://github.com/timwei0801/Highway_trafficwave)
 [![GitHub forks](https://img.shields.io/github/forks/timwei0801/Highway_trafficwave.svg?style=social&label=Fork)](https://github.com/timwei0801/Highway_trafficwave/fork)

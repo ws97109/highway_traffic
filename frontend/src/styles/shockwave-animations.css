@@ -1,0 +1,228 @@
+/* 衝擊波水波紋動畫效果 - 真正的雷達式水波擴散效果 */
+
+/* 真正的雷達式水波紋動畫 */
+@keyframes radar-wave {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+  }
+  5% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0;
+  }
+}
+
+/* 改良的水波紋擴散動畫 - 更真實的物理效果 */
+@keyframes ripple-expand {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  5% {
+    transform: scale(0.1);
+    opacity: 0.8;
+  }
+  25% {
+    transform: scale(0.5);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 0.4;
+  }
+  75% {
+    transform: scale(1.5);
+    opacity: 0.2;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+/* 大範圍水波紋 - 用於高危險等級 */
+@keyframes ripple-expand-large {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  3% {
+    transform: scale(0.05);
+    opacity: 0.7;
+  }
+  20% {
+    transform: scale(0.4);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(0.8);
+    opacity: 0.3;
+  }
+  60% {
+    transform: scale(1.2);
+    opacity: 0.2;
+  }
+  80% {
+    transform: scale(1.6);
+    opacity: 0.1;
+  }
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+/* 快速小範圍水波紋 */
+@keyframes ripple-expand-small {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  8% {
+    transform: scale(0.2);
+    opacity: 0.9;
+  }
+  30% {
+    transform: scale(0.6);
+    opacity: 0.7;
+  }
+  60% {
+    transform: scale(1);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+/* 中心點脈衝動畫 */
+@keyframes pulse-center {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(0.95);
+    opacity: 0.7;
+  }
+}
+
+/* 發光效果 */
+@keyframes shockwave-glow {
+  0% {
+    filter: drop-shadow(0 0 3px rgba(239, 68, 68, 0.4));
+  }
+  50% {
+    filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.8)) drop-shadow(0 0 15px rgba(239, 68, 68, 0.6));
+  }
+  100% {
+    filter: drop-shadow(0 0 3px rgba(239, 68, 68, 0.4));
+  }
+}
+
+/* 衝擊波嚴重程度樣式 */
+.shockwave-low {
+  animation: pulse-center 4s ease-in-out infinite;
+}
+
+.shockwave-medium {
+  animation: pulse-center 3s ease-in-out infinite;
+}
+
+.shockwave-high {
+  animation: pulse-center 2s ease-in-out infinite, shockwave-glow 3s ease-in-out infinite;
+}
+
+.shockwave-critical {
+  animation: pulse-center 1.5s ease-in-out infinite, shockwave-glow 2s ease-in-out infinite;
+}
+
+/* 水波紋效果 - 連續擴散的圓圈 */
+.shockwave-ripple-1 {
+  animation: ripple-expand 4s ease-out infinite;
+}
+
+.shockwave-ripple-2 {
+  animation: ripple-expand 4s ease-out infinite;
+  animation-delay: 1s;
+}
+
+.shockwave-ripple-3 {
+  animation: ripple-expand 4s ease-out infinite;
+  animation-delay: 2s;
+}
+
+.shockwave-ripple-4 {
+  animation: ripple-expand 4s ease-out infinite;
+  animation-delay: 3s;
+}
+
+/* 地圖圖例動畫 */
+.legend-shockwave-indicator {
+  position: relative;
+  overflow: hidden;
+}
+
+.legend-shockwave-indicator::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 50%;
+  animation: ripple 2s ease-out infinite;
+  pointer-events: none;
+}
+
+/* 警告面板動畫 */
+.alert-high {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.alert-critical {
+  animation: pulse 1s ease-in-out infinite, shockwave-glow 1.5s ease-in-out infinite;
+}
+
+/* 響應式調整 */
+@media (max-width: 768px) {
+  @keyframes ripple {
+    0% {
+      transform: scale(0.9);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.1);
+      opacity: 0.7;
+    }
+    100% {
+      transform: scale(1.3);
+      opacity: 0;
+    }
+  }
+}
+
+/* 減少動畫效果（針對偏好減少動畫的用戶） */
+@media (prefers-reduced-motion: reduce) {
+  .shockwave-low,
+  .shockwave-medium,
+  .shockwave-high,
+  .shockwave-critical,
+  .shockwave-ripple,
+  .alert-high,
+  .alert-critical {
+    animation: none;
+  }
+  
+  .legend-shockwave-indicator::after {
+    animation: none;
+  }
+}

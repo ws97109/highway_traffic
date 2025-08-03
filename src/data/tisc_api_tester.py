@@ -157,29 +157,55 @@ class ProductionRealtimeSystem:
         return pd.DataFrame()
 
     def get_latest_available_time(self):
-        """動態尋找最新可用的資料時間"""
+        """動態尋找最新可用的資料時間 - 從最近時間開始搜尋"""
         current = datetime.now()
         
-        for hours_back in range(1, 5):
-            test_time = current - timedelta(hours=hours_back)
+        # 首先嘗試當前時間和最近的幾個5分鐘間隔
+        search_times = []
+        
+        # 當前時間調整到5分鐘間隔
+        current_minute = (current.minute // 5) * 5
+        current_adjusted = current.replace(minute=current_minute, second=0, microsecond=0)
+        
+        # 生成搜尋時間列表：當前時間往前每5分鐘一次，搜尋2小時
+        for minutes_back in range(0, 121, 5):
+            search_time = current_adjusted - timedelta(minutes=minutes_back)
+            search_times.append(search_time)
+        
+        self.logger.info(f"開始搜尋最新可用資料，從 {current_adjusted.strftime('%H:%M')} 開始往前找...")
+        
+        for i, test_time in enumerate(search_times):
             test_url = self._build_test_url(test_time)
             
             try:
-                response = requests.head(test_url, headers=self.headers, timeout=10)
+                response = requests.head(test_url, headers=self.headers, timeout=5)
                 if response.status_code == 200:
-                    self.logger.info(f"發現可用資料時間: {test_time.strftime('%Y-%m-%d %H:xx')}")
+                    delay_minutes = (current - test_time).total_seconds() / 60
+                    if delay_minutes < 10:
+                        self.logger.info(f"✅ 發現即時資料: {test_time.strftime('%Y-%m-%d %H:%M')} (延遲 {delay_minutes:.0f} 分鐘)")
+                    else:
+                        self.logger.info(f"✅ 發現可用資料: {test_time.strftime('%Y-%m-%d %H:%M')} (延遲 {delay_minutes:.0f} 分鐘)")
                     return test_time
-            except:
+            except Exception as e:
+                if i < 5:  # 只在前5次失敗時記錄詳細錯誤
+                    self.logger.debug(f"測試 {test_time.strftime('%H:%M')} 失敗: {e}")
                 continue
         
-        self.logger.warning("未找到可用資料，使用預設時間")
+        self.logger.warning("⚠️ 未找到任何可用資料，使用預設時間")
         return current - timedelta(hours=2)
 
     def _build_test_url(self, target_time):
-        """建立測試URL"""
-        date_str = target_time.strftime('%Y%m%d')
-        hour_str = target_time.strftime('%H')
-        ts = f"{hour_str}0000"
+        """建立測試URL - 調整到5分鐘間隔"""
+        # 將時間調整到最接近的5分鐘間隔
+        minute = target_time.minute
+        rounded_minute = (minute // 5) * 5  # 取5的倍數
+        adjusted_time = target_time.replace(minute=rounded_minute, second=0, microsecond=0)
+        
+        date_str = adjusted_time.strftime('%Y%m%d')
+        hour_str = adjusted_time.strftime('%H')
+        minute_str = adjusted_time.strftime('%M')
+        ts = f"{hour_str}{minute_str}00"
+        
         return f"{self.base_url}/history/TDCS/M05A/{date_str}/{hour_str}/TDCS_M05A_{date_str}_{ts}.csv"
 
     def fetch_recent_data(self, target_time=None):
@@ -355,7 +381,23 @@ class ProductionRealtimeSystem:
         if processed_data.empty:
             return None
         
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M')
+        # 使用資料的實際時間範圍作為檔案名稱
+        if not processed_data.empty:
+            min_hour = processed_data['hour'].min()
+            max_hour = processed_data['hour'].max()
+            min_minute = processed_data['minute'].min()
+            max_minute = processed_data['minute'].max()
+            data_date = processed_data['date'].iloc[0].replace('/', '')  # 2025/08/02 -> 20250802
+            
+            # 如果跨小時，使用時間範圍；否則使用單一時間
+            if min_hour != max_hour:
+                timestamp = f"{data_date}_{min_hour:02d}{min_minute:02d}-{max_hour:02d}{max_minute:02d}"
+            else:
+                timestamp = f"{data_date}_{min_hour:02d}{min_minute:02d}-{max_minute:02d}"
+        else:
+            # 備用方案：使用執行時間
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M')
+            
         output_file = os.path.join(self.realtime_dir, f"realtime_shock_data_{timestamp}.csv")
         
         processed_data.to_csv(output_file, index=False, encoding='utf-8')
@@ -431,8 +473,14 @@ class ProductionRealtimeSystem:
     def single_collection(self):
         """執行單次資料收集"""
         try:
-            # 1. 收集原始資料
-            raw_data = self.fetch_recent_data()
+            # 1. 尋找並收集最新資料
+            latest_time = self.get_latest_available_time()
+            current_time = datetime.now()
+            delay_minutes = (current_time - latest_time).total_seconds() / 60
+            
+            self.logger.info(f"📊 準備收集資料 - 最新可用時間: {latest_time.strftime('%H:%M')}, 延遲: {delay_minutes:.0f}分鐘")
+            
+            raw_data = self.fetch_recent_data(latest_time)
             
             # 2. 處理資料
             processed_data = self.process_data(raw_data)

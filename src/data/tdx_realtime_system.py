@@ -48,9 +48,12 @@ class TDXRealtimeSystem:
         # 設定日誌
         self._setup_logging()
         
-        # TDX API 設定
-        self.client_id = "613890176-1884e50b-52b1-44cb"
-        self.client_secret = "ef5e1d00-4855-4214-b300-475309d88525"
+        # TDX API 設定 - 從環境變數讀取
+        self.client_id = os.getenv('TDX_CLIENT_ID')
+        self.client_secret = os.getenv('TDX_CLIENT_SECRET')
+        
+        if not self.client_id or not self.client_secret:
+            raise ValueError("請在 .env 檔案中設定 TDX_CLIENT_ID 和 TDX_CLIENT_SECRET")
         self.base_url = "https://tdx.transportdata.tw/api/basic"
         self.auth_url = "https://tdx.transportdata.tw/auth/realms/TDXConnect/protocol/openid-connect/token"
         
@@ -59,7 +62,7 @@ class TDXRealtimeSystem:
         self.token_expires_at = None
         
         # 監控配置 - 修改為更合理的間隔
-        self.collection_interval = 1    # 5分鐘間隔 (更即時)
+        self.collection_interval = 5    # 5分鐘間隔 (更即時)
         self.cleanup_frequency = 12     # 每12次收集後清理一次
         self.max_file_age_hours = 24    # 保留24小時的檔案
         

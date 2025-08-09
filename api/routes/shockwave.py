@@ -4,7 +4,9 @@ from datetime import datetime, timedelta
 import sys
 import os
 import pandas as pd
-import random
+import numpy as np
+import glob
+import logging
 
 # 導入後端模組
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
@@ -79,65 +81,245 @@ def load_station_data():
 
 @router.get("/active", response_model=dict)
 async def get_active_shockwaves():
-    """獲取當前活躍的震波 - 使用真實測站數據"""
+    """獲取當前活躍的震波 - 使用真實檢測系統"""
     try:
-        # 載入真實測站數據
-        stations = load_station_data()
-        if not stations:
-            raise HTTPException(status_code=500, detail="無法載入測站數據")
-        
         current_time = datetime.now()
         
-        # 隨機選擇幾個測站作為衝擊波發生點（模擬真實檢測）
-        selected_stations = random.sample(stations, min(4, len(stations)))
-        
-        mock_shockwaves = []
-        for i, station in enumerate(selected_stations):
-            # 根據測站位置生成衝擊波
-            intensity = random.uniform(4.0, 8.5)
-            propagation_speed = random.uniform(15.0, 25.0)
+        # 🔧 修正：使用真實的震波檢測系統
+        try:
+            # 1. 初始化檢測器和預測器
+            detector = FinalOptimizedShockDetector()
+            predictor = RealtimeShockPredictor(
+                data_dir="/Users/weiqihong/Desktop/碩士班/碩一下/highway-traffic/data"
+            )
             
-            # 建立更好的位置名稱
-            location_name = f"{station['start_ic']} - {station['end_ic']} ({station['direction']}向)"
-            if station['start_ic'] == station['end_ic']:
-                location_name = f"{station['start_ic']} ({station['direction']}向)"
+            # 2. 獲取最新的即時資料檔案
+            realtime_dir = os.path.join(root_dir, 'data', 'realtime_data')
+            if not os.path.exists(realtime_dir):
+                raise Exception("即時資料目錄不存在，請確保 TDX 系統正在運行")
             
-            shockwave = {
-                "id": f"sw_{station['id']:03d}",
-                "station_id": station['station_id'],
-                "location_name": location_name,
-                "latitude": station['latitude'],  # 使用真實測站經緯度
-                "longitude": station['longitude'],
-                "intensity": round(intensity, 1),
-                "propagation_speed": round(propagation_speed, 1),
-                "estimated_arrival": (current_time + timedelta(minutes=random.randint(10, 60))).isoformat(),
-                "affected_area": round(random.uniform(1.0, 3.0), 1),  # 更合理的影響範圍
-                "description": f"在測站 {station['station_id']} ({location_name}) 檢測到交通衝擊波",
-                "alternative_routes": []
+            # 尋找最新的資料檔案
+            pattern = os.path.join(realtime_dir, "realtime_shock_data_*.csv")
+            data_files = sorted(glob.glob(pattern), reverse=True)
+            
+            if not data_files:
+                raise Exception("沒有找到即時資料檔案，請確保 TDX 資料收集器正在運行")
+            
+            latest_file = data_files[0]
+            file_age_minutes = (current_time - datetime.fromtimestamp(os.path.getmtime(latest_file))).total_seconds() / 60
+            
+            # 檢查檔案新鮮度（超過10分鐘視為過時）
+            if file_age_minutes > 10:
+                raise Exception(f"最新資料檔案過時 ({file_age_minutes:.1f} 分鐘前)，請檢查 TDX 收集器狀態")
+            
+            # 3. 讀取並處理資料
+            df = pd.read_csv(latest_file)
+            if df.empty:
+                raise Exception("資料檔案為空")
+            
+            # 4. 使用檢測器進行衝擊波分析
+            detected_shocks = []
+            stations = df['station'].unique()
+            
+            for station in stations:
+                station_data = df[df['station'] == station].sort_values(['hour', 'minute'])
+                
+                if len(station_data) >= 3:  # 至少需要3個資料點
+                    try:
+                        # 檢測該站點的衝擊波
+                        shocks = detector.detect_significant_shocks(station_data)
+                        
+                        for shock in shocks:
+                            shock['station'] = station
+                            shock['detection_time'] = current_time
+                            detected_shocks.append(shock)
+                    except Exception as e:
+                        continue  # 單個站點失敗不影響其他站點
+            
+            # 5. 載入測站位置資訊
+            stations_info = load_station_data()
+            station_lookup = {s['station_id']: s for s in stations_info}
+            
+            # 6. 轉換為API格式
+            active_shockwaves_data = []
+            
+            for i, shock in enumerate(detected_shocks):
+                station = shock.get('station', '')
+                
+                # 查找測站資訊
+                station_info = None
+                for info in stations_info:
+                    if info['station_id'] == station or info['id'] == station:
+                        station_info = info
+                        break
+                
+                # 使用真實檢測的數值
+                intensity = shock.get('intensity', shock.get('strength', 5.0))
+                propagation_speed = shock.get('propagation_speed', shock.get('speed', 20.0))
+                confidence = shock.get('confidence', 0.8)
+                
+                # 如果有測站資訊，使用真實位置；否則使用預設位置
+                if station_info:
+                    latitude = station_info['latitude']
+                    longitude = station_info['longitude']
+                    location_name = station_info['name']
+                else:
+                    latitude = 25.0330 + (i * 0.01)  # 預設位置
+                    longitude = 121.5654 + (i * 0.01)
+                    location_name = f"測站 {station}"
+                
+                # 計算預估到達時間（基於傳播速度）
+                estimated_arrival_minutes = int(30 / (propagation_speed / 20)) if propagation_speed > 0 else 30
+                
+                shockwave_data = {
+                    "id": f"real_sw_{station}_{current_time.strftime('%H%M')}",
+                    "station_id": station,
+                    "location_name": location_name,
+                    "latitude": latitude,
+                    "longitude": longitude,
+                    "intensity": round(float(intensity), 1),
+                    "propagation_speed": round(float(propagation_speed), 1),
+                    "estimated_arrival": (current_time + timedelta(minutes=estimated_arrival_minutes)).isoformat(),
+                    "affected_area": round(intensity * 0.5, 1),  # 基於強度計算影響範圍
+                    "description": f"在測站 {station} ({location_name}) 檢測到真實交通衝擊波 (信心度: {confidence:.2f})",
+                    "confidence": round(float(confidence), 3),
+                    "detection_method": "FinalOptimizedShockDetector",
+                    "data_source_time": datetime.fromtimestamp(os.path.getmtime(latest_file)).isoformat(),
+                    "alternative_routes": []
+                }
+                
+                # 為高強度衝擊波添加替代路線建議
+                if intensity >= 6.0:
+                    shockwave_data["alternative_routes"] = [
+                        {
+                            "id": f"alt_real_{station}",
+                            "name": "建議使用替代路線",
+                            "additional_time": max(10, int(intensity * 3)),
+                            "avoidance_success": min(90, int(confidence * 100))
+                        }
+                    ]
+                
+                active_shockwaves_data.append(shockwave_data)
+            
+            # 7. 回傳結果
+            response_data = {
+                "shockwaves": active_shockwaves_data,
+                "count": len(active_shockwaves_data),
+                "last_updated": current_time.isoformat(),
+                "data_source": "real_time_detector",  # 標記為真實檢測
+                "data_file_used": os.path.basename(latest_file),
+                "data_file_age_minutes": round(file_age_minutes, 1),
+                "total_stations_analyzed": len(stations),
+                "detection_summary": {
+                    "files_checked": len(data_files),
+                    "latest_file": os.path.basename(latest_file),
+                    "stations_with_data": len(stations),
+                    "shocks_detected": len(detected_shocks)
+                }
             }
             
-            # 為高強度衝擊波添加替代路線建議
-            if intensity >= 6.0:
-                shockwave["alternative_routes"] = [
-                    {
-                        "id": f"alt_{i+1:03d}",
-                        "name": "建議替代路線",
-                        "additional_time": random.randint(10, 30),
-                        "avoidance_success": random.randint(70, 90)
-                    }
-                ]
+            return response_data
             
-            mock_shockwaves.append(shockwave)
-        
-        return {
-            "shockwaves": mock_shockwaves,
-            "total_count": len(mock_shockwaves),
-            "last_updated": current_time.isoformat(),
-            "data_source": "real_station_coordinates"
-        }
+        except Exception as detection_error:
+            # 如果真實檢測失敗，記錄錯誤並使用最小化的模擬資料
+            logger = logging.getLogger(__name__)
+            logger.error(f"真實震波檢測失敗: {detection_error}")
+            
+            # 回退到載入測站資訊但不生成假震波
+            stations = load_station_data()
+            
+            return {
+                "shockwaves": [],  # 空列表，表示目前沒有檢測到震波
+                "count": 0,
+                "last_updated": current_time.isoformat(),
+                "data_source": "detector_failed",
+                "error": str(detection_error),
+                "available_stations": len(stations),
+                "status": "檢測系統暫時無法使用，請檢查資料收集狀態"
+            }
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"獲取震波資料失敗: {str(e)}")
+
+@router.get("/status")
+async def get_system_status():
+    """獲取系統狀態 - 用於診斷"""
+    try:
+        current_time = datetime.now()
+        
+        # 檢查各個組件狀態
+        status_info = {
+            "timestamp": current_time.isoformat(),
+            "detector_available": False,
+            "predictor_available": False,
+            "data_files_status": {},
+            "tdx_system_status": "unknown"
+        }
+        
+        # 檢查檢測器
+        try:
+            detector = FinalOptimizedShockDetector()
+            status_info["detector_available"] = True
+        except Exception as e:
+            status_info["detector_error"] = str(e)
+        
+        # 檢查預測器
+        try:
+            predictor = RealtimeShockPredictor("/Users/weiqihong/Desktop/碩士班/碩一下/highway-traffic/data")
+            status_info["predictor_available"] = True
+        except Exception as e:
+            status_info["predictor_error"] = str(e)
+        
+        # 檢查資料檔案狀態
+        realtime_dir = os.path.join(root_dir, 'data', 'realtime_data')
+        if os.path.exists(realtime_dir):
+            pattern = os.path.join(realtime_dir, "realtime_shock_data_*.csv")
+            data_files = sorted(glob.glob(pattern), reverse=True)
+            
+            if data_files:
+                latest_file = data_files[0]
+                file_age = (current_time - datetime.fromtimestamp(os.path.getmtime(latest_file))).total_seconds() / 60
+                
+                status_info["data_files_status"] = {
+                    "total_files": len(data_files),
+                    "latest_file": os.path.basename(latest_file),
+                    "latest_file_age_minutes": round(file_age, 1),
+                    "data_freshness": "fresh" if file_age < 10 else "stale" if file_age < 60 else "old"
+                }
+                
+                # 檢查最新檔案內容
+                try:
+                    df = pd.read_csv(latest_file)
+                    status_info["data_files_status"]["latest_file_records"] = len(df)
+                    status_info["data_files_status"]["latest_file_stations"] = df['station'].nunique() if not df.empty else 0
+                except:
+                    status_info["data_files_status"]["latest_file_readable"] = False
+            else:
+                status_info["data_files_status"] = {"message": "沒有找到資料檔案"}
+        else:
+            status_info["data_files_status"] = {"message": "資料目錄不存在"}
+        
+        # 檢查測站資訊
+        try:
+            stations = load_station_data()
+            status_info["station_info"] = {
+                "total_stations": len(stations),
+                "stations_loaded": True
+            }
+        except Exception as e:
+            status_info["station_info"] = {
+                "stations_loaded": False,
+                "error": str(e)
+            }
+        
+        return status_info
+        
+    except Exception as e:
+        return {
+            "error": str(e),
+            "status": "failed",
+            "timestamp": datetime.now().isoformat()
+        }
 
 @router.get("/stations", response_model=dict)
 async def get_station_list():
@@ -251,3 +433,27 @@ async def get_shockwave_statistics():
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"獲取統計資料失敗: {str(e)}")
+
+@router.get("/debug/latest-data")
+async def debug_latest_data():
+    """除錯端點：查看最新資料"""
+    try:
+        realtime_dir = os.path.join(root_dir, 'data', 'realtime_data')
+        pattern = os.path.join(realtime_dir, "realtime_shock_data_*.csv")
+        data_files = sorted(glob.glob(pattern), reverse=True)
+        
+        if not data_files:
+            return {"message": "沒有資料檔案"}
+        
+        latest_file = data_files[0]
+        df = pd.read_csv(latest_file)
+        
+        return {
+            "file": os.path.basename(latest_file),
+            "records": len(df),
+            "stations": df['station'].nunique() if not df.empty else 0,
+            "sample_data": df.head(5).to_dict('records') if not df.empty else [],
+            "columns": list(df.columns) if not df.empty else []
+        }
+    except Exception as e:
+        return {"error": str(e)}

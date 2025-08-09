@@ -819,7 +819,7 @@ class ShockWarningSystem:
 
 def main():
     """主函數"""
-    base_dir = "/Users/weiqihong/Desktop/碩士班/碩一下/highway-traffic/data"
+    base_dir = "../data"
     config_file = os.path.join(base_dir, "warning_config.json")
     
     # 建立預警系統

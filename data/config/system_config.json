@@ -82,7 +82,7 @@
       "session_timeout_minutes": 60
     },
     "paths": {
-      "data_dir": "/Users/weiqihong/Desktop/碩士班/碩一下/highway-traffic/data",
+      "data_dir": "./data",
       "log_dir": "logs",
       "backup_dir": "backups",
       "temp_dir": "temp"

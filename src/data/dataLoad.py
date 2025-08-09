@@ -13,7 +13,7 @@ plt.rcParams['axes.unicode_minus'] = False
 def load_traffic_data(file_path=None):
     """載入交通資料"""
     if file_path is None:
-        file_path = '/Users/weiqihong/Desktop/碩士班/碩一下/highway-traffic/data/Taiwan/train_enhanced_full.csv'
+        file_path = '../data/Taiwan/train_enhanced_full.csv'
     return pd.read_csv(file_path)
 
 def analyze_traffic_data(df):

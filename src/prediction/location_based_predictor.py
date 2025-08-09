@@ -153,8 +153,8 @@ class LocationBasedShockPredictor:
             os.path.join(self.data_dir, "Taiwan", "Etag.csv"),
             os.path.join(os.path.dirname(self.data_dir), "國道", "data", "Taiwan", "Etag.csv"),
             os.path.join(os.path.dirname(self.data_dir), "data", "Taiwan", "Etag.csv"),
-            "/Users/weiqihong/Desktop/碩士班/碩一下/highway-traffic/data/Taiwan/Etag.csv",
-            "/Users/weiqihong/Desktop/碩士班/碩一下/highway-traffic/data/Taiwan/Etag.csv"
+            "../data/Taiwan/Etag.csv",
+            "../data/Taiwan/Etag.csv"
         ]
         
         etag_file = None
@@ -891,7 +891,7 @@ class LocationBasedShockPredictor:
 def main():
     """主函數"""
     # 設定參數（請替換為您的實際API Key）
-    base_dir = "/Users/weiqihong/Desktop/碩士班/碩一下/highway-traffic/data"
+    base_dir = "../data"
     google_api_key = "YOUR_GOOGLE_MAPS_API_KEY"  # 請替換為實際的API Key
     
     # 建立位置預測系統

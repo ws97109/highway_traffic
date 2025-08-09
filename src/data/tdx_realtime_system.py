@@ -33,7 +33,7 @@ class TDXRealtimeSystem:
     7. 修復 Ctrl+C 中斷問題
     """
 
-    def __init__(self, base_dir="/Users/weiqihong/Desktop/碩士班/碩一下/highway-traffic/data"):
+    def __init__(self, base_dir="../data"):
         """初始化 TDX 系統"""
         
         # 基本設定
@@ -62,7 +62,7 @@ class TDXRealtimeSystem:
         self.token_expires_at = None
         
         # 監控配置 - 修改為更合理的間隔
-        self.collection_interval = 5    # 5分鐘間隔 (更即時)
+        self.collection_interval = 1    # 1分鐘間隔 (更即時)
         self.cleanup_frequency = 12     # 每12次收集後清理一次
         self.max_file_age_hours = 24    # 保留24小時的檔案
         

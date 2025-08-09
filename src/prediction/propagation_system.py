@@ -456,9 +456,9 @@ class RealDataShockWavePropagationAnalyzer:
 
 def main():
     # 設定檔案路徑
-    etag_file = '/Users/weiqihong/Desktop/碩士班/碩一下/highway-traffic/data/Taiwan/Etag.csv'
-    distance_file = '/Users/weiqihong/Desktop/碩士班/碩一下/highway-traffic/data/Taiwan/dis.csv'
-    traffic_file = '/Users/weiqihong/Desktop/碩士班/碩一下/highway-traffic/data/Taiwan/train_enhanced_full.csv'
+    etag_file = '../data/Taiwan/Etag.csv'
+    distance_file = '../data/Taiwan/dis.csv'
+    traffic_file = '../data/Taiwan/train_enhanced_full.csv'
     
     try:
         # 初始化基於實際資料的分析器

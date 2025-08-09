@@ -58,7 +58,7 @@ class IntegratedShockPredictionSystem:
         """初始化整合系統"""
         
         # 設定基本路徑
-        self.base_dir = "/Users/weiqihong/Desktop/碩士班/碩一下/highway-traffic/data"
+        self.base_dir = "../data"
         self.config_dir = config_dir or os.path.join(self.base_dir, "config")
         
         # 建立目錄

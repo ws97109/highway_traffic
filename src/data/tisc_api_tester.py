@@ -28,7 +28,7 @@ class ProductionRealtimeSystem:
     5. 優雅關閉
     """
 
-    def __init__(self, base_dir="/Users/weiqihong/Desktop/碩士班/碩一下/highway-traffic/data"):
+    def __init__(self, base_dir="../data"):
         """初始化生產版系統"""
         
         # 基本設定

@@ -57,7 +57,7 @@ class RealtimeShockPredictor:
             data_dir,
             os.path.join(os.path.dirname(data_dir), "國道", "data"),
             os.path.join(os.path.dirname(data_dir), "data"),
-            "/Users/weiqihong/Desktop/碩士班/碩一下/highway-traffic/data"
+            "../data"
         ]
         
         found_etag = False
@@ -540,7 +540,7 @@ class RealtimeShockPredictor:
 def main():
     """主函數"""
     # 設定路徑
-    base_dir = "/Users/weiqihong/Desktop/碩士班/碩一下/highway-traffic/data"
+    base_dir = "../data"
     
     # 建立預測系統
     predictor = RealtimeShockPredictor(base_dir)

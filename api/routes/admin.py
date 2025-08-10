@@ -254,37 +254,52 @@ async def get_dashboard_data():
 
 @router.get("/alerts/active")
 async def get_active_alerts():
-    """獲取當前活躍警報"""
+    """獲取當前活躍警報 - 基於真實檢測結果"""
     try:
-        current_time = datetime.now()
+        from .shockwave import get_active_shockwaves
         
-        active_alerts = [
-            {
-                "id": "alert_001",
-                "type": "shockwave",
-                "severity": "high",
-                "title": "國道1號震波警報",
-                "description": "檢測到高強度震波，預計15分鐘後到達桃園系統",
-                "location": {"lat": 25.0330, "lng": 121.5654},
-                "created_at": (current_time - timedelta(minutes=5)).isoformat(),
-                "estimated_duration": 30
-            },
-            {
-                "id": "alert_002",
+        # 獲取真實的衝擊波檢測結果
+        shockwave_data = await get_active_shockwaves()
+        active_alerts = []
+        
+        # 將衝擊波檢測轉換為警報格式
+        if shockwave_data.get("shockwaves"):
+            for shock in shockwave_data["shockwaves"][:3]:  # 只顯示前3個最重要的
+                severity = "high" if shock.get("intensity", 0) >= 6.0 else "medium"
+                
+                alert = {
+                    "id": f"shock_{shock.get('station_id', 'unknown')}_{shock.get('shock_start_time', '').replace(':', '')}",
+                    "type": "shockwave",
+                    "severity": severity,
+                    "title": f"{shock.get('location_name', '未知測站')} 震波警報",
+                    "description": f"檢測到真實交通衝擊波，強度: {shock.get('intensity', 0):.1f}，速度下降: {shock.get('speed_drop', 0):.0f} km/h",
+                    "location": {
+                        "lat": float(shock.get("latitude", 0)), 
+                        "lng": float(shock.get("longitude", 0))
+                    },
+                    "created_at": shock.get("shock_occurrence_time", datetime.now().isoformat()),
+                    "estimated_duration": int(shock.get("shock_duration", 30))
+                }
+                active_alerts.append(alert)
+        
+        # 如果沒有真實檢測結果，添加一個系統狀態警告
+        if not active_alerts:
+            current_time = datetime.now()
+            active_alerts.append({
+                "id": "system_001",
                 "type": "system",
-                "severity": "medium", 
-                "title": "預測模型準確度下降",
-                "description": "MT-STNet模型準確度降至82%，建議檢查輸入資料",
+                "severity": "low",
+                "title": "系統正常運行",
+                "description": "目前未檢測到衝擊波，系統運行正常",
                 "location": None,
-                "created_at": (current_time - timedelta(minutes=12)).isoformat(),
+                "created_at": current_time.isoformat(),
                 "estimated_duration": None
-            }
-        ]
+            })
         
         return {
             "alerts": active_alerts,
             "total_count": len(active_alerts),
-            "last_updated": current_time.isoformat()
+            "last_updated": datetime.now().isoformat()
         }
         
     except Exception as e:

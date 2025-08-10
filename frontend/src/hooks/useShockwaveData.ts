@@ -15,6 +15,8 @@ interface ShockwaveData {
   description: string;
   recommendations: string[];
   alternativeRoutes?: AlternativeRoute[];
+  shockOccurrenceTime?: string;
+  speedDrop?: number;
 }
 
 interface AlternativeRoute {
@@ -87,7 +89,9 @@ export const useShockwaveData = (userLocation?: { lat: number; lng: number }): S
         severity: determineSeverity(sw.intensity, sw.propagation_speed),
         description: sw.description || `在 ${sw.location_name} 檢測到交通震波`,
         recommendations: generateRecommendations(sw.intensity, sw.propagation_speed),
-        alternativeRoutes: sw.alternative_routes || []
+        alternativeRoutes: sw.alternative_routes || [],
+        shockOccurrenceTime: sw.shock_occurrence_time,
+        speedDrop: sw.speed_drop
       }));
 
       setShockwaves(formattedShockwaves);
@@ -218,11 +222,11 @@ function generateAlerts(shockwaves: ShockwaveData[], userLocation?: { lat: numbe
           title: userLocation ? `${sw.location} 震波警報` : `${sw.location} 衝擊波監測`,
           description: userLocation ? 
             `預計 ${Math.round(timeToArrival)} 分鐘後到達您的位置` :
-            `強度 ${sw.intensity.toFixed(1)}，影響範圍 ${sw.affectedArea.toFixed(1)} km`,
+            `檢測到真實交通衝擊波，強度: ${sw.intensity.toFixed(1)}，速度下降: ${sw.speedDrop || 0} km/h`,
           level: sw.severity === 'critical' || sw.severity === 'high' ? 'high' : 
                  sw.severity === 'medium' ? 'medium' : 'low',
           estimatedImpact: `車速可能下降至 ${Math.max(10, 80 - sw.intensity * 8)} km/h`,
-          timestamp: new Date().toISOString(),
+          timestamp: sw.shockOccurrenceTime || new Date().toISOString(),
           recommendations: sw.recommendations
         });
       }

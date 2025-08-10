@@ -1,0 +1,74 @@
+# RAG 訓練系統 .gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# 向量資料庫
+vector_db/
+*.db
+*.sqlite
+
+# 處理後的資料
+processed_data/
+*.json
+*.pkl
+*.pickle
+
+# 模型文件
+models/*.bin
+models/*.safetensors
+models/*.model
+
+# 日誌文件
+*.log
+logs/
+
+# 評估結果
+evaluation_results/
+*.eval
+
+# 暫存文件
+*.tmp
+*.temp
+.cache/
+
+# IDE 設定
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS 產生的文件
+.DS_Store
+Thumbs.db
+
+# 配置備份
+*.yaml.bak
+*.yml.bak

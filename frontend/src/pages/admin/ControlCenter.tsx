@@ -12,6 +12,7 @@ import {
   UserGroupIcon
 } from '@heroicons/react/24/outline';
 import TrafficMap from '../../components/maps/TrafficMap';
+import MTSTNetPredictor from '../../components/prediction/MTSTNetPredictor';
 import { useShockwaveData } from '../../hooks/useShockwaveData';
 import { useTrafficData } from '../../hooks/useTrafficData';
 
@@ -435,43 +436,49 @@ const ControlCenter: React.FC<ControlCenterProps> = () => {
             </div>
           </div>
 
-          {/* 主要地圖區域 */}
+          {/* 主要內容區域 */}
           <div className="xl:col-span-3">
-            <div className="bg-white rounded-lg shadow overflow-hidden" style={{ height: '800px' }}>
-              <div className="p-4 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-gray-900 flex items-center">
-                    <MapIcon className="w-5 h-5 mr-2 text-blue-600" />
-                    即時交通監控地圖
-                  </h2>
-                  
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center space-x-2 text-sm">
-                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                      <span>順暢</span>
-                      <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                      <span>壅塞</span>
-                      <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                      <span>阻塞</span>
-                      <div className="w-3 h-3 bg-purple-500 rounded-full animate-pulse"></div>
-                      <span>震波</span>
+            {selectedView === 'predictions' ? (
+              /* MT-STNet 預測分析 */
+              <MTSTNetPredictor />
+            ) : (
+              /* 地圖視圖 */
+              <div className="bg-white rounded-lg shadow overflow-hidden" style={{ height: '800px' }}>
+                <div className="p-4 border-b border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+                      <MapIcon className="w-5 h-5 mr-2 text-blue-600" />
+                      即時交通監控地圖
+                    </h2>
+                    
+                    <div className="flex items-center space-x-4">
+                      <div className="flex items-center space-x-2 text-sm">
+                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                        <span>順暢</span>
+                        <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                        <span>壅塞</span>
+                        <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                        <span>阻塞</span>
+                        <div className="w-3 h-3 bg-purple-500 rounded-full animate-pulse"></div>
+                        <span>震波</span>
+                      </div>
                     </div>
                   </div>
                 </div>
+                
+                <div style={{ height: 'calc(100% - 73px)' }}>
+                  <TrafficMap
+                    center={{ lat: 25.0330, lng: 121.5654 }}
+                    trafficData={trafficData}
+                    shockwaves={shockwaves as any}
+                    predictions={predictions}
+                    showTrafficLayer={true}
+                    showShockwaveOverlay={true}
+                    zoom={9}
+                  />
+                </div>
               </div>
-              
-              <div style={{ height: 'calc(100% - 73px)' }}>
-                <TrafficMap
-                  center={{ lat: 25.0330, lng: 121.5654 }}
-                  trafficData={trafficData}
-                  shockwaves={shockwaves as any}
-                  predictions={predictions}
-                  showTrafficLayer={true}
-                  showShockwaveOverlay={true}
-                  zoom={9}
-                />
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </div>

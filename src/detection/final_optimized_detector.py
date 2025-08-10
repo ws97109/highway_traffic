@@ -19,34 +19,106 @@ class FinalOptimizedShockDetector:
     - 更嚴格的檢測標準以符合實際頻率
     """
     
+    # 在 src/detection/final_optimized_detector.py 第 16-40 行
+    # 將現有的 shock_criteria 替換成以下內容：
+
     def __init__(self):
         self.free_flow_speed = 90  # km/h
         self.jam_density = 150     # veh/km
         
-        # 調整為更適合日常交通波的標準
+        # 🔧 調整後的檢測標準 - 適應真實間斷資料
         self.shock_criteria = {
             'mild': {
-                'speed_drop_min': 6,        # 降低最小速度下降
-                'speed_drop_max': 18,       
-                'duration_min': 2,          # 降低至10分鐘
-                'density_increase_min': 3,  # 降低最小密度增加
-                'initial_speed_min': 25     # 降低初始速度要求
+                'speed_drop_min': 10,       # 降低到10 km/h，捕捉較小衝擊波
+                'speed_drop_max': 25,       
+                'duration_min': 1,          # 保持1個間隔
+                'density_increase_min': 1,  # 降低密度要求
+                'initial_speed_min': 25,    # 降低初始速度要求
+                'max_time_gap': 20          # 允許最大20分鐘間隔
             },
             'moderate': {
-                'speed_drop_min': 18,
-                'speed_drop_max': 30,
-                'duration_min': 2,          # 10分鐘
-                'density_increase_min': 6,
-                'initial_speed_min': 35
+                'speed_drop_min': 25,       # 降低到25 km/h
+                'speed_drop_max': 40,       
+                'duration_min': 1,          
+                'density_increase_min': 2,  
+                'initial_speed_min': 30,    # 降低要求
+                'max_time_gap': 20          
             },
             'severe': {
-                'speed_drop_min': 30,
-                'speed_drop_max': 70,
-                'duration_min': 2,          # 10分鐘
-                'density_increase_min': 10,
-                'initial_speed_min': 45
+                'speed_drop_min': 40,       # 降低到40 km/h，您的資料顯示38-46 km/h
+                'speed_drop_max': 100,      
+                'duration_min': 1,          
+                'density_increase_min': 3,  
+                'initial_speed_min': 35,    # 降低要求
+                'max_time_gap': 20          
             }
         }
+
+    # 🆕 新增方法：在 final_optimized_detector.py 最後加入
+    def _calculate_time_gap_minutes(self, data, idx1, idx2):
+        """計算兩個資料點之間的時間間隔（分鐘）"""
+        if idx1 >= len(data) or idx2 >= len(data):
+            return float('inf')
+        
+        row1 = data.iloc[idx1]
+        row2 = data.iloc[idx2]
+        
+        # 假設資料有hour和minute欄位，如果沒有需要從其他欄位解析
+        time1 = row1.get('hour', 0) * 60 + row1.get('minute', 0)
+        time2 = row2.get('hour', 0) * 60 + row2.get('minute', 0)
+        
+        return abs(time2 - time1)
+
+    def _detect_gap_tolerant_shocks(self, data, level, criteria):
+        """🆕 新增：容忍時間間隔的衝擊波檢測"""
+        shocks = []
+        
+        for i in range(len(data) - 1):
+            current = data.iloc[i]
+            next_point = data.iloc[i + 1]
+            
+            # 檢查時間間隔
+            time_gap = self._calculate_time_gap_minutes(data, i, i + 1)
+            
+            # 如果時間間隔在容忍範圍內
+            if time_gap <= criteria.get('max_time_gap', 10):
+                speed_drop = current['median_speed'] - next_point['median_speed']
+                
+                # 檢查是否符合衝擊波條件
+                if (speed_drop >= criteria['speed_drop_min'] and 
+                    speed_drop <= criteria['speed_drop_max'] and
+                    current['median_speed'] >= criteria['initial_speed_min']):
+                    
+                    # 計算其他指標
+                    initial_density = current['flow'] / max(current['median_speed'], 0.1)
+                    final_density = next_point['flow'] / max(next_point['median_speed'], 0.1)
+                    density_change = final_density - initial_density
+                    
+                    shock_event = {
+                        'level': level,
+                        'start_time': f"{current.get('hour', 0):02d}:{current.get('minute', 0):02d}",
+                        'end_time': f"{next_point.get('hour', 0):02d}:{next_point.get('minute', 0):02d}",
+                        'duration': time_gap,  # 實際時間間隔
+                        'speed_drop': speed_drop,
+                        'initial_speed': current['median_speed'],
+                        'final_speed': next_point['median_speed'],
+                        'initial_density': initial_density,
+                        'final_density': final_density,
+                        'density_increase': density_change,
+                        'max_flow': max(current['flow'], next_point['flow']),
+                        'min_flow': min(current['flow'], next_point['flow']),
+                        'start_idx': i,
+                        'end_idx': i + 1,
+                        'theoretical_wave_speed': self._calculate_realistic_wave_speed(
+                            initial_density, final_density, 
+                            current['median_speed'], next_point['median_speed']
+                        ),
+                        'time_gap': time_gap  # 🆕 記錄時間間隔
+                    }
+                    
+                    shocks.append(shock_event)
+        
+        return shocks
     
     def calculate_density(self, flow, speed):
         """計算密度"""
@@ -54,24 +126,78 @@ class FinalOptimizedShockDetector:
         return flow / speed
     
     def detect_significant_shocks(self, station_data):
-        """檢測顯著震波事件"""
+        """檢測顯著震波事件 - 支援間隔資料"""
         data = station_data.copy().reset_index(drop=True)
         data['density'] = self.calculate_density(data['flow'], data['median_speed'])
         
-        # 更強的平滑化（7點移動平均）
-        data['speed_smooth'] = data['median_speed'].rolling(window=7, center=True).mean()
-        data['density_smooth'] = data['density'].rolling(window=7, center=True).mean()
+        # 🔧 進一步減少平滑化，保留真實變化
+        data['speed_smooth'] = data['median_speed'].rolling(window=2, center=False, min_periods=1).mean()
+        data['density_smooth'] = data['density'].rolling(window=2, center=False, min_periods=1).mean()
+        
+        # 🔧 填充NaN值
+        data['speed_smooth'].fillna(data['median_speed'], inplace=True)
+        data['density_smooth'].fillna(data['density'], inplace=True)
         
         all_shocks = []
         
+        # 🆕 使用新的間隔容忍檢測方法
         for level, criteria in self.shock_criteria.items():
-            shocks = self._detect_strict_shocks(data, level, criteria)
+            # 使用新的檢測方法
+            shocks = self._detect_gap_tolerant_shocks(data, level, criteria)
             all_shocks.extend(shocks)
         
-        # 嚴格去重和過濾
-        filtered_shocks = self._strict_filtering(all_shocks)
+        # 🔧 更寬鬆的去重邏輯
+        filtered_shocks = self._remove_overlapping_shocks_relaxed(all_shocks)
         
-        return filtered_shocks
+        return self._format_shock_output(filtered_shocks, data)
+
+    def _remove_overlapping_shocks_relaxed(self, shocks):
+        """🆕 更寬鬆的去重方法"""
+        if not shocks:
+            return []
+        
+        # 按嚴重程度排序
+        sorted_shocks = sorted(shocks, key=lambda x: x['speed_drop'], reverse=True)
+        
+        filtered = []
+        used_times = set()
+        
+        for shock in sorted_shocks:
+            time_key = f"{shock['start_time']}-{shock['end_time']}"
+            
+            # 檢查是否與已有的衝擊波時間重疊
+            overlap = False
+            for used_time in used_times:
+                if self._times_overlap(time_key, used_time):
+                    overlap = True
+                    break
+            
+            if not overlap:
+                filtered.append(shock)
+                used_times.add(time_key)
+        
+        return filtered
+
+    def _times_overlap(self, time1, time2):
+        """檢查兩個時間段是否重疊"""
+        # 簡單的字符串比較，您可以根據需要改進
+        return time1 == time2
+
+    def _format_shock_output(self, shocks, data):
+        """格式化輸出結果"""
+        if not shocks:
+            print(f"未檢測到衝擊波 - 共分析 {len(data)} 個資料點")
+            return []
+        
+        print(f"🚨 檢測到 {len(shocks)} 個衝擊波:")
+        for i, shock in enumerate(shocks, 1):
+            print(f"  {i}. {shock['level'].upper()} 級別")
+            print(f"     時間: {shock['start_time']} → {shock['end_time']} (間隔 {shock.get('time_gap', 'N/A')} 分鐘)")
+            print(f"     速度: {shock['initial_speed']} → {shock['final_speed']} km/h (下降 {shock['speed_drop']} km/h)")
+            print(f"     流量: {shock['max_flow']:.0f} → {shock['min_flow']:.0f}")
+            print()
+        
+        return shocks
     
     def _detect_strict_shocks(self, data, level, criteria):
         """嚴格震波檢測"""
@@ -117,29 +243,35 @@ class FinalOptimizedShockDetector:
         return shocks
     
     def _is_significant_shock_start(self, data, idx, criteria):
-        """檢查是否為顯著震波起始點"""
-        if idx >= len(data) - 3:
+        """檢查是否為顯著震波起始點 - 適應真實資料特性"""
+        if idx >= len(data) - 1:
             return False
         
         current = data.iloc[idx]
         
-        # 基本條件：初始速度足夠高
+        # 放寬基本條件：初始速度要求
         if current['median_speed'] < criteria['initial_speed_min']:
             return False
         
-        # 檢查接下來幾個點的趨勢
-        next_points = data.iloc[idx:idx+3]
+        # 🔧 簡化檢查：只需要下一個點有明顯速度下降即可
+        if idx + 1 < len(data):
+            next_point = data.iloc[idx + 1]
+            speed_drop = current['median_speed'] - next_point['median_speed']
+            
+            # 檢查是否有足夠的速度下降
+            if speed_drop >= criteria['speed_drop_min']:
+                return True
         
-        # 必須有持續的速度下降趨勢
-        speed_drops = []
-        for i in range(len(next_points) - 1):
-            drop = next_points.iloc[i]['median_speed'] - next_points.iloc[i+1]['median_speed']
-            speed_drops.append(drop)
+        # 如果有更多資料點，檢查接下來的趨勢
+        if idx + 2 < len(data):
+            next_points = data.iloc[idx:idx+3]
+            
+            # 檢查總體速度下降
+            total_drop = next_points.iloc[0]['median_speed'] - next_points.iloc[-1]['median_speed']
+            if total_drop >= criteria['speed_drop_min']:
+                return True
         
-        # 至少有2個連續的速度下降
-        consecutive_drops = sum(1 for drop in speed_drops if drop > 2)
-        
-        return consecutive_drops >= 2
+        return False
     
     def _analyze_shock_strictly(self, data, start_idx, criteria):
         """嚴格分析震波"""
@@ -212,11 +344,20 @@ class FinalOptimizedShockDetector:
         }
     
     def _check_monotonic_trend(self, window_data):
-        """檢查震波的單調性"""
-        # 速度應該大致呈下降趨勢
+        """檢查震波的單調性 - 放寬條件適應真實資料"""
         speeds = window_data['median_speed'].values
         
-        # 計算下降趨勢的一致性
+        if len(speeds) < 2:
+            return True  # 資料點太少時直接通過
+        
+        # 檢查是否有明顯的速度下降
+        speed_drop = speeds[0] - speeds[-1]
+        
+        # 如果總體下降超過10 km/h，就認為符合震波特徵
+        if speed_drop >= 10:
+            return True
+            
+        # 計算下降趨勢的一致性 - 放寬到40%
         decreasing_count = 0
         total_pairs = len(speeds) - 1
         
@@ -224,8 +365,8 @@ class FinalOptimizedShockDetector:
             if speeds[i] >= speeds[i+1]:
                 decreasing_count += 1
         
-        # 至少60%的點對顯示下降趨勢
-        return decreasing_count / total_pairs >= 0.6
+        # 降低到40%的點對顯示下降趨勢即可
+        return decreasing_count / total_pairs >= 0.4
     
     def _calculate_realistic_wave_speed(self, rho_i, rho_f, u_i, u_f):
         """計算符合文獻的波速"""

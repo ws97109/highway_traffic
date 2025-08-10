@@ -13,6 +13,7 @@ root_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 sys.path.insert(0, root_dir)
 
 from src.detection.final_optimized_detector import FinalOptimizedShockDetector
+from src.detection.realtime_adaptive_detector import RealtimeAdaptiveShockDetector
 from src.prediction.realtime_shock_predictor import RealtimeShockPredictor
 
 router = APIRouter()
@@ -61,13 +62,13 @@ def load_station_data():
                 lng = float(lng_str)
                 
                 station = {
-                    'id': row['ID'],
-                    'station_id': row['編號'],
-                    'direction': row['方向'],
-                    'start_ic': row['交流道(起)'],
-                    'end_ic': row['交流道(迄)'],
-                    'latitude': lat,
-                    'longitude': lng,
+                    'id': int(row['ID']),  # 確保轉換為Python int
+                    'station_id': str(row['編號']),
+                    'direction': str(row['方向']),
+                    'start_ic': str(row['交流道(起)']),
+                    'end_ic': str(row['交流道(迄)']),
+                    'latitude': float(lat),
+                    'longitude': float(lng),
                     'name': f"{row['交流道(起)']} - {row['交流道(迄)']}"
                 }
                 stations.append(station)
@@ -79,6 +80,48 @@ def load_station_data():
         print(f"載入測站數據失敗: {e}")
         return []
 
+def find_station_info(station_id, stations_info):
+    """精確匹配站點資訊"""
+    # 直接匹配
+    for info in stations_info:
+        if info['station_id'] == station_id:
+            return info
+    
+    # 處理格式差異：01F0339S -> 01F-033.9S
+    try:
+        # 解析站點ID：01F0339S
+        if len(station_id) >= 8 and station_id.startswith(('01F', '03F')):
+            highway = station_id[:3]  # 01F 或 03F
+            km_part = station_id[3:7]  # 0339
+            direction = station_id[-1]  # S 或 N
+            
+            # 轉換為標準格式：01F-033.9S
+            km_major = km_part[:3].lstrip('0') or '0'  # 033 -> 33
+            km_minor = km_part[3]  # 9
+            
+            standard_format = f"{highway}-{km_major}.{km_minor}{direction}"
+            
+            # 尋找匹配
+            for info in stations_info:
+                if info['station_id'] == standard_format:
+                    return info
+                    
+            # 嘗試其他可能的格式
+            alt_formats = [
+                f"{highway}-0{km_major}.{km_minor}{direction}",  # 01F-033.9S
+                f"{highway}-{km_major}{direction}",              # 01F-33S
+                f"{highway}0{km_major}.{km_minor}{direction}",   # 01F033.9S
+            ]
+            
+            for alt_format in alt_formats:
+                for info in stations_info:
+                    if info['station_id'] == alt_format:
+                        return info
+    except:
+        pass
+    
+    return None
+
 @router.get("/active", response_model=dict)
 async def get_active_shockwaves():
     """獲取當前活躍的震波 - 使用真實檢測系統"""
@@ -87,8 +130,8 @@ async def get_active_shockwaves():
         
         # 🔧 修正：使用真實的震波檢測系統
         try:
-            # 1. 初始化檢測器和預測器
-            detector = FinalOptimizedShockDetector()
+            # 1. 初始化適應性檢測器和預測器
+            detector = RealtimeAdaptiveShockDetector()
             predictor = RealtimeShockPredictor(
                 data_dir="/Users/weiqihong/Desktop/碩士班/碩一下/highway-traffic/data"
             )
@@ -127,7 +170,7 @@ async def get_active_shockwaves():
                 if len(station_data) >= 3:  # 至少需要3個資料點
                     try:
                         # 檢測該站點的衝擊波
-                        shocks = detector.detect_significant_shocks(station_data)
+                        shocks = detector.detect_realtime_shocks(station_data)
                         
                         for shock in shocks:
                             shock['station'] = station
@@ -138,25 +181,24 @@ async def get_active_shockwaves():
             
             # 5. 載入測站位置資訊
             stations_info = load_station_data()
-            station_lookup = {s['station_id']: s for s in stations_info}
+            print(f"🔍 載入了 {len(stations_info)} 個測站")
             
             # 6. 轉換為API格式
             active_shockwaves_data = []
             
             for i, shock in enumerate(detected_shocks):
                 station = shock.get('station', '')
+                print(f"🔍 處理震波 {i+1}: 測站 {station}")
                 
-                # 查找測站資訊
-                station_info = None
-                for info in stations_info:
-                    if info['station_id'] == station or info['id'] == station:
-                        station_info = info
-                        break
+                # 查找測站資訊 - 使用新的匹配函數
+                station_info = find_station_info(station, stations_info)
+                print(f"🔍 測站匹配結果: {station_info}")
                 
-                # 使用真實檢測的數值
-                intensity = shock.get('intensity', shock.get('strength', 5.0))
-                propagation_speed = shock.get('propagation_speed', shock.get('speed', 20.0))
-                confidence = shock.get('confidence', 0.8)
+                # 使用真實檢測的數值 - 確保轉換為Python原生型別
+                speed_drop = float(shock.get('speed_drop', 0))
+                intensity = min(10.0, max(1.0, speed_drop / 5.0))  # 將速度下降轉換為強度 (1-10)
+                propagation_speed = abs(float(shock.get('theoretical_wave_speed', 15.0)))
+                confidence = 0.9 if shock.get('level') == 'severe' else 0.8 if shock.get('level') == 'moderate' else 0.7
                 
                 # 如果有測站資訊，使用真實位置；否則使用預設位置
                 if station_info:
@@ -171,8 +213,22 @@ async def get_active_shockwaves():
                 # 計算預估到達時間（基於傳播速度）
                 estimated_arrival_minutes = int(30 / (propagation_speed / 20)) if propagation_speed > 0 else 30
                 
+                # 構建真實的衝擊波發生時間
+                shock_start_time = shock.get('start_time', '00:00')
+                shock_end_time = shock.get('end_time', '00:00')
+                
+                # 從資料中獲取日期
+                shock_date = df.iloc[0]['date'] if not df.empty else current_time.strftime('%Y/%m/%d')
+                
+                # 解析衝擊波實際發生時間
+                try:
+                    start_hour, start_minute = map(int, shock_start_time.split(':'))
+                    shock_datetime = datetime.strptime(f"{shock_date} {start_hour:02d}:{start_minute:02d}", '%Y/%m/%d %H:%M')
+                except:
+                    shock_datetime = current_time
+                
                 shockwave_data = {
-                    "id": f"real_sw_{station}_{current_time.strftime('%H%M')}",
+                    "id": f"real_sw_{station}_{shock_start_time.replace(':', '')}",
                     "station_id": station,
                     "location_name": location_name,
                     "latitude": latitude,
@@ -183,7 +239,12 @@ async def get_active_shockwaves():
                     "affected_area": round(intensity * 0.5, 1),  # 基於強度計算影響範圍
                     "description": f"在測站 {station} ({location_name}) 檢測到真實交通衝擊波 (信心度: {confidence:.2f})",
                     "confidence": round(float(confidence), 3),
-                    "detection_method": "FinalOptimizedShockDetector",
+                    "detection_method": "RealtimeAdaptiveShockDetector",
+                    "shock_occurrence_time": shock_datetime.isoformat(),  # 真實發生時間
+                    "shock_start_time": shock_start_time,
+                    "shock_end_time": shock_end_time,
+                    "shock_duration": float(shock.get('duration', 0)),
+                    "speed_drop": float(shock.get('speed_drop', 0)),
                     "data_source_time": datetime.fromtimestamp(os.path.getmtime(latest_file)).isoformat(),
                     "alternative_routes": []
                 }

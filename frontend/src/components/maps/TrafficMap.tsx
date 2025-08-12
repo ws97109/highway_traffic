@@ -203,11 +203,50 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
 
       // 添加點擊事件顯示詳細資訊
       centerMarker.addListener('click', () => {
-        const infoWindow = new google.maps.InfoWindow({
-          content: createShockwaveInfoContent(shockwave),
-          position: { lat: shockwave.lat, lng: shockwave.lng },
-        });
-        infoWindow.open(map);
+        try {
+          // 安全檢查
+          if (!map || !shockwave) {
+            console.error('地圖或衝擊波資料遺失');
+            return;
+          }
+
+          const content = createShockwaveInfoContent(shockwave);
+          
+          const infoWindow = new google.maps.InfoWindow({
+            content: content,
+            position: { 
+              lat: shockwave.lat || 0, 
+              lng: shockwave.lng || 0 
+            },
+            maxWidth: 420,
+          });
+          
+          infoWindow.open(map);
+
+          // 等待 InfoWindow 完全載入後再載入 AI 推薦
+          google.maps.event.addListenerOnce(infoWindow, 'domready', () => {
+            loadAIRecommendation(shockwave);
+          });
+
+        } catch (error) {
+          console.error('開啟衝擊波資訊視窗時發生錯誤:', error);
+          
+          // 顯示錯誤提示
+          const errorInfoWindow = new google.maps.InfoWindow({
+            content: `
+              <div style="padding: 16px; text-align: center; color: #666;">
+                <div style="margin-bottom: 8px;">⚠️</div>
+                <div>載入衝擊波資訊時發生錯誤</div>
+                <div style="font-size: 12px; margin-top: 8px; color: #999;">請稍後再試或聯繫系統管理員</div>
+              </div>
+            `,
+            position: { 
+              lat: shockwave?.lat || 0, 
+              lng: shockwave?.lng || 0 
+            },
+          });
+          errorInfoWindow.open(map);
+        }
       });
 
       // 創建雷達波組件
@@ -319,49 +358,262 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
     return Math.max(baseRadius * intensityMultiplier, 300); // 最小300m
   };
 
+  // 計算衝擊波持續時間
+  const calculateDuration = (shockwave: ShockwaveData): string => {
+    if (!shockwave.estimatedArrival) return '未知';
+    
+    const now = new Date();
+    const arrival = new Date(shockwave.estimatedArrival);
+    const diffMinutes = Math.max(0, Math.floor((arrival.getTime() - now.getTime()) / 60000));
+    
+    if (diffMinutes < 60) {
+      return `${diffMinutes} 分鐘`;
+    } else {
+      const hours = Math.floor(diffMinutes / 60);
+      const minutes = diffMinutes % 60;
+      return `${hours} 小時 ${minutes} 分鐘`;
+    }
+  };
+
+  // 計算衝擊波半徑（用於顯示）
+  const getDisplayRadius = (shockwave: ShockwaveData): string => {
+    if (!shockwave.affectedArea || shockwave.affectedArea <= 0) {
+      return '未知';
+    }
+    
+    const radiusKm = shockwave.affectedArea;
+    if (radiusKm < 1) {
+      return `${(radiusKm * 1000).toFixed(0)} 公尺`;
+    } else {
+      return `${radiusKm.toFixed(1)} 公里`;
+    }
+  };
+
   // 創建衝擊波資訊窗口內容
   const createShockwaveInfoContent = (shockwave: ShockwaveData): string => {
-    const severity = shockwave.severity || determineSeverityFromIntensity(shockwave.intensity);
-    const severityText = {
-      'critical': '極危險',
-      'high': '高危險',
-      'medium': '中等',
-      'low': '輕微'
-    }[severity];
+    try {
+      // 安全檢查
+      if (!shockwave) {
+        return '<div style="padding: 12px; color: #666;">無法載入衝擊波資訊</div>';
+      }
 
-    const severityColor = getShockwaveStyle(shockwave).color;
+      const severity = shockwave.severity || determineSeverityFromIntensity(shockwave.intensity || 0);
+      const severityText = {
+        'critical': '極危險',
+        'high': '高危險',
+        'medium': '中等',
+        'low': '輕微'
+      }[severity] || '未知';
 
-    return `
-      <div style="padding: 12px; min-width: 250px; font-family: Arial, sans-serif;">
-        <h3 style="margin: 0 0 10px 0; color: #333; font-size: 16px;">🌊 交通衝擊波</h3>
-        <div style="margin-bottom: 8px;">
-          <strong>位置:</strong> ${shockwave.lat.toFixed(4)}, ${shockwave.lng.toFixed(4)}
-        </div>
-        <div style="margin-bottom: 8px;">
-          <strong>強度:</strong> ${shockwave.intensity.toFixed(1)}
-        </div>
-        <div style="margin-bottom: 8px;">
-          <strong>嚴重程度:</strong> 
-          <span style="color: ${severityColor}; font-weight: bold; padding: 2px 6px; background: ${severityColor}20; border-radius: 4px;">
-            ${severityText}
-          </span>
-        </div>
-        <div style="margin-bottom: 8px;">
-          <strong>傳播速度:</strong> ${shockwave.propagationSpeed.toFixed(1)} km/h
-        </div>
-        <div style="margin-bottom: 8px;">
-          <strong>影響範圍:</strong> ${shockwave.affectedArea.toFixed(1)} km
-        </div>
-        <div style="margin-bottom: 8px;">
-          <strong>預估到達:</strong> ${shockwave.estimatedArrival.toLocaleString('zh-TW')}
-        </div>
-        ${shockwave.description ? `
-          <div style="margin-top: 10px; padding: 8px; background: #f3f4f6; border-radius: 4px; font-size: 12px;">
-            ${shockwave.description}
+      const severityColor = getShockwaveStyle(shockwave).color;
+      const duration = calculateDuration(shockwave);
+      const displayRadius = getDisplayRadius(shockwave);
+
+      return `
+        <div style="padding: 16px; min-width: 320px; max-width: 400px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.4;">
+          <div style="display: flex; align-items: center; margin-bottom: 16px; border-bottom: 2px solid ${severityColor}; padding-bottom: 8px;">
+            <span style="font-size: 20px; margin-right: 8px;">🌊</span>
+            <h3 style="margin: 0; color: #333; font-size: 18px; font-weight: 600;">交通衝擊波警報</h3>
           </div>
-        ` : ''}
-      </div>
-    `;
+          
+          <div style="margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span style="font-weight: 600; color: #555;">嚴重程度</span>
+              <span style="color: ${severityColor}; font-weight: bold; padding: 4px 8px; background: ${severityColor}15; border-radius: 6px; border: 1px solid ${severityColor}40;">
+                ${severityText}
+              </span>
+            </div>
+          </div>
+
+          <div style="background: #f8f9fa; border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 14px;">
+              <div>
+                <span style="color: #666; display: block;">強度指數</span>
+                <span style="font-weight: 600; color: #333;">${(shockwave.intensity || 0).toFixed(2)}</span>
+              </div>
+              <div>
+                <span style="color: #666; display: block;">持續時間</span>
+                <span style="font-weight: 600; color: #333;">${duration}</span>
+              </div>
+              <div>
+                <span style="color: #666; display: block;">影響半徑</span>
+                <span style="font-weight: 600; color: #333;">${displayRadius}</span>
+              </div>
+              <div>
+                <span style="color: #666; display: block;">傳播速度</span>
+                <span style="font-weight: 600; color: #333;">${(shockwave.propagationSpeed || 0).toFixed(1)} km/h</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 12px; font-size: 14px;">
+            <div style="color: #666; margin-bottom: 4px;">位置座標</div>
+            <div style="font-family: monospace; background: #f1f3f4; padding: 6px 8px; border-radius: 4px; font-size: 13px;">
+              ${(shockwave.lat || 0).toFixed(6)}, ${(shockwave.lng || 0).toFixed(6)}
+            </div>
+          </div>
+
+          ${shockwave.estimatedArrival ? `
+            <div style="margin-bottom: 12px; font-size: 14px;">
+              <div style="color: #666; margin-bottom: 4px;">預估到達時間</div>
+              <div style="font-weight: 600; color: #d73527;">
+                ${new Date(shockwave.estimatedArrival).toLocaleString('zh-TW', {
+                  year: 'numeric',
+                  month: '2-digit', 
+                  day: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </div>
+            </div>
+          ` : ''}
+
+          ${shockwave.description ? `
+            <div style="margin-bottom: 16px; padding: 10px; background: #e3f2fd; border-left: 4px solid #2196f3; border-radius: 4px; font-size: 13px; color: #1565c0;">
+              <div style="font-weight: 600; margin-bottom: 4px;">詳細描述</div>
+              ${shockwave.description}
+            </div>
+          ` : ''}
+
+          <!-- AI 推薦區域 -->
+          <div style="margin-top: 16px; padding: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; color: white;">
+            <div style="display: flex; align-items: center; margin-bottom: 8px;">
+              <span style="font-size: 16px; margin-right: 6px;">🤖</span>
+              <span style="font-weight: 600; font-size: 14px;">AI 智能建議</span>
+            </div>
+            <div id="ai-recommendation-${shockwave.id}" style="font-size: 13px; line-height: 1.4; min-height: 40px;">
+              <div style="color: rgba(255,255,255,0.8);">正在分析當前交通狀況...</div>
+            </div>
+          </div>
+        </div>
+      `;
+    } catch (error) {
+      console.error('創建衝擊波資訊內容時發生錯誤:', error);
+      return `
+        <div style="padding: 16px; color: #666; text-align: center;">
+          <div style="margin-bottom: 8px;">⚠️</div>
+          <div>載入衝擊波資訊時發生錯誤</div>
+        </div>
+      `;
+    }
+  };
+
+  // 載入 AI 推薦內容
+  const loadAIRecommendation = async (shockwave: ShockwaveData): Promise<void> => {
+    try {
+      const recommendationElement = document.getElementById(`ai-recommendation-${shockwave.id}`);
+      if (!recommendationElement) {
+        console.warn('找不到 AI 推薦容器元素');
+        return;
+      }
+
+      // 顯示載入中狀態
+      recommendationElement.innerHTML = `
+        <div style="display: flex; align-items: center; color: rgba(255,255,255,0.8);">
+          <div style="margin-right: 8px;">⏳</div>
+          <div>AI 正在分析中...</div>
+        </div>
+      `;
+
+      // 模擬 API 調用 - 這裡你可以替換為實際的 API 調用
+      // 根據衝擊波數據生成建議
+      await new Promise(resolve => setTimeout(resolve, 1500)); // 模擬網路延遲
+
+      const recommendations = generateAIRecommendations(shockwave);
+      
+      recommendationElement.innerHTML = `
+        <div style="line-height: 1.5;">
+          ${recommendations.map(rec => `
+            <div style="margin-bottom: 8px; display: flex; align-items: flex-start;">
+              <span style="margin-right: 6px; font-size: 12px;">${rec.icon}</span>
+              <span style="font-size: 13px;">${rec.text}</span>
+            </div>
+          `).join('')}
+        </div>
+      `;
+
+    } catch (error) {
+      console.error('載入 AI 推薦時發生錯誤:', error);
+      const recommendationElement = document.getElementById(`ai-recommendation-${shockwave.id}`);
+      if (recommendationElement) {
+        recommendationElement.innerHTML = `
+          <div style="color: rgba(255,255,255,0.7); font-size: 13px;">
+            暫時無法載入 AI 建議，請稍後再試
+          </div>
+        `;
+      }
+    }
+  };
+
+  // 根據衝擊波數據生成 AI 推薦
+  const generateAIRecommendations = (shockwave: ShockwaveData): Array<{icon: string, text: string}> => {
+    const recommendations = [];
+    const severity = shockwave.severity || determineSeverityFromIntensity(shockwave.intensity || 0);
+    const intensityLevel = shockwave.intensity || 0;
+
+    // 根據嚴重程度提供建議
+    if (severity === 'critical' || intensityLevel > 0.8) {
+      recommendations.push({
+        icon: '🚨',
+        text: '建議立即避開此區域，尋找替代路線'
+      });
+      recommendations.push({
+        icon: '⏰',
+        text: '預估需額外 15-30 分鐘通行時間'
+      });
+    } else if (severity === 'high' || intensityLevel > 0.6) {
+      recommendations.push({
+        icon: '⚠️',
+        text: '建議減速慢行，保持安全距離'
+      });
+      recommendations.push({
+        icon: '🛣️',
+        text: '可考慮使用平行道路或替代路線'
+      });
+    } else if (severity === 'medium' || intensityLevel > 0.4) {
+      recommendations.push({
+        icon: '💡',
+        text: '注意前方交通狀況，準備減速'
+      });
+      recommendations.push({
+        icon: '📱',
+        text: '建議開啟導航避塞功能'
+      });
+    } else {
+      recommendations.push({
+        icon: '✅',
+        text: '影響較輕，正常通行即可'
+      });
+      recommendations.push({
+        icon: '👀',
+        text: '持續關注交通狀況變化'
+      });
+    }
+
+    // 根據傳播速度提供建議
+    const propagationSpeed = shockwave.propagationSpeed || 0;
+    if (propagationSpeed > 50) {
+      recommendations.push({
+        icon: '⚡',
+        text: '衝擊波傳播迅速，盡快通過或迴避'
+      });
+    } else if (propagationSpeed > 20) {
+      recommendations.push({
+        icon: '🕐',
+        text: '有足夠時間調整路線或準備應對'
+      });
+    }
+
+    // 根據影響範圍提供建議
+    const affectedArea = shockwave.affectedArea || 0;
+    if (affectedArea > 2) {
+      recommendations.push({
+        icon: '🗺️',
+        text: '影響範圍較大，建議使用長程替代路線'
+      });
+    }
+
+    return recommendations;
   };
 
   // 工具函數

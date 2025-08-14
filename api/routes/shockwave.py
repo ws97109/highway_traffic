@@ -132,8 +132,9 @@ async def get_active_shockwaves():
         try:
             # 1. 初始化適應性檢測器和預測器
             detector = RealtimeAdaptiveShockDetector()
+            # 使用相對路徑，從 API 根目錄找到 data 目錄
             predictor = RealtimeShockPredictor(
-                data_dir="/Users/weiqihong/Desktop/碩士班/碩一下/highway-traffic/data"
+                data_dir=os.path.join(root_dir, 'data')
             )
             
             # 2. 獲取最新的即時資料檔案
@@ -326,7 +327,7 @@ async def get_system_status():
         
         # 檢查預測器
         try:
-            predictor = RealtimeShockPredictor("/Users/weiqihong/Desktop/碩士班/碩一下/highway-traffic/data")
+            predictor = RealtimeShockPredictor(os.path.join(root_dir, 'data'))
             status_info["predictor_available"] = True
         except Exception as e:
             status_info["predictor_error"] = str(e)

@@ -7,7 +7,7 @@ import os
 def load_station_data():
     """載入測站資料"""
     try:
-        csv_file = "/Users/weiqihong/Desktop/碩士班/碩一下/highway-traffic/data/Taiwan/Etag.csv"
+        csv_file = os.path.join(os.path.dirname(__file__), '..', 'data', 'Taiwan', 'Etag.csv')
         print(f"讀取測站資料: {csv_file}")
         
         df = pd.read_csv(csv_file)

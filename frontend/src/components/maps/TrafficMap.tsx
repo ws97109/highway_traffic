@@ -66,8 +66,18 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
 
   // Google Maps API 載入
   useEffect(() => {
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    
+    if (!apiKey || apiKey === 'your_google_maps_api_key_here') {
+      console.error('❌ Google Maps API 金鑰未設定');
+      console.log('請在 frontend/.env.local 中設定 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY');
+      return;
+    }
+
+    console.log('🔑 載入 Google Maps API...');
+    
     const loader = new Loader({
-      apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
+      apiKey,
       version: 'weekly',
       libraries: ['places', 'geometry'],
       language: 'zh-TW',
@@ -75,9 +85,10 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
     });
 
     loader.load().then(() => {
+      console.log('✅ Google Maps API 載入成功');
       setIsLoaded(true);
     }).catch((error) => {
-      console.error('Google Maps API 載入失敗:', error);
+      console.error('❌ Google Maps API 載入失敗:', error);
     });
   }, []);
 
@@ -687,7 +698,7 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
       <div ref={mapRef} className="w-full h-full" />
       
       {/* 地圖控制面板 */}
-      <div className="absolute top-4 right-4 bg-white rounded-lg shadow-lg p-2">
+      <div className="absolute top-20 left-4 bg-white rounded-lg shadow-lg p-2">
         <div className="flex flex-col space-y-2">
           <button
             onClick={() => {

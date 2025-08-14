@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ollama AI 測試</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, textarea, button {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .response {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-left: 4px solid #007bff;
+            border-radius: 5px;
+        }
+        .error {
+            border-left-color: #dc3545;
+            background-color: #f8d7da;
+        }
+        .loading {
+            text-align: center;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Ollama AI 交通助手測試</h1>
+        
+        <div class="input-group">
+            <label for="message">您的問題：</label>
+            <textarea id="message" rows="3" placeholder="例如：目前台北到桃園的交通狀況如何？"></textarea>
+        </div>
+        
+        <button id="sendBtn" onclick="sendMessage()">發送問題</button>
+        
+        <div id="response" class="response" style="display: none;">
+            <h3>AI 回應：</h3>
+            <div id="responseContent"></div>
+        </div>
+    </div>
+
+    <script>
+        async function sendMessage() {
+            const messageInput = document.getElementById('message');
+            const sendBtn = document.getElementById('sendBtn');
+            const responseDiv = document.getElementById('response');
+            const responseContent = document.getElementById('responseContent');
+            
+            const message = messageInput.value.trim();
+            if (!message) {
+                alert('請輸入問題！');
+                return;
+            }
+            
+            // 顯示加載狀態
+            sendBtn.disabled = true;
+            sendBtn.textContent = 'AI 思考中...';
+            responseDiv.style.display = 'block';
+            responseDiv.className = 'response';
+            responseContent.innerHTML = '<div class="loading">🤖 AI 正在分析交通數據...</div>';
+            
+            try {
+                // 構建交通分析提示
+                const prompt = `你是專業的台灣交通分析助手，請根據以下問題提供詳細且實用的建議：
+
+用戶問題：${message}
+
+請用繁體中文回答，提供：
+1. 詳細分析
+2. 實用建議
+3. 安全提醒
+
+請親切且專業地回答：`;
+
+                console.log('🤖 發送到 Ollama:', prompt);
+                
+                const response = await fetch('http://localhost:11434/api/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        model: 'qwen2.5:7b',
+                        prompt: prompt,
+                        stream: false,
+                        options: {
+                            temperature: 0.7,
+                            num_predict: 500
+                        }
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const result = await response.json();
+                console.log('✅ Ollama 回應:', result);
+                
+                // 顯示回應
+                responseContent.innerHTML = `
+                    <p><strong>模型:</strong> ${result.model}</p>
+                    <p><strong>回應時間:</strong> ${(result.total_duration / 1000000000).toFixed(2)} 秒</p>
+                    <hr>
+                    <div style="white-space: pre-wrap; line-height: 1.6;">${result.response}</div>
+                `;
+                
+            } catch (error) {
+                console.error('❌ 錯誤:', error);
+                responseDiv.className = 'response error';
+                responseContent.innerHTML = `
+                    <strong>錯誤：</strong>${error.message}<br>
+                    <small>請確認 Ollama 服務是否在 http://localhost:11434 運行</small>
+                `;
+            } finally {
+                // 恢復按鈕狀態
+                sendBtn.disabled = false;
+                sendBtn.textContent = '發送問題';
+            }
+        }
+        
+        // 按 Enter 鍵發送
+        document.getElementById('message').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                sendMessage();
+            }
+        });
+        
+        // 頁面載入時檢查 Ollama 狀態
+        window.onload = async function() {
+            try {
+                const response = await fetch('http://localhost:11434/api/tags');
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('✅ Ollama 服務正常，可用模型:', data.models.length);
+                } else {
+                    console.warn('⚠️ Ollama 服務可能未啟動');
+                }
+            } catch (error) {
+                console.error('❌ 無法連接 Ollama 服務:', error);
+            }
+        };
+    </script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-import ControlCenter from '@/pages/admin/ControlCenter'
+import ControlCenter from '../../src/pages/admin/ControlCenter'
 
 export default function AdminPage() {
   return <ControlCenter />

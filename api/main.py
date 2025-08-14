@@ -32,7 +32,9 @@ app.add_middleware(
         "http://localhost:3000", 
         "http://127.0.0.1:3000",
         "http://localhost:3001",
-        "http://127.0.0.1:3001"
+        "http://127.0.0.1:3001",
+        "https://highway-trafficwave.vercel.app",  # 新增您的 Vercel 網域
+        "https://*.vercel.app"  # 允許所有 Vercel 子網域
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -189,11 +191,14 @@ if __name__ == "__main__":
     print("🚀 啟動高速公路智慧交通預警決策支援系統...")
     print("📡 API服務器啟動中...")
     
+    # Railway 會提供 PORT 環境變數
+    port = int(os.environ.get("PORT", 8000))
+    
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
-        port=8000,
-        reload=True,
+        port=port,  # 使用環境變數的 PORT
+        reload=False,  # 生產環境關閉 reload
         log_level="info",
         access_log=True
     )

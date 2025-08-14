@@ -53,3 +53,4 @@ data/Taiwan/train_enhanced_full.csv
 !data/Taiwan/in_deg.csv
 !data/Taiwan/out_deg.csv
 !data/Taiwan/sp.csv
+data/predictions/

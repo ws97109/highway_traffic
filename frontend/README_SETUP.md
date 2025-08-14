@@ -20,7 +20,7 @@
 2. **編輯 `.env.local` 檔案**
    將 `your_google_maps_api_key_here` 替換為您的實際 Google Maps API 金鑰：
    ```
-   NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=AIzaSyBSrE9ThzBBg7fisfBMHWv8beYNt6V9Lt0
+   NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
    ```
 
 3. **重新啟動開發服務器**

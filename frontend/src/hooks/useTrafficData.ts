@@ -31,12 +31,22 @@ export const useTrafficData = (): TrafficDataHook => {
     setError(null);
     
     try {
+      console.log('🔄 正在獲取交通資料...');
       const response = await fetch('/api/traffic/current');
+      
+      console.log('📡 API 回應狀態:', response.status, response.statusText);
+      
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
       }
       
       const data = await response.json();
+      console.log('📊 收到交通資料:', data);
+      
+      // 檢查資料結構
+      if (!data.stations || !Array.isArray(data.stations)) {
+        throw new Error('API 返回資料格式錯誤: 缺少 stations 陣列');
+      }
       
       // 轉換資料格式
       const formattedData: TrafficStation[] = data.stations.map((station: any) => ({
@@ -50,10 +60,18 @@ export const useTrafficData = (): TrafficDataHook => {
         lastUpdate: new Date(station.timestamp)
       }));
       
+      console.log('✅ 成功處理交通資料:', formattedData.length, '個站點');
       setTrafficData(formattedData);
+      
     } catch (err) {
-      setError(err instanceof Error ? err.message : '獲取交通資料失敗');
-      console.error('獲取交通資料失敗:', err);
+      const errorMessage = err instanceof Error ? err.message : '獲取交通資料失敗';
+      setError(errorMessage);
+      console.error('❌ 獲取交通資料失敗:', err);
+      
+      // 不再使用模擬資料，等待真實資料
+      console.log('⚠️ 暫無真實交通資料可用');
+      setTrafficData([]);
+      
     } finally {
       setLoading(false);
     }

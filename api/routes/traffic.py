@@ -36,35 +36,52 @@ class StationInfo(BaseModel):
 async def get_current_traffic():
     """獲取當前交通狀況"""
     try:
-        # 這裡調用你的資料載入函數
-        # 實際實作需要根據你的 dataLoad.py 調整
+        # 使用真實的 TDX 交通資料系統
+        from src.data.tdx_tisc_mix_system import OptimizedIntegratedDataCollectionSystem
         
-        # 模擬資料回應
+        # 初始化資料收集系統
+        data_system = OptimizedIntegratedDataCollectionSystem()
+        
+        # 獲取最新的即時資料
+        latest_data = data_system.get_latest_data_for_shockwave()
+        
         current_time = datetime.now()
+        stations = []
+        
+        if latest_data is not None and not latest_data.empty:
+            # 轉換真實資料為 API 格式
+            for idx, row in latest_data.iterrows():
+                try:
+                    station_data = {
+                        "id": str(row.get('station_id', idx)),
+                        "name": row.get('station_name', f"監測站 {idx}"),
+                        "latitude": float(row.get('latitude', 25.0)),
+                        "longitude": float(row.get('longitude', 121.0)),
+                        "flow": float(row.get('volume', 0)) if row.get('volume') else 0,
+                        "speed": float(row.get('speed', 0)) if row.get('speed') else 0,
+                        "timestamp": current_time.isoformat()
+                    }
+                    stations.append(station_data)
+                except Exception as e:
+                    continue  # 跳過有問題的資料行
+        
+        # 如果沒有真實資料，提供詳細信息
+        if not stations:
+            return {
+                "stations": [],
+                "total_count": 0,
+                "last_updated": current_time.isoformat(),
+                "message": "正在等待 TDX 即時交通資料...",
+                "data_source": "TDX_realtime",
+                "status": "waiting_for_data",
+                "note": "台北站和桃園站的虛擬資料已移除，系統正在收集真實交通數據"
+            }
         
         return {
-            "stations": [
-                {
-                    "id": "001",
-                    "name": "台北站",
-                    "latitude": 25.0330,
-                    "longitude": 121.5654,
-                    "flow": 1200.5,
-                    "speed": 85.2,
-                    "timestamp": current_time.isoformat()
-                },
-                {
-                    "id": "002",
-                    "name": "桃園站", 
-                    "latitude": 25.0412,
-                    "longitude": 121.5743,
-                    "flow": 980.3,
-                    "speed": 92.1,
-                    "timestamp": current_time.isoformat()
-                }
-            ],
-            "total_count": 2,
-            "last_updated": current_time.isoformat()
+            "stations": stations,
+            "total_count": len(stations),
+            "last_updated": current_time.isoformat(),
+            "data_source": "TDX_realtime"
         }
         
     except Exception as e:
@@ -104,24 +121,33 @@ async def get_traffic_history(
 async def get_stations():
     """獲取所有監測站點資訊"""
     try:
-        # 這裡應該從你的配置或資料庫中讀取站點資訊
-        stations = [
-            StationInfo(
-                station_id="001",
-                name="台北站",
-                location={"lat": 25.0330, "lng": 121.5654},
-                highway="國道1號",
-                direction="南向"
-            ),
-            StationInfo(
-                station_id="002",
-                name="桃園站", 
-                location={"lat": 25.0412, "lng": 121.5743},
-                highway="國道1號",
-                direction="南向"
-            )
-        ]
+        # 從真實的交通資料系統獲取站點資訊
+        from src.data.tdx_tisc_mix_system import OptimizedIntegratedDataCollectionSystem
         
+        data_system = OptimizedIntegratedDataCollectionSystem()
+        latest_data = data_system.get_latest_data_for_shockwave()
+        
+        stations = []
+        
+        if latest_data is not None and not latest_data.empty:
+            # 從真實資料中提取站點資訊
+            for idx, row in latest_data.iterrows():
+                try:
+                    station = StationInfo(
+                        station_id=str(row.get('station_id', idx)),
+                        name=row.get('station_name', f"監測站 {idx}"),
+                        location={
+                            "lat": float(row.get('latitude', 25.0)),
+                            "lng": float(row.get('longitude', 121.0))
+                        },
+                        highway=row.get('highway', '國道1號'),
+                        direction=row.get('direction', '未知')
+                    )
+                    stations.append(station)
+                except Exception as e:
+                    continue  # 跳過有問題的資料行
+        
+        # 如果沒有真實資料，返回空列表
         return stations
         
     except Exception as e:

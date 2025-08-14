@@ -75,6 +75,9 @@ class GoogleServicesClass {
     if (!this.apiKey || this.apiKey === 'your_google_maps_api_key_here') {
       console.warn('⚠️ Google Maps API 金鑰未設定或為預設值');
       console.warn('請在 .env.local 中設定正確的 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY');
+      console.log('當前 API 金鑰:', this.apiKey ? `${this.apiKey.substring(0, 10)}...` : 'undefined');
+    } else {
+      console.log('✅ Google Maps API 金鑰已載入:', `${this.apiKey.substring(0, 10)}...`);
     }
   }
 
@@ -169,7 +172,15 @@ class GoogleServicesClass {
             }));
             resolve(geocodeResults);
           } else {
-            reject(new Error(`座標轉地址失敗: ${status}`));
+            // 提供更詳細的錯誤信息
+            let errorMessage = `座標轉地址失敗: ${status}`;
+            
+            if (status === google.maps.GeocoderStatus.REQUEST_DENIED) {
+              errorMessage += '\n💡 請到 Google Cloud Console 啟用 Geocoding API';
+              errorMessage += '\n📍 https://console.cloud.google.com/apis/library/geocoding-backend.googleapis.com';
+            }
+            
+            reject(new Error(errorMessage));
           }
         }
       );

@@ -30,15 +30,23 @@ export const useUserLocation = () => {
       
       setLocation({ lat, lng });
 
-      // 取得地址
+      // 取得地址 - 優雅地處理 Geocoding API 不可用的情況
       try {
         await GoogleServices.initialize();
         const results = await GoogleServices.reverseGeocode(lat, lng);
         if (results.length > 0) {
           setAddress(results[0].address);
         }
-      } catch (geocodeError) {
+      } catch (geocodeError: any) {
         console.warn('無法取得地址資訊:', geocodeError);
+        
+        // 如果是 REQUEST_DENIED，提供備用地址顯示方式
+        if (geocodeError.message && geocodeError.message.includes('REQUEST_DENIED')) {
+          setAddress(`位置: ${lat.toFixed(4)}, ${lng.toFixed(4)}`);
+          console.info('💡 提示: 啟用 Geocoding API 以顯示詳細地址');
+        } else {
+          setAddress('位置已取得');
+        }
       }
 
     } catch (locationError: any) {

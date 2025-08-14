@@ -1,18 +1,30 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { MapPinIcon, ExclamationTriangleIcon, ClockIcon, MapIcon } from '@heroicons/react/24/outline';
+import { MapPinIcon, ExclamationTriangleIcon, ClockIcon, MapIcon, ChatBubbleLeftRightIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import TrafficMap from '../../components/maps/TrafficMap';
 import { useUserLocation, useAddressSearch, useDirections } from '../../hooks/useGoogleServices';
 import { useTrafficData } from '../../hooks/useTrafficData';
 import { useShockwaveData } from '../../hooks/useShockwaveData';
 import DepartureTimeOptimizer from '../../components/smart/DepartureTimeOptimizer';
 import ShockwaveAlert from '../../components/alerts/ShockwaveAlert';
+import apiDiagnostics from '../../utils/apiDiagnostics';
+import DataConnectionStatus from '../../components/diagnostics/DataConnectionStatus';
 
 const DriverDashboard: React.FC = () => {
   const [destination, setDestination] = useState('');
   const [showRouteInput, setShowRouteInput] = useState(false);
   const [selectedAlert, setSelectedAlert] = useState<any>(null);
+  
+  // RAG 智能建議相關狀態
+  const [showRAGAdvice, setShowRAGAdvice] = useState(false);
+  const [ragAdvice, setRagAdvice] = useState<any>(null);
+  const [ragLoading, setRagLoading] = useState(false);
+  const [showRAGChat, setShowRAGChat] = useState(false);
+  const [chatMessage, setChatMessage] = useState('');
+  const [chatHistory, setChatHistory] = useState<any[]>([]);
+  const [ragStatus, setRagStatus] = useState<any>(null);
+  const [chatLoading, setChatLoading] = useState(false);
 
   // Google 服務 Hooks
   const { 
@@ -37,13 +49,284 @@ const DriverDashboard: React.FC = () => {
   } = useDirections();
 
   // 交通資料 Hooks
-  const { trafficData, loading: trafficLoading } = useTrafficData();
-  const { shockwaves, predictions, alerts } = useShockwaveData(userLocation);
+  const { trafficData, loading: trafficLoading, error: trafficError } = useTrafficData();
+  const { shockwaves, predictions, alerts, loading: shockwaveLoading, error: shockwaveError } = useShockwaveData(userLocation);
 
-  // 初始化時取得位置
+  // 調試：打印數據狀態
+  useEffect(() => {
+    console.log('📊 Dashboard 數據狀態更新:');
+    console.log('- 交通數據:', trafficData.length, '個站點');
+    console.log('- 震波數據:', shockwaves.length, '個事件');
+    console.log('- 預測數據:', predictions.length, '個預測');
+    console.log('- 警告數據:', alerts.length, '個警告');
+    console.log('- 交通錯誤:', trafficError);
+    console.log('- 震波錯誤:', shockwaveError);
+  }, [trafficData, shockwaves, predictions, alerts, trafficError, shockwaveError]);
+
+  // 初始化時取得位置、RAG狀態和API診斷
   useEffect(() => {
     getCurrentLocation();
+    checkRAGStatus();
+    
+    // 延遲執行 API 診斷，確保 Google Maps API 已載入
+    setTimeout(async () => {
+      try {
+        const diagnostics = await apiDiagnostics.runDiagnostics();
+        apiDiagnostics.logDiagnosticsReport(diagnostics);
+      } catch (error) {
+        console.warn('API 診斷失敗:', error);
+      }
+    }, 3000);
   }, [getCurrentLocation]);
+
+  // 檢查 Ollama AI 狀態
+  const checkRAGStatus = async () => {
+    try {
+      const response = await fetch('http://localhost:11434/api/tags');
+      if (response.ok) {
+        const data = await response.json();
+        setRagStatus({ 
+          system_health: 'healthy', 
+          ollama_connected: true,
+          available_models: data.models?.length || 0,
+          current_model: 'qwen2.5:7b'
+        });
+      } else {
+        setRagStatus({ system_health: 'unavailable', error: 'Ollama 連接失敗' });
+      }
+    } catch (error) {
+      console.error('檢查 Ollama 狀態失敗:', error);
+      setRagStatus({ system_health: 'unavailable', error: 'Ollama 服務不可用' });
+    }
+  };
+
+  // 獲取RAG智能建議
+  const getRAGAdvice = async () => {
+    if (!userLocation) {
+      alert('請先取得您的位置');
+      return;
+    }
+
+    setRagLoading(true);
+    try {
+      // 構建 AI 分析提示
+      let advicePrompt = `你是台灣交通分析專家，請根據當前交通狀況提供駕駛建議：
+
+=== 目前位置 ===
+緯度: ${userLocation.lat}, 經度: ${userLocation.lng}`;
+
+      if (destination) {
+        advicePrompt += `\n目的地: ${destination}`;
+      }
+
+      if (trafficData.length > 0) {
+        const avgSpeed = trafficData.reduce((sum, station) => sum + (station.speed || 0), 0) / trafficData.length;
+        advicePrompt += `\n交通狀況: ${trafficData.length} 個監測點，平均車速 ${avgSpeed.toFixed(1)} km/h`;
+      }
+
+      if (alerts.length > 0) {
+        advicePrompt += `\n⚠️ 警告: ${alerts.length} 個交通警報`;
+      }
+
+      advicePrompt += `\n\n請提供具體的駕駛建議，包括：
+1. 路況分析
+2. 最佳出發時間建議  
+3. 路線選擇建議
+4. 安全注意事項
+
+請用繁體中文回答。`;
+
+      const response = await fetch('http://localhost:11434/api/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'qwen2.5:7b',
+          prompt: advicePrompt,
+          stream: false,
+          options: {
+            temperature: 0.5,
+            num_predict: 400
+          }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('AI 服務暫時不可用');
+      }
+
+      const result = await response.json();
+      const advice = {
+        title: "🤖 AI 智能建議",
+        description: result.response || '暫無建議',
+        priority: "medium",
+        action_type: "route_optimization",
+        reasoning: "基於即時交通數據分析",
+        confidence: 0.85,
+        source: "Ollama AI"
+      };
+      setRagAdvice(advice);
+      setShowRAGAdvice(true);
+    } catch (error) {
+      console.error('獲取RAG建議失敗:', error);
+      alert('獲取智能建議失敗，請稍後再試');
+    } finally {
+      setRagLoading(false);
+    }
+  };
+
+  // Ollama AI 對話功能
+  const sendChatMessage = async () => {
+    if (!chatMessage.trim() || chatLoading) return;
+
+    const userMessage = chatMessage;
+    setChatMessage('');
+    setChatLoading(true);
+    
+    // 添加用戶消息到歷史
+    setChatHistory(prev => [...prev, { type: 'user', content: userMessage, timestamp: new Date() }]);
+    
+    // 添加"AI思考中"消息
+    setChatHistory(prev => [...prev, { 
+      type: 'thinking', 
+      content: 'AI助手正在分析交通數據...', 
+      timestamp: new Date() 
+    }]);
+
+    try {
+      console.log('🤖 發送消息到 Ollama AI:', userMessage);
+      
+      // 準備發送給 AI 的數據
+      const chatData = {
+        message: userMessage,
+        traffic_data: {
+          stations: trafficData,
+          total_count: trafficData.length,
+          last_updated: new Date().toISOString()
+        },
+        shockwave_data: {
+          shockwaves: shockwaves,
+          predictions: predictions,
+          count: shockwaves.length
+        },
+        user_location: userLocation
+      };
+
+      console.log('📊 發送給AI的數據:', chatData);
+      
+      // 直接調用 Ollama API
+      const response = await fetch('http://localhost:11434/api/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'qwen2.5:7b',
+          prompt: buildTrafficAnalysisPrompt(userMessage, chatData),
+          stream: false,
+          options: {
+            temperature: 0.7,
+            top_p: 0.9,
+            num_predict: 400
+          }
+        })
+      });
+
+      console.log('📡 Ollama API 回應狀態:', response.status);
+
+      // 移除"思考中"消息
+      setChatHistory(prev => prev.filter(msg => msg.type !== 'thinking'));
+
+      if (!response.ok) {
+        throw new Error(`Ollama API 錯誤 ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ 收到 Ollama 回應:', result);
+      
+      // 添加AI回應到歷史
+      setChatHistory(prev => [...prev, { 
+        type: 'assistant', 
+        content: result.response || '抱歉，AI 無法生成回應。', 
+        timestamp: new Date(),
+        source: 'Ollama AI (qwen2.5:7b)'
+      }]);
+    } catch (error) {
+      console.error('❌ AI 對話失敗:', error);
+      
+      // 移除"思考中"消息
+      setChatHistory(prev => prev.filter(msg => msg.type !== 'thinking'));
+      
+      setChatHistory(prev => [...prev, { 
+        type: 'error', 
+        content: `抱歉，AI助手暫時不可用：${error instanceof Error ? error.message : '未知錯誤'}`, 
+        timestamp: new Date() 
+      }]);
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
+  // 構建交通分析提示詞
+  const buildTrafficAnalysisPrompt = (userMessage: string, data: any) => {
+    const { traffic_data, shockwave_data, user_location } = data;
+    
+    let prompt = `你是一個專業的台灣交通分析助手，請根據以下即時交通數據為駕駛者提供智能建議。請用繁體中文回答，語氣要親切且專業。
+
+=== 即時交通數據 ===
+`;
+
+    if (traffic_data && traffic_data.stations.length > 0) {
+      const avgSpeed = traffic_data.stations.reduce((sum: number, station: any) => sum + (station.speed || 0), 0) / traffic_data.stations.length;
+      const congestedStations = traffic_data.stations.filter((s: any) => s.speed < 50);
+      
+      prompt += `交通監測站點: ${traffic_data.stations.length} 個
+平均車速: ${avgSpeed.toFixed(1)} km/h
+壅塞站點: ${congestedStations.length} 個
+數據更新時間: ${traffic_data.last_updated}
+
+`;
+      
+      if (congestedStations.length > 0) {
+        prompt += `壅塞路段詳情:\n`;
+        congestedStations.slice(0, 3).forEach((station: any) => {
+          prompt += `- ${station.name}: ${station.speed} km/h\n`;
+        });
+        prompt += `\n`;
+      }
+    }
+
+    if (shockwave_data && shockwave_data.shockwaves.length > 0) {
+      prompt += `⚠️ 震波警報: 偵測到 ${shockwave_data.shockwaves.length} 個交通震波事件
+`;
+      shockwave_data.shockwaves.slice(0, 2).forEach((sw: any) => {
+        prompt += `- ${sw.location}: 強度 ${sw.intensity}, 影響範圍 ${sw.affectedArea} km\n`;
+      });
+      prompt += `\n`;
+    }
+
+    if (shockwave_data && shockwave_data.predictions.length > 0) {
+      prompt += `預測數據: ${shockwave_data.predictions.length} 個預測點\n\n`;
+    }
+
+    if (user_location) {
+      prompt += `用戶位置: 緯度 ${user_location.lat}, 經度 ${user_location.lng}\n\n`;
+    }
+
+    prompt += `=== 用戶問題 ===
+${userMessage}
+
+=== 請提供 ===
+1. 當前路況分析
+2. 具體駕駛建議
+3. 路線規劃建議（如適用）
+4. 安全注意事項
+
+請基於上述數據提供專業且實用的建議：`;
+
+    return prompt;
+  };
 
   // 處理目的地搜尋
   const handleDestinationSearch = async (query: string) => {
@@ -122,7 +405,38 @@ const DriverDashboard: React.FC = () => {
               <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-600">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                 <span>即時監控</span>
+                {ragStatus && (
+                  <div className="flex items-center space-x-1 ml-3">
+                    <div className={`w-2 h-2 rounded-full ${
+                      ragStatus.system_health === 'healthy' ? 'bg-green-500' :
+                      ragStatus.system_health === 'degraded' ? 'bg-yellow-500' : 'bg-red-500'
+                    }`}></div>
+                    <span className="text-xs">RAG</span>
+                  </div>
+                )}
               </div>
+              
+              {/* RAG智能建議按鈕 */}
+              <button
+                onClick={getRAGAdvice}
+                disabled={ragLoading || ragStatus?.system_health === 'unavailable'}
+                className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 rounded-full text-sm font-medium hover:from-purple-700 hover:to-pink-700 flex items-center shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="獲取AI智能建議"
+              >
+                <SparklesIcon className="w-4 h-4 mr-2" />
+                {ragLoading ? 'AI分析中...' : 'AI建議'}
+              </button>
+              
+              {/* RAG對話按鈕 */}
+              <button
+                onClick={() => setShowRAGChat(true)}
+                disabled={ragStatus?.system_health === 'unavailable'}
+                className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-4 py-2 rounded-full text-sm font-medium hover:from-emerald-700 hover:to-teal-700 flex items-center shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="與AI助手對話"
+              >
+                <ChatBubbleLeftRightIcon className="w-4 h-4 mr-2" />
+                AI助手
+              </button>
               
               <button
                 onClick={() => setShowRouteInput(true)}
@@ -151,6 +465,41 @@ const DriverDashboard: React.FC = () => {
           
           {/* 左側面板 - 警告和資訊 */}
           <div className="lg:col-span-1 space-y-6">
+            
+            {/* 數據狀態面板 - 調試用 */}
+            <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200/50 p-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">📊 系統狀態</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span>交通數據:</span>
+                  <span className={trafficError ? 'text-red-600' : 'text-green-600'}>
+                    {trafficError ? '錯誤' : `${trafficData.length} 個站點`}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>震波事件:</span>
+                  <span className={shockwaveError ? 'text-red-600' : 'text-blue-600'}>
+                    {shockwaveError ? '錯誤' : `${shockwaves.length} 個事件`}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>預測數據:</span>
+                  <span className="text-purple-600">{predictions.length} 個預測</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>警告數量:</span>
+                  <span className={alerts.length > 0 ? 'text-orange-600' : 'text-gray-600'}>
+                    {alerts.length} 個警告
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>RAG系統:</span>
+                  <span className={ragStatus?.system_health === 'available' ? 'text-green-600' : 'text-yellow-600'}>
+                    {ragStatus?.system_health || '檢查中...'}
+                  </span>
+                </div>
+              </div>
+            </div>
             
             {/* 即時警告 */}
             <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200/50 p-6">
@@ -358,7 +707,7 @@ const DriverDashboard: React.FC = () => {
                 />
                 
                 {/* 地圖控制按鈕 */}
-                <div className="absolute top-4 right-4 flex flex-col space-y-2">
+                <div className="absolute top-20 right-2 flex flex-col space-y-2">
                   <button
                     onClick={getCurrentLocation}
                     className="bg-white/90 backdrop-blur-sm p-3 rounded-lg shadow-lg hover:bg-white transition-colors"
@@ -517,17 +866,250 @@ const DriverDashboard: React.FC = () => {
         </div>
       )}
 
+      {/* RAG智能建議對話框 */}
+      {showRAGAdvice && ragAdvice && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-2xl mx-4 max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                  <SparklesIcon className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">AI智能建議</h3>
+                  <p className="text-sm text-gray-600">基於RAG模型的個人化駕駛建議</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowRAGAdvice(false)}
+                className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="space-y-6">
+              {/* 建議優先級和信心度 */}
+              <div className="flex items-center justify-between bg-gray-50 rounded-lg p-4">
+                <div className="flex items-center space-x-3">
+                  <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    ragAdvice.priority === 'urgent' ? 'bg-red-100 text-red-800' :
+                    ragAdvice.priority === 'high' ? 'bg-orange-100 text-orange-800' :
+                    ragAdvice.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                    'bg-green-100 text-green-800'
+                  }`}>
+                    {ragAdvice.priority.toUpperCase()}
+                  </div>
+                  <span className="text-sm text-gray-600">優先級</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-gray-600">信心度</span>
+                  <div className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium">
+                    {(ragAdvice.confidence * 100).toFixed(0)}%
+                  </div>
+                </div>
+              </div>
+              
+              {/* 建議標題和描述 */}
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-6 border-l-4 border-purple-400">
+                <h4 className="text-lg font-bold text-gray-900 mb-3">{ragAdvice.title}</h4>
+                <p className="text-gray-700 leading-relaxed">{ragAdvice.description}</p>
+              </div>
+              
+              {/* 安全影響 */}
+              <div className="bg-blue-50 rounded-lg p-4">
+                <h5 className="font-semibold text-gray-900 mb-2 flex items-center">
+                  <ExclamationTriangleIcon className="w-5 h-5 mr-2 text-blue-600" />
+                  安全評估
+                </h5>
+                <p className="text-gray-700">{ragAdvice.safety_impact}</p>
+              </div>
+              
+              {/* 時間節省 */}
+              {ragAdvice.time_saving_min && (
+                <div className="bg-green-50 rounded-lg p-4">
+                  <h5 className="font-semibold text-gray-900 mb-2 flex items-center">
+                    <ClockIcon className="w-5 h-5 mr-2 text-green-600" />
+                    時間影響
+                  </h5>
+                  <p className="text-gray-700">
+                    預計{ragAdvice.time_saving_min > 0 ? '節省' : '增加'} {Math.abs(ragAdvice.time_saving_min)} 分鐘
+                  </p>
+                </div>
+              )}
+              
+              {/* AI分析理由 */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h5 className="font-semibold text-gray-900 mb-2">AI分析理由</h5>
+                <p className="text-gray-700 text-sm leading-relaxed">{ragAdvice.reasoning}</p>
+              </div>
+              
+              {/* 替代路線 */}
+              {ragAdvice.alternatives && ragAdvice.alternatives.length > 0 && (
+                <div>
+                  <h5 className="font-semibold text-gray-900 mb-3">替代路線建議</h5>
+                  <div className="space-y-3">
+                    {ragAdvice.alternatives.map((alt, index) => (
+                      <div key={index} className="bg-white border border-gray-200 rounded-lg p-4">
+                        <div className="font-medium text-gray-900">{alt.route_name}</div>
+                        <div className="text-sm text-gray-600 mt-1">{alt.description}</div>
+                        <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
+                          <span>額外距離: {alt.extra_distance_km}km</span>
+                          <span>時間差: {alt.time_difference_min > 0 ? '+' : ''}{alt.time_difference_min}分鐘</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* 附近休息站 */}
+              {ragAdvice.rest_areas && ragAdvice.rest_areas.length > 0 && (
+                <div>
+                  <h5 className="font-semibold text-gray-900 mb-3">附近休息站</h5>
+                  <div className="space-y-3">
+                    {ragAdvice.rest_areas.map((area, index) => (
+                      <div key={index} className="bg-white border border-gray-200 rounded-lg p-4">
+                        <div className="font-medium text-gray-900">{area.name}</div>
+                        <div className="text-sm text-gray-600 mt-1">
+                          {area.direction} {area.distance_km}km，約 {area.estimated_travel_time} 分鐘車程
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          設施: {area.facilities.join(', ')}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* 成本估算 */}
+              {ragAdvice.estimated_cost && (
+                <div className="bg-yellow-50 rounded-lg p-4">
+                  <h5 className="font-semibold text-gray-900 mb-2">成本估算</h5>
+                  <p className="text-gray-700 text-sm">{ragAdvice.estimated_cost}</p>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex justify-between items-center mt-6 pt-6 border-t border-gray-200">
+              <div className="text-sm text-gray-500">
+                由 RAG+Ollama AI 提供 • 建議僅供參考
+              </div>
+              <button
+                onClick={() => setShowRAGAdvice(false)}
+                className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                我知道了
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* RAG對話助手 */}
+      {showRAGChat && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl w-full max-w-2xl mx-4 h-[600px] flex flex-col">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-lg flex items-center justify-center">
+                  <ChatBubbleLeftRightIcon className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">AI交通助手</h3>
+                  <p className="text-sm text-gray-600">智能駕駛諮詢服務</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowRAGChat(false)}
+                className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100"
+              >
+                ✕
+              </button>
+            </div>
+            
+            {/* 對話歷史 */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              {chatHistory.length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <ChatBubbleLeftRightIcon className="w-8 h-8 text-emerald-600" />
+                  </div>
+                  <p className="text-gray-500 font-medium">您好！我是AI交通助手</p>
+                  <p className="text-gray-400 text-sm mt-2">
+                    您可以詢問關於交通狀況、路線建議、駕駛安全等任何問題
+                  </p>
+                  <div className="flex flex-wrap justify-center gap-2 mt-4">
+                    {['目前路況如何？', '有什麼替代路線？', '什麼時候出發最好？'].map((suggestion, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setChatMessage(suggestion)}
+                        className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-xs transition-colors"
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                chatHistory.map((msg, index) => (
+                  <div key={index} className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[80%] rounded-lg p-4 ${
+                      msg.type === 'user' ? 'bg-blue-600 text-white' :
+                      msg.type === 'error' ? 'bg-red-50 text-red-800 border border-red-200' :
+                      'bg-gray-100 text-gray-900'
+                    }`}>
+                      <div className="text-sm">{msg.content}</div>
+                      <div className="text-xs mt-2 opacity-70">
+                        {msg.timestamp.toLocaleTimeString()}
+                        {msg.source && ` • ${msg.source}`}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            
+            {/* 輸入區域 */}
+            <div className="p-6 border-t border-gray-200">
+              <div className="flex space-x-3">
+                <input
+                  type="text"
+                  value={chatMessage}
+                  onChange={(e) => setChatMessage(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && sendChatMessage()}
+                  placeholder="輸入您的問題..."
+                  className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+                <button
+                  onClick={sendChatMessage}
+                  disabled={!chatMessage.trim()}
+                  className="bg-emerald-600 text-white px-6 py-2 rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  發送
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 載入指示器 */}
-      {(locationLoading || trafficLoading || routeLoading) && (
+      {(locationLoading || trafficLoading || routeLoading || ragLoading) && (
         <div className="fixed bottom-4 right-4 bg-white rounded-lg shadow-lg p-4 flex items-center space-x-3">
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
           <span className="text-sm text-gray-600">
             {locationLoading && '取得位置中...'}
             {trafficLoading && '載入交通資料...'}
             {routeLoading && '規劃路線中...'}
+            {ragLoading && 'AI分析中...'}
           </span>
         </div>
       )}
+
+      {/* API連接狀態診斷工具 */}
+      <DataConnectionStatus />
     </div>
   );
 };

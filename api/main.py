@@ -192,13 +192,13 @@ if __name__ == "__main__":
     print("🚀 啟動高速公路智慧交通預警決策支援系統...")
     print("📡 API服務器啟動中...")
     
-    # Railway 會提供 PORT 環境變數
+    # Railway 會提供 PORT 環境變數，本機開發使用 8000
     port = int(os.environ.get("PORT", 8000))
     
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
-        port=port,  # 使用環境變數的 PORT
+        port=port,
         reload=False,  # 生產環境關閉 reload
         log_level="info",
         access_log=True

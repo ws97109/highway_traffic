@@ -9,6 +9,7 @@
   "environments": {
     "production": {
       "variables": {
+        "NIXPACKS_PYTHON_VERSION": "3.9",
         "PYTHONPATH": ".",
         "PYTHONDONTWRITEBYTECODE": "1"
       }

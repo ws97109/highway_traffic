@@ -1,0 +1,476 @@
+[
+  {
+    "id": "priority_matrix_three_001",
+    "title": "建議優先級矩陣",
+    "content": "高效益低成本：動態限速系統、交通標誌標線優化、尖峰時段流量管制、匝道號誌時制調整。高效益高成本：曲率半徑改善工程、土城-鶯歌容量擴充、服務區匝道系統重建、智慧交通系統全面建置。低效益低成本：即時交通資訊發布、駕駛行為宣導、路面品質提升。低效益高成本：全線大規模重建、替代路線新建。",
+    "category": "優先級矩陣",
+    "tags": ["高效益低成本", "動態限速", "曲率改善高成本", "智慧交通"],
+    "metadata": {
+      "high_impact_low_cost": ["動態限速系統", "標誌標線優化", "流量管制", "號誌調整"],
+      "high_impact_high_cost": ["曲率改善", "容量擴充", "匝道重建", "智慧交通"],
+      "low_impact_low_cost": ["資訊發布", "行為宣導", "路面提升"],
+      "low_impact_high_cost": ["大規模重建", "替代路線"]
+    }
+  },
+  {
+    "id": "next_steps_immediate_three_001",
+    "title": "下一步立即行動",
+    "content": "立即行動：召開國道三號改善專案會議討論曲率改善方案、進行土城-鶯歌段交通管理措施評估、建立即時監控系統追蹤關鍵績效指標。短期目標：3個月內完成動態限速系統試辦、6個月內完成關西服務區匝道改善設計、建立每月交通表現評估機制。長期願景：2年內完成智慧交通系統第一期、3年內完成重點急彎改善工程、5年內達成全線平均速度95km/h以上目標。",
+    "category": "下一步行動",
+    "tags": ["專案會議", "3個月試辦", "5年95km/h目標"],
+    "metadata": {
+      "immediate": ["專案會議", "交通評估", "監控系統"],
+      "short_term": {"3_months": "動態限速試辦", "6_months": "服務區改善設計"},
+      "long_term": {"2_years": "智慧交通一期", "5_years": "95km/h目標"}
+    }
+  },
+  {
+    "id": "statistical_methodology_three_001",
+    "title": "統計分析方法學",
+    "content": "統計方法：描述性統計分析、皮爾森積差相關、斯皮爾曼等級相關非線性關係、偏相關分析控制第三變數效應、多元線性回歸、Ridge正則化回歸、Lasso特徵選擇回歸。模型驗證：正態性檢驗Jarque-Bera通過p=0.310、等變異性Breusch-Pagan通過p=0.315、多重共線性avg_width VIF=5.94需注意、影響力分析2個高影響力觀測值、交叉驗證顯示過度配適問題需改善。",
+    "category": "統計方法",
+    "tags": ["7種統計方法", "正態性通過", "VIF5.94注意", "過度配適"],
+    "metadata": {
+      "methods": ["描述統計", "皮爾森相關", "斯皮爾曼相關", "偏相關", "多元回歸", "Ridge", "Lasso"],
+      "normality_test": {"test": "Jarque-Bera", "p_value": 0.310, "result": "通過"},
+      "homoscedasticity": {"test": "Breusch-Pagan", "p_value": 0.315, "result": "通過"},
+      "multicollinearity": {"avg_width_vif": 5.94, "status": "需注意"},
+      "cross_validation": {"issue": "過度配適"}
+    }
+  },
+  {
+    "id": "research_limitations_three_001",
+    "title": "研究限制與未來改善",
+    "content": "資料限制：分析期間較短未涵蓋季節性變化和年度趨勢、缺乏惡劣天氣條件下資料影響全天候預測、幾何資料更新頻率有限可能不反映最新道路狀況、ETag資料雖量大但缺乏駕駛行為微觀資訊、未包含事故施工等特殊事件影響。模型限制：avg_width變數存在高VIF值5.94多重共線性問題、交叉驗證結果顯示模型穩定性問題R²變異極大、線性模型可能無法充分捕捉非線性關係、樣本數相對較少路段數僅6個限制統計推論、未考慮駕駛行為天氣特殊事件等外部變數。未來改善：擴大資料收集範圍增加分析路段數量和時間跨度、多元資料整合納入天氣事件駕駛行為等影響因子、非線性模型發展使用GAM隨機森林等方法、動態預測模型發展時間序列和即時預測能力、交互效應分析深入探討變數間交互作用、機器學習應用結合深度學習等先進技術、驗證資料收集獨立資料集驗證模型泛化能力。",
+    "category": "研究限制",
+    "tags": ["期間較短", "VIF5.94問題", "6路段限制", "未來7項改善"],
+    "metadata": {
+      "data_constraints": ["期間較短", "缺乏天氣資料", "更新頻率限制", "缺乏微觀資訊", "未含特殊事件"],
+      "model_limitations": ["VIF5.94", "穩定性問題", "非線性捕捉不足", "樣本數限制", "外部變數缺失"],
+      "future_improvements": ["擴大收集", "多元整合", "非線性模型", "動態預測", "交互效應", "機器學習", "驗證資料"]
+    }
+  },
+  {
+    "id": "practical_applications_three_001",
+    "title": "實務應用場景",
+    "content": "決策支援場景：管理者詢問哪個路段最需要優先改善回應土城-鶯歌段基於最低速度87.7km/h、管理者詢問投資道路拓寬效益回應偏相關分析顯示控制其他變數後路幅正效應係數0.137、管理者詢問為什麼車道多速度反而低回應多車道路段往往是容量瓶頸點反映交通集中效應、管理者詢問什麼時段最容易塞車回應週間17時達最低速度76.2km/h北向16-17時流量高峰、管理者詢問改善效益量化預測回應曲率半徑每改善100m速度提升2.3km/h。自動化分析工作流程：結合即時ETag資料使用已建立模型進行異常偵測、新建設或改善工程的效益預測和後評估、基於統計優先級排序的預算分配建議。",
+    "category": "實務應用",
+    "tags": ["決策支援", "土城鶯歌優先", "曲率改善2.3km/h", "自動化工作流程"],
+    "metadata": {
+      "decision_scenarios": {
+        "priority_segment": "土城-鶯歌段87.7km/h",
+        "width_benefit": "偏相關0.137正效應",
+        "lane_paradox": "容量瓶頸點效應",
+        "congestion_time": "17時76.2km/h",
+        "quantified_benefit": "2.3km/h per 100m"
+      },
+      "automation": ["異常偵測", "效益預測", "預算分配"]
+    }
+  },
+  {
+    "id": "visualization_catalog_three_001",
+    "title": "視覺化圖表目錄",
+    "content": "描述性圖表：散佈圖矩陣幾何特性與交通表現關係、相關性熱力圖變數間相關程度、3D關係圖車道數路幅寬速度立體關係。時間序列：24小時流量趨勢每小時變化模式、週間時段速度熱力圖工作日vs週末、季節性變化分析長期趨勢。比較分析：路段速度比較6個路段表現排序、車種分布比較各路段組成差異、模型性能比較線性Ridge Lasso效果。診斷圖表：Q-Q圖殘差正態性檢驗、殘差圖模型配適度評估、Cook距離圖影響力觀測識別、VIF柱狀圖多重共線性檢測。進階視覺化：雷達圖路段綜合比較、箱型圖速度分布特徵、非線性關係探索曲線配適。",
+    "category": "視覺化目錄",
+    "tags": ["散佈矩陣", "熱力圖", "3D關係", "雷達圖比較"],
+    "metadata": {
+      "descriptive": ["散佈矩陣", "相關熱力圖", "3D關係圖"],
+      "time_series": ["24小時趨勢", "週間熱力圖", "季節變化"],
+      "comparative": ["路段比較", "車種分布", "模型性能"],
+      "diagnostic": ["Q-Q圖", "殘差圖", "Cook距離", "VIF柱狀"],
+      "advanced": ["雷達圖", "箱型圖", "非線性探索"]
+    }
+  },
+  {
+    "id": "implementation_roadmap_three_001",
+    "title": "實施路線圖",
+    "content": "第一階段立即0-6個月：動態限速系統部署土城-鶯歌段、交通標誌標線優化急彎路段、匝道號誌時制調整、即時監測系統強化，預期成果速度變異減少10-15%安全性提升，預算估計中等投資。第二階段短期6個月-2年：服務區匝道系統改善關西、關鍵急彎路段幾何改善、智慧交通系統建置、路面品質提升工程，預期成果系統平均速度提升3-5km/h，投資規模中高投資。第三階段中期2-5年：大規模幾何線形改善、瓶頸路段容量提升、替代路線發展評估、區域路網整合規劃，預期成果根本解決容量瓶頸問題，投資規模高投資。持續活動：持續ETag和幾何資料更新、定期統計模型校正、即時效果追蹤、基於實證結果調整管理策略。",
+    "category": "實施路線圖",
+    "tags": ["三階段實施", "0-6個月立即", "2-5年中期", "持續活動"],
+    "metadata": {
+      "phase_1": {"timeline": "0-6個月", "focus": "運營改善", "benefit": "變異減少10-15%", "cost": "中等"},
+      "phase_2": {"timeline": "6個月-2年", "focus": "設計改善", "benefit": "速度提升3-5km/h", "cost": "中高"},
+      "phase_3": {"timeline": "2-5年", "focus": "結構提升", "benefit": "根本解決瓶頸", "cost": "高"},
+      "continuous": ["資料更新", "模型校正", "效果追蹤", "策略調整"]
+    }
+  },
+  {
+    "id": "highway_three_executive_summary_001",
+    "title": "國道三號執行摘要關鍵發現",
+    "content": "關鍵發現：曲率半徑是影響速度最關鍵因素係數-2.320相關性-0.759、車道數與速度呈負相關係數-2.159可能因容量飽和效應、路幅寬度與速度呈正相關係數1.095顯示擴寬效益、速度預測模型達到高精度R²=0.931 RMSE=0.808km/h、土城系統-鶯歌系統段為主要瓶頸路段平均速度僅87.7km/h。",
+    "category": "執行摘要",
+    "tags": ["曲率係數-2.320", "車道係數-2.159", "R²0.931", "土城鶯歌瓶頸"],
+    "metadata": {
+      "curvature_coefficient": -2.320,
+      "lanes_coefficient": -2.159,
+      "width_coefficient": 1.095,
+      "model_r_squared": 0.931,
+      "model_rmse": 0.808,
+      "bottleneck_segment": "土城系統-鶯歌系統段"
+    }
+  },
+  {
+    "id": "highway_three_traffic_performance_001",
+    "title": "國道三號交通表現總覽",
+    "content": "交通表現：北向平均速度90.9±2.7km/h、南向平均速度91.8±3.9km/h、平均車道數3.5、平均路幅寬度16.9m。問題路段：土城系統-鶯歌系統段北向平均速度87.7km/h最低、龍潭-關西服務區段北向速度變異18.0km/h最大。",
+    "category": "交通表現",
+    "tags": ["北向90.9±2.7", "南向91.8±3.9", "平均3.5車道", "土城鶯歌87.7"],
+    "metadata": {
+      "northbound_speed": 90.9,
+      "northbound_std": 2.7,
+      "southbound_speed": 91.8,
+      "southbound_std": 3.9,
+      "average_lanes": 3.5,
+      "average_width": 16.9,
+      "problem_segments": ["土城系統-鶯歌系統段", "龍潭-關西服務區段"]
+    }
+  },
+  {
+    "id": "performance_indicators_three_001",
+    "title": "決策支援績效指標體系",
+    "content": "速度閾值：優秀>95km/h、良好90-95km/h、可接受85-90km/h、差劣<85km/h。速度變異閾值：穩定<12km/h、中等12-15km/h、不穩定15-18km/h、高度不穩定>18km/h。幾何改善優先級：曲率半徑<500m高優先級、路幅寬度<16m中優先級、縱坡度>3%中優先級。",
+    "category": "績效指標",
+    "tags": ["速度閾值95", "變異閾值18", "曲率500m", "路幅16m"],
+    "metadata": {
+      "speed_thresholds": {"excellent": ">95", "good": "90-95", "acceptable": "85-90", "poor": "<85"},
+      "variance_thresholds": {"stable": "<12", "moderate": "12-15", "unstable": "15-18", "highly_unstable": ">18"},
+      "geometric_priorities": {"curvature": "<500m", "width": "<16m", "grade": ">3%"}
+    }
+  },
+  {
+    "id": "intervention_triggers_three_001",
+    "title": "決策支援干預觸發條件",
+    "content": "觸發條件1：平均速度<88km/h，行動啟動交通管理措施，緊急度高，回應時間立即。觸發條件2：速度標準差>18km/h，行動檢討幾何設計和服務區管理，緊急度中高，回應時間24小時內。觸發條件3：曲率半徑<300m，行動考慮幾何改善工程，緊急度中，回應時間一週內。觸發條件4：流量密度過高，行動評估動態限速方案，緊急度中，回應時間一個月內。",
+    "category": "干預觸發",
+    "tags": ["速度88km/h觸發", "變異18km/h觸發", "曲率300m觸發", "流量密度觸發"],
+    "metadata": {
+      "speed_trigger": {"threshold": 88, "urgency": "高", "response": "立即"},
+      "variance_trigger": {"threshold": 18, "urgency": "中高", "response": "24小時"},
+      "curvature_trigger": {"threshold": 300, "urgency": "中", "response": "一週"},
+      "density_trigger": {"urgency": "中", "response": "一個月"}
+    }
+  },
+  {
+    "id": "performance_scoring_three_001",
+    "title": "績效評分系統",
+    "content": "評分公式：Score = 0.5×(速度/100) + 0.3×(1-速度變異/25) + 0.15×(曲率品質) + 0.05×(車道配置效率)。權重：速度0.5、穩定性0.3、幾何品質0.15、容量效率0.05。路段評分：土城-鶯歌0.45、鶯歌-龍潭0.62、龍潭-關西0.58、關西-竹林0.78、竹林-寶山0.71、寶山-茄苳0.68。",
+    "category": "績效評分",
+    "tags": ["評分公式", "速度權重0.5", "關西竹林最高0.78", "土城鶯歌最低0.45"],
+    "metadata": {
+      "formula": "0.5×Speed + 0.3×Stability + 0.15×Geometry + 0.05×Capacity",
+      "weights": {"speed": 0.5, "stability": 0.3, "geometry": 0.15, "capacity": 0.05},
+      "highest_score": {"segment": "關西-竹林", "score": 0.78},
+      "lowest_score": {"segment": "土城-鶯歌", "score": 0.45}
+    }
+  },
+  {
+    "id": "data_quality_strengths_three_001",
+    "title": "數據品質評估-優勢",
+    "content": "數據優勢：大量ETag資料提供高可信度分析基礎3255346筆、幾何特性資料完整涵蓋關鍵參數、統計模型通過多項診斷檢驗正態性和等變異性、詳細的路段分析涵蓋6個主要路段。",
+    "category": "數據品質",
+    "tags": ["3255346筆ETag", "診斷檢驗通過", "6個路段分析", "幾何參數完整"],
+    "metadata": {
+      "etag_records": 3255346,
+      "segments_analyzed": 6,
+      "model_validation": "通過診斷檢驗",
+      "geometric_coverage": "完整"
+    }
+  },
+  {
+    "id": "data_quality_limitations_three_001",
+    "title": "數據品質評估-限制",
+    "content": "數據限制：路幅寬度存在高度共線性VIF=5.94、分析期間較短未涵蓋季節性變化、缺乏惡劣天氣條件下資料、ETag資料雖量大但缺乏駕駛行為微觀資訊、未包含事故施工等特殊事件影響。交叉驗證問題：模型穩定性問題CV R²變異極大、樣本數相對較少僅6個路段限制統計推論能力。",
+    "category": "數據限制",
+    "tags": ["VIF5.94共線性", "期間較短", "CV變異大", "6路段限制"],
+    "metadata": {
+      "multicollinearity": "VIF=5.94",
+      "analysis_period": "較短",
+      "cv_instability": "R²變異極大",
+      "sample_size": "6個路段",
+      "missing_factors": ["天氣", "事故", "施工", "駕駛行為"]
+    }
+  },
+  {
+    "id": "technical_specifications_three_001",
+    "title": "技術規格與環境配置",
+    "content": "分析工具：Python 3.x、Pandas資料處理、NumPy數值計算、Scikit-learn機器學習、Statsmodels統計分析、Matplotlib/Seaborn視覺化。統計方法：皮爾森積差相關、斯皮爾曼等級相關、偏相關控制第三變數、OLS線性回歸、Ridge正則化回歸、Lasso特徵選擇回歸。數據來源：ETag電子收費資料、道路幾何測量資料、國道三號整合資料。",
+    "category": "技術規格",
+    "tags": ["Python3.x", "統計方法", "ETag資料", "幾何測量"],
+    "metadata": {
+      "python_version": "3.x",
+      "key_libraries": ["Pandas", "NumPy", "Scikit-learn", "Statsmodels"],
+      "statistical_methods": ["皮爾森相關", "偏相關", "線性回歸", "Ridge", "Lasso"],
+      "data_sources": ["ETag", "幾何測量", "整合資料"]
+    }
+  },
+  {
+    "id": "top_findings_three_001",
+    "title": "前五大關鍵發現排序",
+    "content": "排名1：曲率半徑是速度的最關鍵決定因素，證據回歸係數-2.320相關性-0.759，可行動幾何線形改善可立即見效。排名2：車道數悖論更多車道反而速度更低，證據回歸係數-2.159，影響需重新思考容量擴充策略。排名3：土城-鶯歌段為系統性瓶頸，證據速度最低87.7km/h，優先級應列為最優先改善路段。排名4：路幅寬度與交通表現正相關，證據回歸係數+1.095，機會路幅優化有改善空間。排名5：服務區影響顯著，證據關西服務區段變異最大18.0km/h，策略優化匝道系統設計。",
+    "category": "關鍵發現",
+    "tags": ["曲率係數-2.320", "車道悖論-2.159", "土城鶯歌瓶頸", "路幅+1.095"],
+    "metadata": {
+      "finding_1": {"factor": "曲率半徑", "coefficient": -2.320, "correlation": -0.759},
+      "finding_2": {"factor": "車道數悖論", "coefficient": -2.159},
+      "finding_3": {"bottleneck": "土城-鶯歌段", "speed": 87.7},
+      "finding_4": {"factor": "路幅寬度", "coefficient": 1.095},
+      "finding_5": {"service_area": "關西", "variance": 18.0}
+    }
+  },
+  {
+    "id": "unexpected_discoveries_three_001",
+    "title": "意外發現與模型性能",
+    "content": "意外發現：車道數與速度的負相關關係反映容量瓶頸效應、偏相關分析顯示控制其他變數後路幅寬度對速度呈正效應、重車比例影響反轉控制流量後重車本身不是主因。模型性能：速度預測準確度R²=0.931 RMSE=0.808km/h極高精度、流量預測準確度R²=0.724中等偏高、實務意義可解釋93.1%的速度變異具極高實務應用價值。",
+    "category": "意外發現",
+    "tags": ["車道負相關", "路幅正效應", "R²0.931極高精度"],
+    "metadata": {
+      "unexpected": ["車道數負相關", "路幅正效應", "重車影響反轉"],
+      "speed_model": {"r_squared": 0.931, "rmse": 0.808},
+      "volume_model": {"r_squared": 0.724},
+      "practical_value": "可解釋93.1%變異"
+    }
+  },
+  {
+    "id": "correlation_analysis_three_001",
+    "title": "相關性分析結果",
+    "content": "最強負相關：平均速度vs平均曲率-0.759解釋曲率是速度最強預測因子、平均速度vs車道數-0.667解釋車道數增加伴隨速度下降、平均速度vs速度標準差-0.822解釋速度變異與平均速度負相關。最強正相關：車道數vs路幅寬0.798解釋設計標準一致性、流量vs重車比例0.991解釋幾乎完全相關。偏相關洞察：控制車道數和流量後路幅寬度對速度呈正效應偏相關0.137。",
+    "category": "相關性分析",
+    "tags": ["曲率-0.759", "車道-0.667", "速度變異-0.822", "偏相關0.137"],
+    "metadata": {
+      "strongest_negative": [
+        {"variable": "avg_curvature", "correlation": -0.759},
+        {"variable": "avg_lanes", "correlation": -0.667},
+        {"variable": "speed_std", "correlation": -0.822}
+      ],
+      "strongest_positive": [
+        {"variable": "lanes_vs_width", "correlation": 0.798},
+        {"variable": "volume_vs_heavy", "correlation": 0.991}
+      ],
+      "partial_correlation": {"width_controlled": 0.137}
+    }
+  },
+  {
+    "id": "speed_prediction_model_three_001",
+    "title": "速度預測模型詳細",
+    "content": "模型類型：多元線性回歸。R²：0.931。調整R²：0.931。RMSE：0.808km/h。MAE：0.530km/h。模型方程式：Speed = Intercept - 2.320×曲率 - 2.159×車道數 + 1.095×路幅 - 0.897×坡度 - 0.096×重車比例。特徵重要性：曲率係數-2.320重要性最高、車道數係數-2.159重要性第二、路幅寬度係數1.095重要性第三、坡度係數-0.897重要性第四、重車比例係數-0.096重要性最低。",
+    "category": "預測模型",
+    "tags": ["R²0.931", "RMSE0.808", "曲率-2.320最高", "路幅1.095正相關"],
+    "metadata": {
+      "model_type": "多元線性回歸",
+      "r_squared": 0.931,
+      "rmse": 0.808,
+      "mae": 0.530,
+      "features": {
+        "curvature": {"coeff": -2.320, "importance": "最高"},
+        "lanes": {"coeff": -2.159, "importance": "第二"},
+        "width": {"coeff": 1.095, "importance": "第三"},
+        "grade": {"coeff": -0.897, "importance": "第四"},
+        "heavy_vehicle": {"coeff": -0.096, "importance": "最低"}
+      }
+    }
+  },
+  {
+    "id": "segment_tucheng_yingge_001",
+    "title": "土城系統-鶯歌系統段詳細分析",
+    "content": "路段：土城系統-鶯歌系統段，里程範圍44.7-55.0K。特徵：地形都會區瓶頸路段、幾何挑戰土地限制改善空間、交通問題速度偏低交通容量接近飽和。表現：北向速度87.7km/h、南向速度88.2km/h、速度排名最低速度路段、壅塞水準高。問題分析：交織區衝突、匝道間距過短、既有建設限制。建議措施：立即動態限速、中期交織區改善、長期結構性容量擴充評估。",
+    "category": "路段分析",
+    "tags": ["土城鶯歌44.7-55.0K", "北向87.7km/h", "最低速度", "都會瓶頸"],
+    "metadata": {
+      "km_range": "44.7-55.0K",
+      "terrain": "都會區瓶頸",
+      "nb_speed": 87.7,
+      "sb_speed": 88.2,
+      "ranking": "最低速度路段",
+      "issues": ["交織區衝突", "匝道間距短", "容量飽和"],
+      "recommendations": ["動態限速", "交織區改善", "容量擴充"]
+    }
+  },
+  {
+    "id": "segment_longtan_guanxi_001",
+    "title": "龍潭-關西服務區段詳細分析",
+    "content": "路段：龍潭-關西服務區段，里程範圍65.0-75.0K。特徵：地形台地地形起伏、幾何挑戰服務區匝道交織影響、交通問題速度變異最大。表現：北向速度變異18.0km/h、排名最高速度變異路段、服務區進出影響明顯。問題分析：服務區匝道交織、地形起伏變化、車流組成改變。建議措施：匝道設計改善、標誌系統強化、服務區流量管理。",
+    "category": "路段分析",
+    "tags": ["龍潭關西65.0-75.0K", "變異18.0km/h", "服務區影響", "最高變異"],
+    "metadata": {
+      "km_range": "65.0-75.0K",
+      "terrain": "台地起伏",
+      "nb_variance": 18.0,
+      "ranking": "最高速度變異路段",
+      "issues": ["服務區匝道交織", "地形起伏", "車流組成變化"],
+      "recommendations": ["匝道改善", "標誌強化", "流量管理"]
+    }
+  },
+  {
+    "id": "time_patterns_three_001",
+    "title": "時間模式分析",
+    "content": "24小時模式：最低速度時段17時週三速度76.2km/h工作日下午尖峰、最高速度時段0-6時深夜離峰速度95+km/h、尖峰特徵16-17時北向流量達65+車次、離峰特徵深夜2-4時約10-15車次。日間模式：工作日7-9時速度下降至85-90km/h、工作日17-19時速度最低可降至76-85km/h、23時後速度快速回升至95+km/h。週間模式：週末速度普遍高於平日2-3km/h、平日尖峰更明顯、夜間恢復模式一致。",
+    "category": "時間模式",
+    "tags": ["17時最低76.2", "凌晨95+", "16-17時尖峰", "週末高2-3"],
+    "metadata": {
+      "lowest_speed": {"time": "17時週三", "speed": 76.2},
+      "highest_speed": {"time": "0-6時", "speed": "95+"},
+      "peak_volume": {"time": "16-17時", "volume": "65+車次"},
+      "weekend_improvement": "2-3km/h"
+    }
+  },
+  {
+    "id": "vehicle_composition_three_001",
+    "title": "車種組成與影響分析",
+    "content": "車種分布：小客車71.3%絕對主導車種較國道一號高、小貨車22.2%與國道一號相近、大貨車3.1%商用車輛比例相對較低、聯結車1.8%、大客車1.5%。雙向平衡：茄苳往土城50.3%、土城往茄苳49.7%、流量差異僅0.6個百分點近乎完美平衡。總流量：國道三號48.5百萬車次較國道一號8.4百萬高出近5倍、雙向各為24.1-24.4百萬車次規模顯著。車種平衡：小客車雙向流量幾乎完全相等差異僅0.2百萬、小貨車兩方向完全一致均為5.4百萬。",
+    "category": "車種分析",
+    "tags": ["小客車71.3%", "雙向平衡0.6%", "48.5百萬車次", "較國道一號高5倍"],
+    "metadata": {
+      "passenger_car": {"percentage": 71.3, "compared_to_highway1": "較高"},
+      "light_truck": {"percentage": 22.2, "compared_to_highway1": "相近"},
+      "directional_balance": {"tucheng_to_qiedong": 49.7, "qiedong_to_tucheng": 50.3, "difference": 0.6},
+      "total_volume": {"highway3": "48.5百萬", "highway1": "8.4百萬", "ratio": "5倍"}
+    }
+  },
+  {
+    "id": "geometric_features_three_001",
+    "title": "幾何特性分析",
+    "content": "車道特性：平均車道數3.5、範圍3.0-4.0車道、大部分路段3-4車道配置、速度相關性-0.667負相關。路幅特性：平均路幅16.9m、範圍15.5-19.5m、關鍵路段寬度15.5m以下需關注、流量相關性0.815強正相關。曲率分析：速度相關性-0.759最強預測因子、關鍵閾值曲率半徑小於500m、嚴重影響閾值半徑小於300m時速度驟降、改善潛力半徑每增加100m速度約增加2.3km/h。坡度影響：速度相關性-0.271中等影響、陡坡路段縱坡度超過3%有17處、建議考慮大型車專用道。",
+    "category": "幾何特性",
+    "tags": ["平均3.5車道", "路幅16.9m", "曲率-0.759", "坡度-0.271"],
+    "metadata": {
+      "lanes": {"average": 3.5, "range": "3.0-4.0", "correlation": -0.667},
+      "width": {"average": 16.9, "range": "15.5-19.5", "correlation": 0.815},
+      "curvature": {"correlation": -0.759, "critical": "<500m", "severe": "<300m", "improvement": "2.3km/h per 100m"},
+      "grade": {"correlation": -0.271, "steep_sections": 17, "threshold": ">3%"}
+    }
+  },
+  {
+    "id": "model_diagnostics_three_001",
+    "title": "模型診斷與驗證",
+    "content": "正態性檢驗：Jarque-Bera檢驗統計量2.344 p值0.310通過解釋殘差符合正態分布假設。等變異性檢驗：Breusch-Pagan檢驗統計量5.910 p值0.315通過解釋等變異性假設成立。多重共線性檢驗：avg_width VIF=5.94高共線性需注意、avg_lanes VIF=2.83可接受、large_vehicle_ratio VIF=4.53邊緣。影響力分析：Cook距離閾值0.333、高影響力觀測2個、最大Cook距離0.848解釋存在少數高影響力觀測點但不影響模型穩定性。殘差分析：Q-Q圖顯示良好正態性、95%標準化殘差在±2σ範圍內、隨機分布無明顯模式。",
+    "category": "模型診斷",
+    "tags": ["正態性通過p0.310", "等變異通過p0.315", "VIF5.94注意", "Cook0.848"],
+    "metadata": {
+      "normality": {"test": "Jarque-Bera", "statistic": 2.344, "p_value": 0.310, "result": "通過"},
+      "homoscedasticity": {"test": "Breusch-Pagan", "statistic": 5.910, "p_value": 0.315, "result": "通過"},
+      "multicollinearity": {"avg_width_vif": 5.94, "avg_lanes_vif": 2.83, "heavy_vehicle_vif": 4.53},
+      "influential_obs": {"count": 2, "max_cook": 0.848, "threshold": 0.333}
+    }
+  },
+  {
+    "id": "highway_three_metadata_001",
+    "title": "國道三號分析報告基本信息",
+    "content": "標題：國道三號交通與幾何特性整合分析知識庫。版本：1.0。創建日期：2025-08-12。分析期間：2024年資料。高速公路路段：國道三號土城系統-茄苳段44.7K-102.2K。總路段數：6個。數據點：北向幾何1322、南向幾何1322、北向ETag 1623229、南向ETag 1632117。",
+    "category": "報告信息",
+    "tags": ["國道三號", "土城-茄苳", "44.7K-102.2K", "2024年資料", "6路段"],
+    "metadata": {
+      "highway_section": "國道三號 44.7K-102.2K",
+      "analysis_period": "2024年",
+      "total_segments": 6,
+      "northbound_geometry": 1322,
+      "southbound_geometry": 1322,
+      "northbound_etag": 1623229,
+      "southbound_etag": 1632117
+    }
+  },
+  {
+    "id": "cost_benefit_analysis_three_001",
+    "title": "成本效益分析矩陣",
+    "content": "高效益低成本：動態限速系統實施成本低見效快減少變異15-20%、交通標誌標線優化成本極低立即改善、匝道號誌時制調整零成本高效益、即時監測系統強化中等成本持續效益。高效益高成本：曲率半徑改善工程成本極高但效益最大係數-2.320、土城-鶯歌容量擴充投資巨大根本解決瓶頸、智慧交通系統全面建置高投資長期效益、服務區匝道系統重建高成本解決變異問題。中效益中成本：路幅寬度擴充受土地限制但效果確定係數1.095、重車專用道建置分離車流提升速度、路面品質提升工程中等投資中等效益。低效益高成本：大規模路線重建成本效益需審慎評估、全線坡度調整工程複雜度高效益有限。投資建議：優先高效益低成本方案快速見效、階段性實施高效益高成本項目、審慎評估低效益高成本方案。",
+    "category": "成本效益",
+    "tags": ["高效益低成本", "階段性實施", "審慎評估", "優先排序"],
+    "metadata": {
+      "high_benefit_low_cost": [
+        {"action": "動態限速", "cost": "低", "benefit": "變異減少15-20%"},
+        {"action": "標誌優化", "cost": "極低", "benefit": "立即改善"},
+        {"action": "號誌調整", "cost": "零", "benefit": "高效益"},
+        {"action": "監測強化", "cost": "中等", "benefit": "持續效益"}
+      ],
+      "high_benefit_high_cost": [
+        {"action": "曲率改善", "cost": "極高", "benefit": "最大係數-2.320"},
+        {"action": "容量擴充", "cost": "巨大", "benefit": "根本解決"},
+        {"action": "智慧交通", "cost": "高", "benefit": "長期效益"},
+        {"action": "匝道重建", "cost": "高", "benefit": "解決變異"}
+      ],
+      "investment_strategy": "優先低成本→階段性高成本→審慎評估低效益"
+    }
+  },
+  {
+    "id": "risk_management_three_001",
+    "title": "風險管理與應變計畫",
+    "content": "運營風險：模型預測失準風險持續校正和驗證預測準確性追蹤、改善工程期間交通衝擊分階段施工和替代路線規劃基於模型預測影響範圍、外部因素影響天氣事件風險應變計畫和彈性管理擴充資料收集範圍。投資風險：投資效益不如預期基於統計信賴區間評估階段性投資和效益驗證、技術風險新技術應用可能失敗小規模試點驗證後推廣、政策風險法規變化影響實施密切關注政策動向提前因應。工程風險：施工期間安全風險嚴格施工管理和安全監控、環境影響風險環評程序完整執行、用地取得風險提早規劃替代方案。應變措施：建立風險監控指標定期評估風險等級、制定應變程序明確責任分工、設立風險基金應對突發狀況、建立專家諮詢機制重大決策支援。監控機制：即時監控關鍵績效指標KPI、定期風險評估月度季度檢討、預警系統建立臨界值警報、回饋機制根據監控結果調整策略。",
+    "category": "風險管理",
+    "tags": ["運營風險", "投資風險", "應變措施", "監控機制"],
+    "metadata": {
+      "operational_risks": [
+        {"risk": "模型失準", "mitigation": "持續校正驗證", "monitoring": "準確性追蹤"},
+        {"risk": "工程衝擊", "mitigation": "分階段施工", "preparation": "替代路線"},
+        {"risk": "外部因素", "mitigation": "應變計畫", "data_expansion": "擴充收集"}
+      ],
+      "investment_risks": [
+        {"risk": "效益不如預期", "assessment": "統計信賴區間", "strategy": "階段性投資"},
+        {"risk": "技術風險", "mitigation": "小規模試點", "approach": "驗證後推廣"},
+        {"risk": "政策風險", "monitoring": "政策動向", "preparation": "提前因應"}
+      ],
+      "contingency_measures": ["風險監控", "應變程序", "風險基金", "專家諮詢"],
+      "monitoring_system": ["即時KPI", "定期評估", "預警系統", "回饋機制"]
+    }
+  },
+  {
+    "id": "performance_targets_three_001",
+    "title": "績效目標與里程碑",
+    "content": "短期目標6個月內：土城-鶯歌段平均速度提升至90km/h以上、全線速度變異控制在15km/h以下、動態限速系統覆蓋率達80%、交通事故率降低10%。中期目標2年內：系統平均速度提升至95km/h以上、關西服務區段速度變異降至12km/h以下、智慧交通系統第一期建置完成、曲率半徑<300m路段改善完成50%。長期目標5年內：全線平均速度達98km/h以上、速度變異控制在10km/h以下、智慧交通系統全面建置、主要瓶頸路段容量問題根本解決。關鍵績效指標KPI：速度指標平均速度速度變異尖峰時段速度、安全指標事故率事故嚴重度、效率指標旅行時間可靠性容量利用率、服務指標用路人滿意度投訴件數。監控頻率：即時監控速度流量密度、每日監控平均速度尖峰延滯事件影響、每週監控速度變異趨勢變化、每月監控改善效果評估模型校正、每季監控整體績效目標達成情況。達成策略：建立績效儀表板即時追蹤關鍵指標、定期檢討會議評估目標達成進度、獎懲機制激勵團隊達成目標、持續改善機制根據績效調整策略。",
+    "category": "績效目標",
+    "tags": ["短期90km/h", "中期95km/h", "長期98km/h", "KPI監控"],
+    "metadata": {
+      "short_term_6months": {
+        "speed_target": ">90km/h土城-鶯歌",
+        "variance_target": "<15km/h全線",
+        "system_coverage": "80%動態限速",
+        "safety_target": "事故率降10%"
+      },
+      "medium_term_2years": {
+        "speed_target": ">95km/h系統平均",
+        "variance_target": "<12km/h關西服務區",
+        "system_milestone": "智慧交通一期完成",
+        "geometric_target": "50%急彎改善完成"
+      },
+      "long_term_5years": {
+        "speed_target": ">98km/h全線平均",
+        "variance_target": "<10km/h全線",
+        "system_milestone": "智慧交通全面建置",
+        "capacity_target": "瓶頸根本解決"
+      },
+      "kpi_categories": ["速度指標", "安全指標", "效率指標", "服務指標"],
+      "monitoring_frequency": ["即時", "每日", "每週", "每月", "每季"],
+      "achievement_strategy": ["績效儀表板", "定期檢討", "獎懲機制", "持續改善"]
+    }
+  },
+  {
+    "id": "priority_matrix_three_002",
+    "title": "建議優先級矩陣",
+    "content": "高效益低成本：動態限速系統、交通標誌標線優化、尖峰時段流量管制、匝道號誌時制調整。高效益高成本：曲率半徑改善工程、土城-鶯歌容量擴充、服務區匝道系統重建、智慧交通系統全面建置。低效益低成本：即時交通資訊發布、駕駛行為宣導、路面品質提升。低效益高成本：全線大規模重建、替代路線新建。",
+    "category": "優先級矩陣",
+    "tags": ["立即曲率改善", "中期智慧交通", "長期路網整合", "運營優化"],
+    "metadata": {
+      "immediate_actions": {
+        "curvature_improvement": {"coefficient": -2.320, "priority": "最高", "benefit": "效益最大"},
+        "dynamic_speed_limit": {"target": "土城-鶯歌段", "benefit": "變異減少15-20%"},
+        "heavy_vehicle_management": {"target": "高坡度路段", "benefit": "混合車流改善10-15%"},
+        "width_optimization": {"target": "<16m路段", "method": "單純擴寬"}
+      },
+      "medium_term": {
+        "service_area_improvement": {"target": "關西服務區", "benefit": "變異降至12km/h"},
+        "intelligent_transport": {"scope": "主要瓶頸路段", "benefit": "效率提升8-12%"},
+        "geometric_improvement": {"target": "曲率半徑<300m", "benefit": "速度提升5-8km/h"},
+        "model_stability": {"issue": "過度配適", "solution": "交叉驗證改善"}
+      },
+      "long_term": {
+        "capacity_solutions": {"target": "土城-鶯歌段", "timeline": "8-15年"},
+        "network_optimization": {"scope": "國道一二三號", "timeline": "10-20年"},
+        "alternative_routes": {"benefit": "減少瓶頸流量"},
+        "advanced_modeling": {"methods": ["GAM", "隨機森林"]}
+      },
+      "operational_optimization": {
+        "traffic_management": ["潮汐車道", "雙向流量差異"],
+        "incident_management": ["快速清除", "強化巡邏"],
+        "performance_monitoring": ["ETag收集", "幾何更新", "氣象整合"]
+      }
+    }
+  }
+]

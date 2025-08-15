@@ -118,27 +118,7 @@ export default function Home() {
             運用人工智慧與大數據分析，提供即時交通監控、震波預警與智慧決策支援，
             讓每一次出行都更安全、更順暢。
           </p>
-          
-          {/* 系統統計 */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto mb-12">
-            <div className="bg-white/60 backdrop-blur-sm rounded-xl p-6 border border-gray-200/50 shadow-sm">
-              <div className="text-3xl font-bold text-blue-600 mb-2">{systemStats.activeUsers.toLocaleString()}</div>
-              <div className="text-sm text-gray-600">活躍用戶</div>
-            </div>
-            <div className="bg-white/60 backdrop-blur-sm rounded-xl p-6 border border-gray-200/50 shadow-sm">
-              <div className="text-3xl font-bold text-green-600 mb-2">{systemStats.monitoringStations}</div>
-              <div className="text-sm text-gray-600">監測站點</div>
-            </div>
-            <div className="bg-white/60 backdrop-blur-sm rounded-xl p-6 border border-gray-200/50 shadow-sm">
-              <div className="text-3xl font-bold text-orange-600 mb-2">{systemStats.activeAlerts}</div>
-              <div className="text-sm text-gray-600">即時警告</div>
-            </div>
-            <div className="bg-white/60 backdrop-blur-sm rounded-xl p-6 border border-gray-200/50 shadow-sm">
-              <div className="text-3xl font-bold text-purple-600 mb-2">{systemStats.systemUptime}</div>
-              <div className="text-sm text-gray-600">系統可用率</div>
-            </div>
-          </div>
-        </div>
+      
 
         {/* 用戶選擇區塊 */}
         <div className="grid md:grid-cols-2 gap-8 mb-16">

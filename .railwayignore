@@ -1,0 +1,26 @@
+# 前端檔案 (Railway 只需要後端)
+frontend/
+frontend/**
+
+# 開發工具
+.git/
+.vscode/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.coverage
+.pytest_cache/
+node_modules/
+
+# 日誌檔案
+*.log
+logs/
+
+# 臨時檔案
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db

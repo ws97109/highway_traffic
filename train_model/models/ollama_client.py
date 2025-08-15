@@ -144,7 +144,8 @@ class OllamaClient:
 2. 使用繁體中文回答
 3. 如果資料不足以回答問題，請誠實說明
 4. 提供有用的補充資訊和建議
-5. 回答要結構化且易於理解"""
+5. 回答要結構化且易於理解
+6. 每一個題號就換一個段落"""
         
         # 使用自定義系統提示或預設提示
         system_msg = system_prompt if system_prompt else default_system

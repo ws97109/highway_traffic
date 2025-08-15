@@ -105,6 +105,7 @@ export default function Home() {
 
       {/* 主要內容 */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    </div>
         
         {/* 歡迎區塊 */}
         <div className="text-center mb-16">

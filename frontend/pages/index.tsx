@@ -105,7 +105,6 @@ export default function Home() {
 
       {/* 主要內容 */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-    </div>
         
         {/* 歡迎區塊 */}
         <div className="text-center mb-16">
@@ -119,7 +118,7 @@ export default function Home() {
             運用人工智慧與大數據分析，提供即時交通監控、震波預警與智慧決策支援，
             讓每一次出行都更安全、更順暢。
           </p>
-      
+        </div>
 
         {/* 用戶選擇區塊 */}
         <div className="grid md:grid-cols-2 gap-8 mb-16">

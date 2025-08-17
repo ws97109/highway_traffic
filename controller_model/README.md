@@ -31,6 +31,9 @@ ollama serve
 
 # 拉取模型 (新終端)
 ollama pull llama3.1:8b
+
+# 或是記憶體夠可以換較大的模型 (新終端)
+ollama pull deepseek-r1:32b
 ```
 
 #### Step 3: 安裝 Python 依賴
@@ -44,7 +47,9 @@ pip install -r requirements.txt
 ```
 data/Taiwan/
 ├── 國道一號_整合資料.csv
-└── 國道三號_整合資料.csv
+├── 國道三號_整合資料.csv
+├── geometric_statistical_N01.json
+└── geometric_statistical_N03.json
 ```
 
 #### Step 5: 啟動後端服務
@@ -111,6 +116,8 @@ curl http://localhost:8000/api/admin/training-status
 ```
 data/Taiwan/國道一號_整合資料.csv
 data/Taiwan/國道三號_整合資料.csv
+data/Taiwan/geometric_statistical_N01.json
+data/Taiwan/geometric_statistical_N03.json
 ```
 
 ## 📊 系統狀態檢查

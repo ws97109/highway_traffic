@@ -110,31 +110,26 @@ const DriverDashboard: React.FC = () => {
     setRagLoading(true);
     try {
       // 構建 AI 分析提示
-      let advicePrompt = `你是台灣交通分析專家，請根據當前交通狀況提供駕駛建議：
-
-=== 目前位置 ===
-緯度: ${userLocation.lat}, 經度: ${userLocation.lng}`;
+      let advicePrompt = `【交通諮詢】我是台灣駕駛人，目前位置：${userLocation.lat}, ${userLocation.lng}`;
 
       if (destination) {
-        advicePrompt += `\n目的地: ${destination}`;
+        advicePrompt += `，計劃前往：${destination}`;
       }
 
       if (trafficData.length > 0) {
         const avgSpeed = trafficData.reduce((sum, station) => sum + (station.speed || 0), 0) / trafficData.length;
-        advicePrompt += `\n交通狀況: ${trafficData.length} 個監測點，平均車速 ${avgSpeed.toFixed(1)} km/h`;
+        const congestedCount = trafficData.filter(station => station.speed < 50).length;
+        advicePrompt += `\n\n【即時路況】監測站點：${trafficData.length}個，平均車速：${avgSpeed.toFixed(1)}km/h`;
+        if (congestedCount > 0) {
+          advicePrompt += `，壅塞站點：${congestedCount}個`;
+        }
       }
 
       if (alerts.length > 0) {
-        advicePrompt += `\n⚠️ 警告: ${alerts.length} 個交通警報`;
+        advicePrompt += `\n【警報】檢測到${alerts.length}個交通警報事件`;
       }
 
-      advicePrompt += `\n\n請提供具體的駕駛建議，包括：
-1. 路況分析
-2. 最佳出發時間建議  
-3. 路線選擇建議
-4. 安全注意事項
-
-請用繁體中文回答。`;
+      advicePrompt += `\n\n請根據以上實際監測資料，提供專業的台灣本土化駕駛建議，包括詳細的路線規劃、行駛指引和注意事項。使用繁體中文回答。`;
 
       const response = await fetch('http://localhost:11434/api/generate', {
         method: 'POST',
@@ -146,8 +141,9 @@ const DriverDashboard: React.FC = () => {
           prompt: advicePrompt,
           stream: false,
           options: {
-            temperature: 0.5,
-            num_predict: 400
+            temperature: 0.2,
+            num_predict: 400,
+            stop: ["如果您還有", "祝您一路平安", "希望以上建議"]
           }
         })
       });
@@ -226,9 +222,9 @@ const DriverDashboard: React.FC = () => {
           prompt: buildTrafficAnalysisPrompt(userMessage, chatData),
           stream: false,
           options: {
-            temperature: 0.7,
-            top_p: 0.9,
-            num_predict: 400
+            temperature: 0.2,
+            num_predict: 400,
+            stop: ["如果您還有", "祝您一路平安", "希望以上建議"]
           }
         })
       });
@@ -272,58 +268,33 @@ const DriverDashboard: React.FC = () => {
   const buildTrafficAnalysisPrompt = (userMessage: string, data: any) => {
     const { traffic_data, shockwave_data, user_location } = data;
     
-    let prompt = `你是一個專業的台灣交通分析助手，請根據以下即時交通數據為駕駛者提供智能建議。請用繁體中文回答，語氣要親切且專業。
+    let prompt = `【台灣交通諮詢】我是台灣駕駛人`;
 
-=== 即時交通數據 ===
-`;
+    if (user_location) {
+      prompt += `，目前位置：${user_location.lat.toFixed(4)}, ${user_location.lng.toFixed(4)}`;
+    }
 
     if (traffic_data && traffic_data.stations.length > 0) {
       const avgSpeed = traffic_data.stations.reduce((sum: number, station: any) => sum + (station.speed || 0), 0) / traffic_data.stations.length;
       const congestedStations = traffic_data.stations.filter((s: any) => s.speed < 50);
+      const smoothStations = traffic_data.stations.filter((s: any) => s.speed >= 80);
       
-      prompt += `交通監測站點: ${traffic_data.stations.length} 個
-平均車速: ${avgSpeed.toFixed(1)} km/h
-壅塞站點: ${congestedStations.length} 個
-數據更新時間: ${traffic_data.last_updated}
-
-`;
+      prompt += `\n\n【即時路況資料】`;
+      prompt += `\n監測站點：${traffic_data.stations.length}個`;
+      prompt += `\n平均車速：${avgSpeed.toFixed(1)}km/h`;
+      prompt += `\n順暢站點：${smoothStations.length}個（≥80km/h）`;
       
       if (congestedStations.length > 0) {
-        prompt += `壅塞路段詳情:\n`;
-        congestedStations.slice(0, 3).forEach((station: any) => {
-          prompt += `- ${station.name}: ${station.speed} km/h\n`;
-        });
-        prompt += `\n`;
+        prompt += `\n壅塞站點：${congestedStations.length}個（<50km/h）`;
       }
     }
 
     if (shockwave_data && shockwave_data.shockwaves.length > 0) {
-      prompt += `⚠️ 震波警報: 偵測到 ${shockwave_data.shockwaves.length} 個交通震波事件
-`;
-      shockwave_data.shockwaves.slice(0, 2).forEach((sw: any) => {
-        prompt += `- ${sw.location}: 強度 ${sw.intensity}, 影響範圍 ${sw.affectedArea} km\n`;
-      });
-      prompt += `\n`;
+      prompt += `\n\n【震波警報】偵測到${shockwave_data.shockwaves.length}個交通震波事件`;
     }
 
-    if (shockwave_data && shockwave_data.predictions.length > 0) {
-      prompt += `預測數據: ${shockwave_data.predictions.length} 個預測點\n\n`;
-    }
-
-    if (user_location) {
-      prompt += `用戶位置: 緯度 ${user_location.lat}, 經度 ${user_location.lng}\n\n`;
-    }
-
-    prompt += `=== 用戶問題 ===
-${userMessage}
-
-=== 請提供 ===
-1. 當前路況分析
-2. 具體駕駛建議
-3. 路線規劃建議（如適用）
-4. 安全注意事項
-
-請基於上述數據提供專業且實用的建議：`;
+    prompt += `\n\n【駕駛問題】${userMessage}`;
+    prompt += `\n\n請根據以上實際監測資料，提供台灣本土化的專業駕駛建議，包括詳細的路線指引和行駛方式（使用繁體中文）：`;
 
     return prompt;
   };
@@ -502,14 +473,7 @@ ${userMessage}
             </div>
             
             {/* 即時警告 */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200/50 p-6">
-              <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                <div className="w-8 h-8 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-lg flex items-center justify-center mr-3">
-                  <ExclamationTriangleIcon className="w-5 h-5 text-white" />
-                </div>
-                即時警告
-              </h2>
-              
+            <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200/50 p-6">              
               {alerts.length > 0 ? (
                 <div className="space-y-3">
                   {alerts.slice(0, 3).map((alert, index) => (

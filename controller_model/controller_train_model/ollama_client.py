@@ -14,7 +14,8 @@ from loguru import logger
 import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
-from train_model.utils.config_manager import get_config_manager
+from utils.config_manager import get_config_manager
+from embeddings.vector_store import VectorStore, RAGRetriever
 
 class OllamaClient:
     """Ollama 客戶端"""

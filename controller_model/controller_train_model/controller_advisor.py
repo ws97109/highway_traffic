@@ -19,8 +19,8 @@ import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 
-from train_model.models.ollama_client import OllamaClient, RAGOllamaChat
-from train_model.embeddings.vector_store import VectorStore, RAGRetriever
+from models.ollama_client import OllamaClient, RAGOllamaChat
+from embeddings.vector_store import VectorStore, RAGRetriever
 
 # =============================================================================
 # API 請求/回應模型

@@ -26,7 +26,7 @@ except ImportError:
 import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
-from train_model.utils.config_manager import get_config_manager
+from utils.config_manager import get_config_manager
 
 class VectorStore:
     """向量儲存和檢索系統"""

@@ -34,7 +34,7 @@
   },
   "devDependencies": {
     "@types/google.maps": "^3.58.1",
-    "@types/node": "^20.0.0",
+    "@types/node": "20.19.11",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "@types/socket.io-client": "^3.0.0",
@@ -44,7 +44,7 @@
     "eslint": "^8.0.0",
     "eslint-config-next": "^14.0.0",
     "postcss": "^8.4.0",
-    "typescript": "^5.0.0"
+    "typescript": "5.9.2"
   },
   "engines": {
     "node": ">=18.0.0",

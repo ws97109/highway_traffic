@@ -66,3 +66,37 @@ controller_model/vector_db/**/*.bin
 *.sqlite3
 controller_model/vector_db/
 api/vector_db/
+
+# Node.js 大文件
+frontend/node_modules/
+node_modules/
+**/@next/swc-*/
+
+# 機器學習模型和數據文件
+*.npz
+*.data-*-of-*
+train_model/configs/processed_data/
+train_model/scripts/vector_db/
+controller_model/vector_db/
+controller_model/configs/processed_data/
+
+# 訓練數據
+data/Taiwan/train.csv
+data/Taiwan/train_enhanced_full.csv
+
+# Conda 環境
+.conda/
+conda/
+
+# TensorFlow 庫文件
+**/_pywrap_*.so
+**/libtensorflow*.dylib
+
+# 大型實驗結果
+src/models/mt_stnet/results/
+src/models/mt_stnet/baselines/*/weights/
+src/models/mt_stnet/baselines/*/data/
+src/models/mt_stnet/baselines/*/experiments/
+
+# 大型 PDF 文件
+Reference/paper/*.pdf

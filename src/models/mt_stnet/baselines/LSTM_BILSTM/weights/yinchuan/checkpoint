@@ -1,2 +1,0 @@
-model_checkpoint_path: "LSTM_BILSTM"
-all_model_checkpoint_paths: "LSTM_BILSTM"

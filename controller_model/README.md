@@ -150,6 +150,7 @@ curl -X POST http://localhost:8000/api/admin/retrain
 Highway_trafficwave/
 ├── train_model/          # 後端 Python 代碼
 │   ├── main.py          # 主服務器 (支援自動訓練)
+│   ├── quick_start.py   # 快速啟動腳本
 │   ├── scripts/         # 訓練腳本
 │   ├── models/          # AI 模型
 │   ├── embeddings/      # 向量處理

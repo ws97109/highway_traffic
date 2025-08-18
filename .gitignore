@@ -1,5 +1,6 @@
 # 環境設定檔案
 .env
+.env2
 .env.local
 .env.development.local
 .env.test.local

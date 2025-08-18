@@ -65,3 +65,4 @@ controller_model/vector_db/**/*.bin
 # 向量資料庫相關檔案
 *.sqlite3
 controller_model/vector_db/
+api/vector_db/

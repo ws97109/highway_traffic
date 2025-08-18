@@ -63,10 +63,13 @@ controller_model/configs/processed_data/enhanced_highway_data.json
 controller_model/vector_db/
 train_model/configs/processed_data/enhanced_highway_data.json
 train_model/scripts/vector_db/
+train_model/vector_db/
 
 # 向量資料庫相關檔案
 *.sqlite3
 api/vector_db/
+vector_db/
+**/vector_db/
 
 # 機器學習相關大文件
 *.npz

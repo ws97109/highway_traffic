@@ -54,3 +54,13 @@ data/Taiwan/train_enhanced_full.csv
 !data/Taiwan/out_deg.csv
 !data/Taiwan/sp.csv
 data/predictions/
+
+# 大型模型和資料庫檔案
+controller_model/configs/processed_data/enhanced_highway_data.json
+controller_model/vector_db/chroma.sqlite3
+controller_model/vector_db/*/data_level0.bin
+controller_model/vector_db/**/*.bin
+
+# 向量資料庫相關檔案
+*.sqlite3
+controller_model/vector_db/

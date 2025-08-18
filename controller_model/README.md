@@ -55,7 +55,7 @@ data/Taiwan/
 #### Step 5: 啟動後端服務
 ```bash
 cd train_model
-python main.py
+python quick_start.py
 ```
 
 **🎉 就是這樣！** 系統會自動檢測並執行訓練流程。

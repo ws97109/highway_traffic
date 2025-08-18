@@ -9,12 +9,14 @@ import {
   CpuChipIcon,
   SignalIcon,
   BoltIcon,
-  UserGroupIcon
+  UserGroupIcon,
+  ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline';
 import TrafficMap from '../../components/maps/TrafficMap';
 import MTSTNetPredictor from '../../components/prediction/MTSTNetPredictor';
 import { useShockwaveData } from '../../hooks/useShockwaveData';
 import { useTrafficData } from '../../hooks/useTrafficData';
+import RAGChatbot from '../../components/chat/RagChatbot';
 
 interface ControlCenterProps {}
 
@@ -68,6 +70,7 @@ const ControlCenter: React.FC<ControlCenterProps> = () => {
   const [recommendedActions, setRecommendedActions] = useState<RecommendedAction[]>([]);
   const [selectedView, setSelectedView] = useState<'overview' | 'shockwaves' | 'predictions' | 'control'>('overview');
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [chatbotOpen, setChatbotOpen] = useState(false);
 
   // 使用 hooks 獲取即時資料
   const { trafficData } = useTrafficData();
@@ -243,6 +246,16 @@ const ControlCenter: React.FC<ControlCenterProps> = () => {
                 <ClockIcon className="w-4 h-4 inline mr-1" />
                 最後更新: {systemStatus.lastUpdate ? systemStatus.lastUpdate.toLocaleTimeString('zh-TW') : '載入中...'}
               </div>
+
+              {/* AI 智能助手按鈕 */}
+              <button
+                onClick={() => setChatbotOpen(true)}
+                className="flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-full hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg"
+                title="開啟 AI 智能助手"
+              >
+                <ChatBubbleLeftRightIcon className="w-4 h-4" />
+                <span className="text-sm font-medium">AI智能助手</span>
+              </button>
               
               <label className="flex items-center bg-blue-50 rounded-full px-3 py-1 cursor-pointer hover:bg-blue-100 transition-colors">
                 <input
@@ -291,6 +304,15 @@ const ControlCenter: React.FC<ControlCenterProps> = () => {
                 {label}
               </button>
             ))}
+            
+            {/* AI智能助手標籤 */}
+            <button
+              onClick={() => setChatbotOpen(true)}
+              className="flex items-center px-3 py-2 text-sm font-medium rounded-md bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 transition-all"
+            >
+              <ChatBubbleLeftRightIcon className="w-4 h-4 mr-2" />
+              AI智能助手
+            </button>
           </nav>
         </div>
 
@@ -482,6 +504,13 @@ const ControlCenter: React.FC<ControlCenterProps> = () => {
           </div>
         </div>
       </div>
+
+      {/* RAG 聊天機器人組件 */}
+      <RAGChatbot
+        isOpen={chatbotOpen}
+        onClose={() => setChatbotOpen(false)}
+        position="fixed"
+      />
     </div>
   );
 };

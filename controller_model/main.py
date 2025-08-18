@@ -16,8 +16,8 @@ import sys
 from pathlib import Path
 
 # 導入本地模組
-from models.controller_advisor import router as controller_router
-from models.ollama_client import OllamaClient, RAGOllamaChat
+from controller_train_model.controller_advisor import router as controller_router
+from controller_train_model.ollama_client import OllamaClient, RAGOllamaChat
 from embeddings.vector_store import VectorStore, RAGRetriever
 
 # 導入 API 模型
@@ -87,7 +87,7 @@ async def auto_setup_rag_system():
             print("❌ Ollama 服務未連接")
             print("請執行以下命令啟動 Ollama:")
             print("1. ollama serve")
-            print("2. ollama pull llama3.1:8b")
+            print("2. ollama pull qwen2.5:7b")
             return None
         
         print("✅ Ollama 服務連接成功")

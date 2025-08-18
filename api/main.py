@@ -60,10 +60,13 @@ async def startup_event():
     print("正在初始化高速公路智慧交通預警決策支援系統...")
     
     try:
+        # 設定資料目錄
+        data_dir = os.path.join(root_dir, "data")
+        
         # 初始化後端系統
         integrated_system = IntegratedShockPredictionSystem()
         detector = FinalOptimizedShockDetector()
-        predictor = RealtimeShockPredictor()
+        predictor = RealtimeShockPredictor(data_dir=data_dir)
         
         print("✅ 系統初始化完成!")
         print("🚀 智慧交通預警系統已啟動")

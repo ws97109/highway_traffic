@@ -19,7 +19,7 @@ import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 
-from models.ollama_client import OllamaClient, RAGOllamaChat
+from .ollama_client import OllamaClient, RAGOllamaChat
 from embeddings.vector_store import VectorStore, RAGRetriever
 
 # =============================================================================

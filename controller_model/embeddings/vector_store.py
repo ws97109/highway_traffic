@@ -26,20 +26,35 @@ except ImportError:
 import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
-from utils.config_manager import get_config_manager
+# from utils.config_manager import get_config_manager  # 暫時註解掉，使用預設配置
 
 class VectorStore:
     """向量儲存和檢索系統"""
     
     def __init__(self, config_path: str = None):
         """初始化向量儲存系統"""
-        # 使用配置管理器
-        if config_path:
-            os.environ['RAG_CONFIG_PATH'] = config_path
+        # 使用預設配置，而不是配置管理器
+        default_config = {
+            'embeddings': {
+                'model_name': 'all-MiniLM-L6-v2',
+                'device': 'cpu',
+                'batch_size': 32,
+                'max_length': 512
+            },
+            'vector_db': {
+                'type': 'chroma',
+                'persist_directory': './vector_db',
+                'collection_name': 'highway_traffic',
+                'distance_metric': 'cosine'
+            },
+            'retrieval': {
+                'top_k': 5,
+                'score_threshold': 0.7,
+                'rerank': False
+            }
+        }
         
-        self.config_manager = get_config_manager()
-        self.config = self.config_manager.get_config()
-        
+        self.config = default_config
         self.embedding_config = self.config['embeddings']
         self.vector_db_config = self.config['vector_db']
         self.retrieval_config = self.config['retrieval']
@@ -55,7 +70,7 @@ class VectorStore:
         self.collection = None
         self._initialize_vector_db()
         
-        logger.info("向量儲存系統初始化完成")
+        print("向量儲存系統初始化完成")  # 暫時使用 print
     
     def _initialize_vector_db(self):
         """初始化向量資料庫"""
@@ -128,7 +143,7 @@ class VectorStore:
         # 可能的路徑
         search_paths = [
             current_dir / 'vector_db',
-            current_dir / 'train_model' / 'vector_db',
+            current_dir / 'controller_model' / 'vector_db',
             current_dir.parent / 'vector_db',
             current_dir / '.chroma',
             current_dir / 'chroma_db'
@@ -140,7 +155,7 @@ class VectorStore:
             search_paths.extend([
                 current_dir / config_dir,
                 current_dir.parent / config_dir,
-                current_dir / 'train_model' / config_dir
+                current_dir / 'controller_model' / config_dir
             ])
         
         best_collection = None

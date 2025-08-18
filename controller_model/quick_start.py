@@ -113,7 +113,7 @@ def check_ollama_service():
 
 def download_recommended_model():
     """下載推薦的模型"""
-    recommended_models = ['deepseek-r1:32b', 'llama3.1:8b', 'llama3:latest']
+    recommended_models = ['qwen2.5:7b']
     
     for model in recommended_models:
         logger.info(f"嘗試下載模型: {model}")
@@ -467,7 +467,7 @@ async def main():
         model = download_recommended_model()
         if not model:
             print("❌ 模型下載失敗，請手動執行:")
-            print("ollama pull llama3.1:8b")
+            print("ollama pull qwen2.5:7b")
             return
     else:
         logger.info("✓ 已有可用模型")

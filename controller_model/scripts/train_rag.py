@@ -16,9 +16,9 @@ project_root = current_dir.parent.parent
 sys.path.insert(0, str(project_root))
 
 # 導入自定義模組
-from train_model.data_processing.enhanced_csv_processor import EnhancedHighwayCSVProcessor
-from train_model.embeddings.vector_store import VectorStore, RAGRetriever
-from train_model.models.ollama_client import OllamaClient, RAGOllamaChat
+from controller_model.data_processing.enhanced_csv_processor import EnhancedHighwayCSVProcessor
+from controller_model.embeddings.vector_store import VectorStore, RAGRetriever
+from controller_model.controller_train_model.ollama_client import OllamaClient, RAGOllamaChat
 
 class RAGTrainer:
     """RAG 系統訓練器"""

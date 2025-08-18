@@ -14,7 +14,7 @@ from loguru import logger
 import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
-from utils.config_manager import get_config_manager
+# from utils.config_manager import get_config_manager  # 暫時註解掉，使用預設配置
 from embeddings.vector_store import VectorStore, RAGRetriever
 
 class OllamaClient:
@@ -22,13 +22,18 @@ class OllamaClient:
     
     def __init__(self, config_path: str = None):
         """初始化 Ollama 客戶端"""
-        # 使用配置管理器
-        if config_path:
-            os.environ['RAG_CONFIG_PATH'] = config_path
+        # 使用預設配置，而不是配置管理器
+        default_config = {
+            'ollama': {
+                'base_url': 'http://localhost:11434',
+                'model': 'qwen2.5:7b',
+                'timeout': 300,
+                'max_tokens': 2048,
+                'temperature': 0.1
+            }
+        }
         
-        self.config_manager = get_config_manager()
-        self.config = self.config_manager.get_config()
-        
+        self.config = default_config
         self.ollama_config = self.config['ollama']
         self.base_url = self.ollama_config['base_url']
         self.model = self.ollama_config['model']
@@ -36,7 +41,7 @@ class OllamaClient:
         self.max_tokens = self.ollama_config['max_tokens']
         self.temperature = self.ollama_config['temperature']
         
-        logger.info(f"Ollama 客戶端初始化完成 - 模型: {self.model}")
+        print(f"Ollama 客戶端初始化完成 - 模型: {self.model}")  # 暫時使用 print 而不是 logger
     
     async def check_connection(self) -> bool:
         """檢查 Ollama 服務連接"""

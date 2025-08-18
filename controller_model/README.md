@@ -30,7 +30,7 @@ brew install ollama
 ollama serve
 
 # 拉取模型 (新終端)
-ollama pull llama3.1:8b
+ollama pull qwen2.5:7b
 
 # 或是記憶體夠可以換較大的模型 (新終端)
 ollama pull deepseek-r1:32b
@@ -99,7 +99,7 @@ ollama serve
 ollama list
 
 # 重新拉取模型
-ollama pull llama3.1:8b
+ollama pull qwen2.5:7b
 ```
 
 ### 問題 2: 向量資料庫為空

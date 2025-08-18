@@ -76,7 +76,7 @@ seaborn>=0.12.0
 colorama==0.4.6  # Windows 終端顏色支援
 
 # 安全性
-cryptography==41.0.8
+cryptography==42.0.8
 
 # ============================================================================
 # 開發和測試工具（可選）
@@ -156,7 +156,7 @@ isort==5.12.0
 #    - macOS: brew install ollama
 #    - 其他: https://ollama.ai/download
 #    - 啟動: ollama serve
-#    - 拉取模型: ollama pull llama3.1:8b
+#    - 拉取模型: ollama pull qwen2.5:7b
 #
 # 2. 首次安裝可能需要較長時間（下載大型 AI 模型）
 #

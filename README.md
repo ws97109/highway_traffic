@@ -287,7 +287,7 @@ const suggestions = await optimizer.getOptimalDepartureTimes();
 ```
 
 ### 管理者功能
-![圖片描述](image/管理者介面.jpg)
+![圖片描述](image/管理者介面.jpeg)
 #### 專業監控中心
 - **大屏幕設計**: 支援4K顯示器和多螢幕部署
 - **即時交通監控**: 全路網交通流量、速度、密度監控

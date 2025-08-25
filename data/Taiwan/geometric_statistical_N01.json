@@ -1,0 +1,621 @@
+[
+  {
+    "id": "highway_one_metadata_001",
+    "title": "國道一號分析報告基本信息",
+    "content": "標題：國道一號交通與幾何特性整合分析知識庫。版本：2.0。創建日期：2025-01-12。分析期間：118天長期觀測資料。高速公路路段：國道一號五股-新竹段34K-104K。總路段數：7個。數據點：北向幾何1411、南向幾何1411、北向ETag 2892173、南向ETag 2891681。",
+    "category": "報告信息",
+    "tags": ["國道一號", "五股-新竹", "34K-104K", "118天觀測", "7路段"],
+    "metadata": {
+      "highway_section": "國道一號 34K-104K",
+      "analysis_period_days": 118,
+      "total_segments": 7,
+      "northbound_geometry": 1411,
+      "southbound_geometry": 1411,
+      "northbound_etag": 2892173,
+      "southbound_etag": 2891681,
+      "start_date": "2024-09-01",
+      "end_date": "2024-12-27"
+    }
+  },
+  {
+    "id": "highway_one_executive_summary_001",
+    "title": "國道一號執行摘要關鍵發現",
+    "content": "關鍵發現：大型車比例是影響行車速度的最重要因素係數-3.414、車道數增加反而與速度呈負相關係數-2.589可能因流量集中效應、路幅寬度與速度呈正相關係數0.441顯示設計餘裕的重要性、速度預測模型達到中等準確度R²=0.572 RMSE=2.777km/h、五股-林口段為主要瓶頸路段平均速度僅74.9-77.8km/h。",
+    "category": "執行摘要",
+    "tags": ["大型車係數-3.414", "車道係數-2.589", "R²0.572", "五股-林口瓶頸"],
+    "metadata": {
+      "heavy_vehicle_coefficient": -3.414,
+      "lanes_coefficient": -2.589,
+      "width_coefficient": 0.441,
+      "model_r_squared": 0.572,
+      "model_rmse": 2.777,
+      "bottleneck_segment": "五股-林口段"
+    }
+  },
+  {
+    "id": "highway_one_traffic_performance_001",
+    "title": "國道一號交通表現總覽",
+    "content": "交通表現：北向平均速度82.9±4.2km/h、南向平均速度83.1±4.9km/h、平均車道數3.6、平均路幅寬度16.9m。問題路段：五股-林口段北向平均速度74.9km/h速度變異23.7km/h低速高變異、機場系統-中壢段南向平均速度76.5km/h速度變異21.4km/h低速高變異。",
+    "category": "交通表現",
+    "tags": ["北向82.9±4.2", "南向83.1±4.9", "平均3.6車道", "五股林口74.9"],
+    "metadata": {
+      "northbound_speed": 82.9,
+      "northbound_std": 4.2,
+      "southbound_speed": 83.1,
+      "southbound_std": 4.9,
+      "average_lanes": 3.6,
+      "average_width": 16.9,
+      "problem_segments": ["五股-林口段", "機場系統-中壢段"]
+    }
+  },
+  {
+    "id": "performance_indicators_001",
+    "title": "決策支援績效指標體系",
+    "content": "速度閾值：優秀>90km/h、良好80-90km/h、可接受70-80km/h、差劣<70km/h。速度變異閾值：穩定<10km/h、中等10-15km/h、不穩定15-20km/h、高度不穩定>20km/h。流量服務水準：A級<20輛次、B級20-30輛次、C級30-40輛次、D級40-45輛次、E級45-50輛次、F級>50輛次。",
+    "category": "績效指標",
+    "tags": ["速度閾值90", "變異閾值20", "流量服務水準", "分級標準"],
+    "metadata": {
+      "speed_thresholds": {"excellent": ">90", "good": "80-90", "acceptable": "70-80", "poor": "<70"},
+      "variance_thresholds": {"stable": "<10", "moderate": "10-15", "unstable": "15-20", "highly_unstable": ">20"},
+      "service_levels": {"A": "<20", "B": "20-30", "C": "30-40", "D": "40-45", "E": "45-50", "F": ">50"}
+    }
+  },
+  {
+    "id": "intervention_triggers_001",
+    "title": "決策支援干預觸發條件",
+    "content": "觸發條件1：平均速度<75km/h，行動啟動交通管理措施，緊急度高，回應時間立即。觸發條件2：速度標準差>20km/h，行動檢討速限設定和交通管制，緊急度中高，回應時間24小時內。觸發條件3：大型車比例>25%，行動考慮大型車管制措施，緊急度中，回應時間一週內。觸發條件4：流量>50輛次/間隔，行動評估容量提升方案，緊急度中，回應時間一個月內。",
+    "category": "干預觸發",
+    "tags": ["速度75km/h觸發", "變異20km/h觸發", "大型車25%觸發", "流量50觸發"],
+    "metadata": {
+      "speed_trigger": {"threshold": 75, "urgency": "高", "response": "立即"},
+      "variance_trigger": {"threshold": 20, "urgency": "中高", "response": "24小時"},
+      "heavy_vehicle_trigger": {"threshold": 25, "urgency": "中", "response": "一週"},
+      "volume_trigger": {"threshold": 50, "urgency": "中", "response": "一個月"}
+    }
+  },
+  {
+    "id": "performance_scoring_001",
+    "title": "績效評分系統",
+    "content": "評分公式：Score = 0.4×(速度/100) + 0.3×(1-速度變異/50) + 0.2×(1-流量/60) + 0.1×(1-重車比例)。權重：速度0.4、穩定性0.3、壅塞0.2、車種組成0.1。路段評分：五股-林口0.42、林口-機場系統0.68、機場系統-中壢0.51、中壢-湖口0.75、湖口-竹北0.65、竹北-新竹0.62、新竹-頭份0.70。",
+    "category": "績效評分",
+    "tags": ["評分公式", "權重分配", "路段評分", "中壢-湖口最高0.75"],
+    "metadata": {
+      "formula": "0.4×Speed + 0.3×Stability + 0.2×Congestion + 0.1×VehicleMix",
+      "weights": {"speed": 0.4, "stability": 0.3, "congestion": 0.2, "vehicle_mix": 0.1},
+      "highest_score": {"segment": "中壢-湖口", "score": 0.75},
+      "lowest_score": {"segment": "五股-林口", "score": 0.42}
+    }
+  },
+  {
+    "id": "data_quality_strengths_001",
+    "title": "數據品質評估-優勢",
+    "content": "數據優勢：大量ETag資料提供高可信度分析基礎5783854筆、幾何特性資料完整涵蓋34個關鍵參數、統計模型通過多項診斷檢驗、118天長期觀測確保季節性模式捕捉。",
+    "category": "數據品質",
+    "tags": ["5783854筆ETag", "34個參數", "診斷檢驗通過", "118天觀測"],
+    "metadata": {
+      "etag_records": 5783854,
+      "geometric_parameters": 34,
+      "observation_days": 118,
+      "model_validation": "通過診斷檢驗"
+    }
+  },
+  {
+    "id": "data_quality_limitations_001",
+    "title": "數據品質評估-限制",
+    "content": "數據限制：車道數與路幅寬存在高度共線性VIF>25、部分路段樣本數較少影響統計穩定性、缺乏天氣事故等外部因素資料、速度資料存在異常值負值及極端高值。數據清理：移除速度負值觀測約0.3%、極端值處理>150km/h設為異常、缺失值插補使用前後時段平均、重複值刪除約0.1%。",
+    "category": "數據限制",
+    "tags": ["VIF>25共線性", "異常值處理", "缺失值插補", "樣本數限制"],
+    "metadata": {
+      "multicollinearity": "VIF>25",
+      "negative_values_removed": "0.3%",
+      "extreme_threshold": "150km/h",
+      "duplicate_removed": "0.1%",
+      "missing_factors": ["天氣", "事故", "外部因素"]
+    }
+  },
+  {
+    "id": "technical_specifications_001",
+    "title": "技術規格與環境配置",
+    "content": "分析工具：Python 3.8+、Pandas 1.3.0、NumPy 1.21.0、SciPy 1.7.0、Matplotlib 3.4.2、Seaborn 0.11.1。統計套件：Statsmodels 0.12.2、Scikit-learn 0.24.2。數據來源：ETag電子收費資料XML格式、道路幾何測量資料CSV格式CP1252編碼、國道一號三號整合資料.csv。",
+    "category": "技術規格",
+    "tags": ["Python3.8+", "統計套件", "XML格式", "CP1252編碼"],
+    "metadata": {
+      "python_version": "3.8+",
+      "key_libraries": ["Pandas", "NumPy", "SciPy", "Matplotlib"],
+      "statistical_packages": ["Statsmodels", "Scikit-learn"],
+      "data_formats": ["XML", "CSV"],
+      "encoding": "CP1252 to UTF-8"
+    }
+  },
+  {
+    "id": "data_processing_specs_001",
+    "title": "數據處理規格詳細",
+    "content": "數據處理：編碼轉換CP1252 to UTF-8、坐標系統TWD97、分段策略均等10公里分段、聚合方法時段平均與標準差。分析期間：開始日期2024-09-01、結束日期2024-12-27、總天數118、數據頻率每5分鐘一筆。計算需求：處理時間約2-3小時含資料清理、記憶體使用4-6GB RAM、儲存需求2GB。",
+    "category": "數據處理",
+    "tags": ["CP1252轉UTF-8", "TWD97坐標", "10公里分段", "5分鐘頻率"],
+    "metadata": {
+      "encoding_conversion": "CP1252 to UTF-8",
+      "coordinate_system": "TWD97",
+      "segmentation": "10公里均等",
+      "frequency": "5分鐘",
+      "processing_time": "2-3小時",
+      "memory_requirement": "4-6GB RAM",
+      "storage_needed": "2GB"
+    }
+  },
+  {
+    "id": "top_findings_001",
+    "title": "前五大關鍵發現排序",
+    "content": "排名1：大型車比例是速度的最關鍵決定因素，證據回歸係數-3.414相關性-0.597，可行動實施大型車分流可立即改善。排名2：車道數悖論更多車道反而速度更低，證據回歸係數-2.589，影響需重新思考容量擴充策略。排名3：五股-林口段為系統性瓶頸，證據速度最低74.9km/h變異最大23.7km/h，優先級應列為最優先改善路段。排名4：路幅寬度與交通表現正相關，證據回歸係數+0.441，機會路幅優化有改善空間。排名5：尖峰時段流量集中度高，證據16-17時達55輛次凌晨僅10輛次，策略可利用離峰時段分散流量。",
+    "category": "關鍵發現",
+    "tags": ["大型車係數-3.414", "車道悖論-2.589", "五股林口瓶頸", "路幅+0.441"],
+    "metadata": {
+      "finding_1": {"factor": "大型車比例", "coefficient": -3.414, "correlation": -0.597},
+      "finding_2": {"factor": "車道數悖論", "coefficient": -2.589},
+      "finding_3": {"bottleneck": "五股-林口段", "speed": 74.9, "variance": 23.7},
+      "finding_4": {"factor": "路幅寬度", "coefficient": 0.441},
+      "finding_5": {"peak_volume": 55, "off_peak_volume": 10}
+    }
+  },
+  {
+    "id": "unexpected_discoveries_001",
+    "title": "意外發現與模型性能",
+    "content": "意外發現：車道數與速度的負相關關係、週末速度反而優於平日提升4.5%、南北向速度差異在特定路段顯著機場系統-中壢段差6.1km/h。模型性能：速度預測準確度R²=0.572 RMSE=2.777km/h、流量預測準確度R²=0.812 RMSE=2.453、實務意義可解釋57.2%的速度變異具實務應用價值。",
+    "category": "意外發現",
+    "tags": ["車道負相關", "週末提升4.5%", "R²0.572實務價值"],
+    "metadata": {
+      "unexpected": ["車道數負相關", "週末速度優於平日4.5%", "南北向差異6.1km/h"],
+      "speed_model": {"r_squared": 0.572, "rmse": 2.777},
+      "volume_model": {"r_squared": 0.812, "rmse": 2.453},
+      "practical_value": "可解釋57.2%變異"
+    }
+  },
+  {
+    "id": "visualization_insights_001",
+    "title": "視覺化分析洞察",
+    "content": "散佈矩陣：幾何特性與交通表現散佈矩陣，關鍵模式車道數與路幅寬呈現完美線性關係、速度與流量呈現明顯負相關、大型車比例分布集中於0.56-0.62。3D視覺化：車道數-路幅寬-速度3D關係圖，最佳區域3車道配17-18m路幅時速度表現最佳，避免區域4車道以上反而速度下降。熱力圖分析：週間時段速度熱力圖，尖峰衝擊工作日7-9時及17-19時速度降至65km/h以下，最佳行車時間凌晨0-5時速度可達92km/h以上。",
+    "category": "視覺化洞察",
+    "tags": ["3D關係圖", "最佳3車道17-18m", "熱力圖分析", "凌晨92km/h"],
+    "metadata": {
+      "optimal_config": {"lanes": 3, "width": "17-18m", "speed": "85-90km/h"},
+      "avoid_zone": "4車道以上",
+      "rush_hour_speed": "65km/h以下",
+      "best_travel_time": "凌晨0-5時92km/h+"
+    }
+  },
+  {
+    "id": "correlation_heatmap_001",
+    "title": "相關性熱力圖分析",
+    "content": "最強正相關：avg_lanes vs avg_width 0.967。最強負相關：avg_speed vs speed_std -0.791。多重共線性問題：車道數與路幅寬需選擇其一作為預測變數。",
+    "category": "相關性分析",
+    "tags": ["最強正相關0.967", "最強負相關-0.791", "多重共線性"],
+    "metadata": {
+      "strongest_positive": {"variables": "avg_lanes vs avg_width", "correlation": 0.967},
+      "strongest_negative": {"variables": "avg_speed vs speed_std", "correlation": -0.791},
+      "multicollinearity": "車道數與路幅寬"
+    }
+  },
+  {
+    "id": "priority_matrix_001",
+    "title": "建議優先級矩陣",
+    "content": "高效益低成本：大型車時段管制、動態速限調整、尖峰時段匝道儀控。高效益高成本：五股-林口路幅拓寬、大型車專用爬坡道、智慧交通系統全面建置。低效益低成本：交通資訊即時發布、標誌標線改善、駕駛行為宣導。低效益高成本：全線坡度調整、曲率改善工程。",
+    "category": "優先級矩陣",
+    "tags": ["高效益低成本", "動態速限", "大型車管制", "智慧交通高成本"],
+    "metadata": {
+      "high_impact_low_cost": ["大型車時段管制", "動態速限調整", "匝道儀控"],
+      "high_impact_high_cost": ["路幅拓寬", "專用爬坡道", "智慧交通系統"],
+      "low_impact_low_cost": ["即時發布", "標誌改善", "行為宣導"],
+      "low_impact_high_cost": ["坡度調整", "曲率改善"]
+    }
+  },
+  {
+    "id": "next_steps_immediate_001",
+    "title": "下一步立即行動",
+    "content": "立即行動：召開跨部門協調會議討論大型車管制方案、進行五股-林口段詳細工程可行性評估、建立即時監控儀表板追蹤關鍵指標。短期目標：3個月內完成大型車分流試辦計畫、6個月內完成THCS參數本土化研究、建立定期月/季交通表現評估機制。長期願景：2年內完成智慧交通系統第一期建設、3年內完成重點路段幾何改善、5年內達成全線平均速度85km/h以上目標。",
+    "category": "下一步行動",
+    "tags": ["跨部門協調", "3個月試辦", "5年85km/h目標"],
+    "metadata": {
+      "immediate": ["跨部門會議", "工程評估", "監控儀表板"],
+      "short_term": {"3_months": "大型車分流試辦", "6_months": "THCS本土化"},
+      "long_term": {"2_years": "智慧交通一期", "5_years": "85km/h目標"}
+    }
+  },
+  {
+    "id": "statistical_methodology_001",
+    "title": "統計分析方法學",
+    "content": "統計方法：描述性統計分析、皮爾森相關分析、斯皮爾曼相關分析非線性關係、偏相關分析控制變數效應、多元線性回歸、Ridge回歸、Lasso回歸。模型診斷：正態性檢驗Jarque-Bera檢驗通過p=0.619、等變異性Breusch-Pagan檢驗通過p=0.356、多重共線性車道數與路幅寬存在高共線性VIF>25、影響力觀測3個高影響力觀測值。",
+    "category": "統計方法",
+    "tags": ["7種統計方法", "正態性通過", "VIF>25共線性", "3個高影響力"],
+    "metadata": {
+      "methods": ["描述統計", "皮爾森相關", "斯皮爾曼相關", "偏相關", "多元回歸", "Ridge", "Lasso"],
+      "normality_test": {"test": "Jarque-Bera", "p_value": 0.619, "result": "通過"},
+      "homoscedasticity": {"test": "Breusch-Pagan", "p_value": 0.356, "result": "通過"},
+      "multicollinearity": {"vif_threshold": 25, "affected": "車道數與路幅寬"},
+      "influential_obs": 3
+    }
+  },
+  {
+    "id": "cook_distance_analysis_001",
+    "title": "Cook距離影響力分析",
+    "content": "Cook距離分析：閾值0.286、異常值計數3個、最大值0.85。VIF分析：avg_lanes 25.6、avg_width 24.2、avg_curvature 1.03、avg_grade 1.02、large_vehicle_ratio 1.58。",
+    "category": "影響力分析",
+    "tags": ["Cook閾值0.286", "3個異常值", "VIF最高25.6"],
+    "metadata": {
+      "cook_threshold": 0.286,
+      "outliers_count": 3,
+      "max_cook_value": 0.85,
+      "vif_values": {
+        "avg_lanes": 25.6,
+        "avg_width": 24.2,
+        "avg_curvature": 1.03,
+        "avg_grade": 1.02,
+        "large_vehicle_ratio": 1.58
+      }
+    }
+  },
+  {
+    "id": "descriptive_statistics_geometric_001",
+    "title": "幾何特性描述統計",
+    "content": "車道數：平均3.6，標準差0.4，最小3.0，最大4.25，分布雙峰分布於3條和4條車道。路幅寬度：平均16.9，標準差2.1，最小15.0，最大20.0，分布接近常態分布。曲率：平均0.00015，標準差0.00012，注意大部分路段為直線或曲率很小。坡度：平均0.5，標準差1.2，範圍-2%到+3%，注意整體坡度變化不大。",
+    "category": "描述統計",
+    "tags": ["車道3.6±0.4", "路幅16.9±2.1", "曲率0.00015", "坡度0.5±1.2"],
+    "metadata": {
+      "lanes": {"mean": 3.6, "std": 0.4, "min": 3.0, "max": 4.25, "distribution": "雙峰"},
+      "width": {"mean": 16.9, "std": 2.1, "min": 15.0, "max": 20.0, "distribution": "常態"},
+      "curvature": {"mean": 0.00015, "std": 0.00012, "note": "大部分直線"},
+      "grade": {"mean": 0.5, "std": 1.2, "range": "-2% to +3%", "note": "變化不大"}
+    }
+  },
+  {
+    "id": "descriptive_statistics_traffic_001",
+    "title": "交通特性描述統計",
+    "content": "平均速度：平均83.0，標準差5.1，最小62.5，最大94.7，25百分位79.0，50百分位82.6，75百分位87.5。平均流量：平均40.5，標準差5.8，最小33.5，最大50.0，尖峰時段16:00-17:00。大型車比例：平均0.588，標準差0.028，最小0.56，最大0.62，注意大型車比例約占58.8%。",
+    "category": "描述統計",
+    "tags": ["速度83.0±5.1", "流量40.5±5.8", "大型車58.8%", "尖峰16-17時"],
+    "metadata": {
+      "speed": {"mean": 83.0, "std": 5.1, "min": 62.5, "max": 94.7, "q25": 79.0, "q50": 82.6, "q75": 87.5},
+      "volume": {"mean": 40.5, "std": 5.8, "min": 33.5, "max": 50.0, "peak_hour": "16:00-17:00"},
+      "heavy_vehicle": {"mean": 0.588, "std": 0.028, "min": 0.56, "max": 0.62, "percentage": 58.8}
+    }
+  },
+  {
+    "id": "speed_correlations_001",
+    "title": "速度相關性分析",
+    "content": "最強負相關：大型車比例相關-0.597解釋大型車比例越高速度越低、流量相關-0.775解釋流量越大速度越低、速度標準差相關-0.791解釋速度變異與平均速度負相關。最強正相關：路幅寬度相關0.555解釋路幅越寬流量容量越大、車道數相關0.432解釋車道數與流量正相關。",
+    "category": "速度相關性",
+    "tags": ["大型車-0.597", "流量-0.775", "變異-0.791", "路幅0.555"],
+    "metadata": {
+      "strongest_negative": [
+        {"variable": "large_vehicle_ratio", "correlation": -0.597},
+        {"variable": "avg_volume", "correlation": -0.775},
+        {"variable": "speed_std", "correlation": -0.791}
+      ],
+      "strongest_positive": [
+        {"variable": "avg_width", "correlation": 0.555},
+        {"variable": "avg_lanes", "correlation": 0.432}
+      ]
+    }
+  },
+  {
+    "id": "nonlinear_relationships_001",
+    "title": "非線性關係分析",
+    "content": "路幅寬度vs流量：皮爾森相關0.555，斯皮爾曼相關0.169，差異-0.386，解釋路幅寬度與流量存在強烈非線性關係。速度vs大型車比例：皮爾森相關-0.597，斯皮爾曼相關-0.529，差異-0.068，解釋大型車比例與速度呈現穩定負相關。",
+    "category": "非線性關係",
+    "tags": ["路幅流量非線性-0.386", "大型車速度穩定-0.068"],
+    "metadata": {
+      "width_volume": {
+        "pearson": 0.555,
+        "spearman": 0.169,
+        "difference": -0.386,
+        "interpretation": "強烈非線性"
+      },
+      "speed_heavy": {
+        "pearson": -0.597,
+        "spearman": -0.529,
+        "difference": -0.068,
+        "interpretation": "穩定負相關"
+      }
+    }
+  },
+  {
+    "id": "partial_correlations_001",
+    "title": "偏相關分析結果",
+    "content": "控制路幅的偏相關：車道數vs速度-0.290、車道數vs流量-0.386，解釋控制路幅後車道數與速度流量都呈負相關。控制車道數的偏相關：路幅vs速度0.210、路幅vs流量0.259，解釋控制車道數後路幅仍與交通表現正相關。",
+    "category": "偏相關分析",
+    "tags": ["控制路幅負相關", "控制車道正相關", "路幅仍正相關"],
+    "metadata": {
+      "controlling_width": {
+        "lanes_vs_speed": -0.290,
+        "lanes_vs_volume": -0.386,
+        "interpretation": "車道數負相關"
+      },
+      "controlling_lanes": {
+        "width_vs_speed": 0.210,
+        "width_vs_volume": 0.259,
+        "interpretation": "路幅仍正相關"
+      }
+    }
+  },
+  {
+    "id": "correlation_matrix_highlights_001",
+    "title": "相關矩陣重點分析",
+    "content": "高度多重共線性：車道數vs路幅寬0.967，問題車道數與路幅寬存在嚴重共線性。速度相關：速度vs速度標準差-0.791、速度vs流量-0.775、速度vs大型車-0.597。流量相關：流量vs速度標準差0.445、流量vs大型車0.548、流量vs路幅0.555。",
+    "category": "相關矩陣",
+    "tags": ["嚴重共線性0.967", "速度流量-0.775", "流量標準差0.445"],
+    "metadata": {
+      "multicollinearity": {"lanes_vs_width": 0.967, "severity": "嚴重"},
+      "speed_related": {
+        "speed_vs_std": -0.791,
+        "speed_vs_volume": -0.775,
+        "speed_vs_heavy": -0.597
+      },
+      "volume_related": {
+        "volume_vs_std": 0.445,
+        "volume_vs_heavy": 0.548,
+        "volume_vs_width": 0.555
+      }
+    }
+  },
+  {
+    "id": "speed_prediction_model_001",
+    "title": "速度預測模型詳細",
+    "content": "模型類型：多元線性回歸。R²：0.572。調整R²：0.570。RMSE：2.777km/h。模型方程式：Speed = 82.5 - 3.414×大型車 - 2.589×車道數 + 0.441×路幅 - 0.148×坡度。截距：82.5。特徵：大型車比例係數-3.414標準誤0.421 p值<0.001重要性最高、車道數係數-2.589標準誤0.512 p值<0.001重要性高、路幅寬度係數0.441標準誤0.198 p值0.026重要性中、坡度係數-0.148標準誤0.089 p值0.095重要性低、曲率係數-0.077標準誤0.045 p值0.087重要性低。",
+    "category": "預測模型",
+    "tags": ["R²0.572", "RMSE2.777", "大型車-3.414最高", "路幅0.441正相關"],
+    "metadata": {
+      "model_type": "多元線性回歸",
+      "r_squared": 0.572,
+      "adjusted_r_squared": 0.570,
+      "rmse": 2.777,
+      "intercept": 82.5,
+      "features": {
+        "heavy_vehicle": {"coeff": -3.414, "p_value": "<0.001", "importance": "最高"},
+        "lanes": {"coeff": -2.589, "p_value": "<0.001", "importance": "高"},
+        "width": {"coeff": 0.441, "p_value": "0.026", "importance": "中"},
+        "grade": {"coeff": -0.148, "p_value": "0.095", "importance": "低"}
+      }
+    }
+  },
+  {
+    "id": "volume_prediction_model_001",
+    "title": "流量預測模型詳細",
+    "content": "模型類型：多元線性回歸。R²：0.812。調整R²：0.810。RMSE：2.453。特徵：路幅寬度係數8.335標準誤1.234 p值<0.001重要性最高解釋路幅寬度是流量的主要決定因素、車道數係數-6.288標準誤1.456 p值<0.001重要性高解釋控制路幅後車道數與流量呈負相關、速度係數-3.470標準誤0.567 p值<0.001重要性中解釋高速度路段通常流量較低。",
+    "category": "流量預測",
+    "tags": ["R²0.812", "RMSE2.453", "路幅8.335最高", "車道-6.288負相關"],
+    "metadata": {
+      "model_type": "多元線性回歸",
+      "r_squared": 0.812,
+      "adjusted_r_squared": 0.810,
+      "rmse": 2.453,
+      "features": {
+        "width": {"coeff": 8.335, "importance": "最高", "interpretation": "主要決定因素"},
+        "lanes": {"coeff": -6.288, "importance": "高", "interpretation": "負相關"},
+        "speed": {"coeff": -3.470, "importance": "中", "interpretation": "高速低流量"}
+      }
+    }
+  },
+  {
+    "id": "regularized_models_001",
+    "title": "正則化模型比較",
+    "content": "Ridge回歸：類型Ridge Regression，alpha 1.0，交叉驗證R²-0.036，標準差0.643，優勢有效控制多重共線性問題。Lasso回歸：類型Lasso Regression，alpha 0.1，交叉驗證R²-0.041，標準差0.655，特徵選擇自動進行特徵選擇，選中特徵large_vehicle_ratio、avg_width。模型比較：最佳模型多元線性回歸，原因在此資料集上表現最佳R²=0.572。",
+    "category": "正則化模型",
+    "tags": ["Ridge控制共線性", "Lasso特徵選擇", "線性回歸最佳"],
+    "metadata": {
+      "ridge": {"alpha": 1.0, "cv_r2": -0.036, "advantage": "控制共線性"},
+      "lasso": {"alpha": 0.1, "cv_r2": -0.041, "selected": ["large_vehicle_ratio", "avg_width"]},
+      "best_model": {"type": "多元線性回歸", "r_squared": 0.572}
+    }
+  },
+  {
+    "id": "segment_wugu_linkou_001",
+    "title": "五股-林口段詳細分析",
+    "content": "路段：五股-林口段，里程範圍34-44K。特徵：地形爬坡路段、幾何挑戰縱坡度大曲率半徑小、交通問題速度低變異大大型車影響顯著。表現：北向速度74.9km/h、南向速度77.8km/h、北向速度變異23.7km/h、南向速度變異19.2km/h、壅塞水準高、速度百分位最低10%。幾何細節：平均車道數3.2、平均路幅15.5、平均坡度2.8、平均曲率0.00032。",
+    "category": "路段分析",
+    "tags": ["五股-林口34-44K", "北向74.9km/h", "變異23.7", "最低10%"],
+    "metadata": {
+      "km_range": "34-44K",
+      "terrain": "爬坡路段",
+      "nb_speed": 74.9,
+      "sb_speed": 77.8,
+      "nb_variance": 23.7,
+      "sb_variance": 19.2,
+      "congestion": "高",
+      "geometric": {"lanes": 3.2, "width": 15.5, "grade": 2.8, "curvature": 0.00032}
+    }
+  },
+  {
+    "id": "segment_linkou_airport_001",
+    "title": "林口-機場系統段詳細分析",
+    "content": "路段：林口-機場系統段，里程範圍44-54K。特徵：地形平坦至下坡、幾何挑戰交流道密集、交通問題流量大匯入匯出頻繁。表現：北向速度85.1km/h、南向速度87.8km/h、壅塞水準中、速度百分位50-60%。幾何細節：平均車道數3.8、平均路幅17.2、平均坡度-0.5、平均曲率0.00012。",
+    "category": "路段分析",
+    "tags": ["林口-機場44-54K", "北向85.1km/h", "下坡-0.5", "50-60%"],
+    "metadata": {
+      "km_range": "44-54K",
+      "terrain": "平坦至下坡",
+      "nb_speed": 85.1,
+      "sb_speed": 87.8,
+      "congestion": "中",
+      "percentile": "50-60%",
+      "geometric": {"lanes": 3.8, "width": 17.2, "grade": -0.5, "curvature": 0.00012}
+    }
+  },
+  {
+    "id": "segment_airport_zhongli_001",
+    "title": "機場系統-中壢段詳細分析",
+    "content": "路段：機場系統-中壢段，里程範圍54-64K。特徵：地形平坦、幾何挑戰服務區影響、交通問題南向速度較低。表現：北向速度82.6km/h、南向速度76.5km/h、北向速度變異18.3km/h、南向速度變異21.4km/h、壅塞水準中高、速度百分位20-30%。幾何細節：平均車道數3.5、平均路幅16.8、平均坡度0.2、平均曲率0.00008。",
+    "category": "路段分析",
+    "tags": ["機場-中壢54-64K", "南向76.5km/h", "變異21.4", "20-30%"],
+    "metadata": {
+      "km_range": "54-64K",
+      "terrain": "平坦",
+      "nb_speed": 82.6,
+      "sb_speed": 76.5,
+      "nb_variance": 18.3,
+      "sb_variance": 21.4,
+      "congestion": "中高",
+      "percentile": "20-30%"
+    }
+  },
+  {
+    "id": "segment_zhongli_hukou_001",
+    "title": "中壢-湖口段詳細分析",
+    "content": "路段：中壢-湖口段，里程範圍64-74K。特徵：地形平坦、幾何挑戰無顯著挑戰、交通問題流量穩定。表現：北向速度88.3km/h、南向速度88.1km/h、壅塞水準低、速度百分位70-80%。",
+    "category": "路段分析",
+    "tags": ["中壢-湖口64-74K", "北向88.3km/h", "無挑戰", "70-80%"],
+    "metadata": {
+      "km_range": "64-74K",
+      "terrain": "平坦",
+      "nb_speed": 88.3,
+      "sb_speed": 88.1,
+      "congestion": "低",
+      "percentile": "70-80%",
+      "challenges": "無顯著挑戰"
+    }
+  },
+  {
+    "id": "hourly_traffic_patterns_001",
+    "title": "每小時交通模式分析",
+    "content": "尖峰時段：早晨07:00-09:00北向流量51.2南向流量50.8速度降低15-20%、晚間16:00-18:00北向流量54.8南向流量53.2速度降低20-25%。離峰時段：夜間02:00-04:00北向流量10.5南向流量9.8平均速度92-95km/h。24小時流量：00時北向16.5南向16.8、07時北向44.3南向50.1、16時北向55.1南向53.8、23時北向23.8南向24.1。",
+    "category": "時間模式",
+    "tags": ["早晨尖峰51.2", "晚間尖峰54.8", "夜間10.5", "16時最高55.1"],
+    "metadata": {
+      "morning_peak": {"time": "07:00-09:00", "nb_volume": 51.2, "sb_volume": 50.8, "speed_reduction": "15-20%"},
+      "evening_peak": {"time": "16:00-18:00", "nb_volume": 54.8, "sb_volume": 53.2, "speed_reduction": "20-25%"},
+      "night_minimum": {"time": "02:00-04:00", "nb_volume": 10.5, "sb_volume": 9.8, "speed": "92-95km/h"},
+      "peak_hour": {"time": "16時", "nb_volume": 55.1, "sb_volume": 53.8}
+    }
+  },
+  {
+    "id": "weekly_patterns_001",
+    "title": "週間模式分析",
+    "content": "週間模式：平日平均速度81.5、週末平均速度85.2、週末速度改善4.5%、平日重車比例0.612、週末重車比例0.548。速度熱力圖洞察：最低速度時段週一至週五07:00-09:00速度62-68km/h、週一至週五17:00-19:00速度63-69km/h。最高速度時段：週六日00:00-05:00速度92-95km/h、週一至週五00:00-05:00速度91-94km/h。",
+    "category": "週間模式",
+    "tags": ["週末改善4.5%", "平日重車61.2%", "凌晨92-95km/h"],
+    "metadata": {
+      "weekday_speed": 81.5,
+      "weekend_speed": 85.2,
+      "weekend_improvement": "4.5%",
+      "weekday_heavy_ratio": 0.612,
+      "weekend_heavy_ratio": 0.548,
+      "lowest_periods": ["週一至五07:00-09:00", "週一至五17:00-19:00"],
+      "highest_periods": ["週六日00:00-05:00", "週一至五00:00-05:00"]
+    }
+  },
+  {
+    "id": "vehicle_type_distribution_001",
+    "title": "車種分布與影響分析",
+    "content": "車種分布：客車20.5%平均速度92.3速度標準差12.5、小貨車20.5%平均速度88.7速度標準差11.2、大貨車20.1%平均速度75.2速度標準差8.3、聯結車19.7%平均速度72.8速度標準差7.9、遊覽車19.2%平均速度85.1速度標準差9.8。重車影響：合併百分比58.8%、速度降低效應-3.414、關鍵路段五股-林口機場系統-中壢、建議實施大型車輛分流管理。",
+    "category": "車種分析",
+    "tags": ["客車92.3km/h", "重車58.8%", "效應-3.414", "分流管理"],
+    "metadata": {
+      "passenger_car": {"percentage": 20.5, "speed": 92.3, "std": 12.5},
+      "heavy_truck": {"percentage": 20.1, "speed": 75.2, "std": 8.3},
+      "semi_trailer": {"percentage": 19.7, "speed": 72.8, "std": 7.9},
+      "heavy_combined": {"percentage": 58.8, "speed_effect": -3.414},
+      "critical_segments": ["五股-林口", "機場系統-中壢"]
+    }
+  },
+  {
+    "id": "speed_distribution_analysis_001",
+    "title": "速度分布特徵分析",
+    "content": "整體分布：平均83.0、中位數82.6、眾數82.0、偏度0.12、峰度2.95，解釋接近常態分布略微右偏。路段特定：最變異路段五股-林口北向四分位距28.5異常值計數125異常值百分比8.9%、最穩定路段中壢-湖口四分位距15.2異常值計數32異常值百分比2.3%。極端值：最高記錄速度152、最低記錄速度-98，注意負值可能為資料錯誤或車輛停止。",
+    "category": "速度分布",
+    "tags": ["平均83.0", "右偏0.12", "五股變異28.5", "中壢穩定15.2"],
+    "metadata": {
+      "overall": {"mean": 83.0, "median": 82.6, "skewness": 0.12, "kurtosis": 2.95},
+      "most_variable": {"segment": "五股-林口(NB)", "iqr": 28.5, "outliers": 125, "outlier_pct": "8.9%"},
+      "most_stable": {"segment": "中壢-湖口", "iqr": 15.2, "outliers": 32, "outlier_pct": "2.3%"},
+      "extremes": {"max": 152, "min": -98}
+    }
+  },
+  {
+    "id": "radar_chart_comparison_001",
+    "title": "雷達圖路段比較",
+    "content": "最快路段：中壢-湖口，特徵路幅0.85車道數0.75曲率0.15流量0.45重車比例0.35。最慢路段：五股-林口，特徵路幅0.45車道數0.55曲率0.85流量0.75重車比例0.85。對比分析：最慢路段的大型車比例和曲率明顯高於最快路段。",
+    "category": "雷達圖比較",
+    "tags": ["中壢湖口最快", "五股林口最慢", "重車曲率明顯高"],
+    "metadata": {
+      "fastest": {
+        "segment": "中壢-湖口",
+        "characteristics": {"width": 0.85, "lanes": 0.75, "curvature": 0.15, "volume": 0.45, "heavy_ratio": 0.35}
+      },
+      "slowest": {
+        "segment": "五股-林口",
+        "characteristics": {"width": 0.45, "lanes": 0.55, "curvature": 0.85, "volume": 0.75, "heavy_ratio": 0.85}
+      }
+    }
+  },
+  {
+    "id": "immediate_traffic_management_001",
+    "title": "立即交通管理建議",
+    "content": "大型車輛分流管理：目標路段五股-林口段機場系統-中壢段、預期效益減少大型車影響提升整體行車速度3-5km/h、實施方式特定時段限制大型車使用內側車道、優先級高、成本效益比高。動態速限調整：目標路段五股-林口段、預期效益降低速度變異20%提升行車安全、實施方式依據即時交通狀況調整速限標誌、優先級中高、成本效益比中。尖峰時段流量管制：目標路段全線、時段07:00-09:00和16:00-18:00、預期效益降低尖峰時段壅塞15%、實施方式匝道儀控HOV車道規劃、優先級中、成本效益比中。",
+    "category": "立即建議",
+    "tags": ["大型車分流3-5km/h", "動態速限20%改善", "匝道儀控15%"],
+    "metadata": {
+      "heavy_vehicle_management": {
+        "targets": ["五股-林口段", "機場系統-中壢段"],
+        "benefit": "3-5km/h提升",
+        "priority": "高",
+        "cost_benefit": "高"
+      },
+      "dynamic_speed_limit": {
+        "target": "五股-林口段",
+        "benefit": "變異降低20%",
+        "priority": "中高"
+      },
+      "peak_flow_control": {
+        "scope": "全線",
+        "periods": ["07:00-09:00", "16:00-18:00"],
+        "benefit": "壅塞降低15%"
+      }
+    }
+  },
+  {
+    "id": "medium_term_geometric_001",
+    "title": "中期幾何設計改善建議",
+    "content": "路幅拓寬：目標路段五股-林口段、現有路幅15.5m、建議路幅18-19m、預期效益根據模型路幅每增加1m可提升速度0.441km/h預期提升1.5-2km/h、技術細節考慮將現有路幅從平均16.9m拓寬至18-19m、優先級高、估計成本高。坡度緩解工程：目標路段五股-林口段、現有坡度2.8%、建議坡度2.0%、預期效益改善爬坡路段幾何條件提升速度1-2km/h、技術細節局部路段坡度調整設置爬坡專用道、優先級中、估計成本極高。",
+    "category": "中期改善",
+    "tags": ["路幅拓寬1.5-2km/h", "坡度緩解1-2km/h", "18-19m目標"],
+    "metadata": {
+      "width_expansion": {
+        "target": "五股-林口段",
+        "current": "15.5m",
+        "proposed": "18-19m",
+        "benefit": "1.5-2km/h",
+        "cost": "高"
+      },
+      "grade_mitigation": {
+        "target": "五股-林口段",
+        "current": "2.8%",
+        "proposed": "2.0%",
+        "benefit": "1-2km/h",
+        "cost": "極高"
+      }
+    }
+  },
+  {
+    "id": "long_term_capacity_001",
+    "title": "長期容量提升規劃",
+    "content": "智慧交通系統建置：範圍全線段、預期效益整體提升交通管理效率15-20%、組件即時流量監控動態路徑導引事故快速處理車聯網整合、實施期間3-5年、優先級高、ROI期間5-7年。替代路線規劃：目標路段五股-林口段、預期效益分散主要瓶頸路段流量20-30%、考量因子結合區域路網整體規劃、實施期間5-10年、優先級中、相關專案淡江大橋國道1甲延伸。專用道系統：類型大型車專用爬坡道、目標路段五股-林口段、預期效益分離大型車與小型車流提升整體速度5-8km/h、實施期間3-5年、優先級高、估計成本極高。",
+    "category": "長期規劃",
+    "tags": ["智慧交通15-20%", "替代路線20-30%", "專用道5-8km/h"],
+    "metadata": {
+      "intelligent_transport": {
+        "scope": "全線段",
+        "benefit": "15-20%效率提升",
+        "period": "3-5年",
+        "roi": "5-7年"
+      },
+      "alternative_routes": {
+        "target": "五股-林口段",
+        "benefit": "20-30%流量分散",
+        "period": "5-10年"
+      },
+      "dedicated_lanes": {
+        "type": "大型車專用爬坡道",
+        "benefit": "5-8km/h提升",
+        "cost": "極高"
+      }
+    }
+  }
+]

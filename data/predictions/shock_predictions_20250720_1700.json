@@ -1,0 +1,115 @@
+{
+  "01F_N": {
+    "shocks": [
+      {
+        "level": "mild",
+        "start_time": "2025/07/20 15:20",
+        "end_time": "2025/07/20 15:45",
+        "duration": 25,
+        "speed_drop": 17.0,
+        "initial_speed": 47.0,
+        "final_speed": 30.0,
+        "initial_density": 5.502661629921118,
+        "final_density": 10.467902323184113,
+        "density_increase": 4.965240693262995,
+        "avg_flow": 278.05243435902855,
+        "start_idx": 0,
+        "end_idx": 5,
+        "wave_speed": 11.159977232204609,
+        "shock_strength": 36.17021276595745,
+        "detection_time": "2025-07-20T17:00:42.982812",
+        "station": "01F0928N",
+        "prediction_id": "01F0928N_20250720_170042"
+      }
+    ],
+    "propagation_predictions": {
+      "01F0956N": {
+        "target_station": "01F0956N",
+        "source_shock": {
+          "level": "mild",
+          "start_time": "2025/07/20 15:20",
+          "end_time": "2025/07/20 15:45",
+          "duration": 25,
+          "speed_drop": 17.0,
+          "initial_speed": 47.0,
+          "final_speed": 30.0,
+          "initial_density": 5.502661629921118,
+          "final_density": 10.467902323184113,
+          "density_increase": 4.965240693262995,
+          "avg_flow": 278.05243435902855,
+          "start_idx": 0,
+          "end_idx": 5,
+          "wave_speed": 11.159977232204609,
+          "shock_strength": 36.17021276595745,
+          "detection_time": "2025-07-20T17:00:42.982812",
+          "station": "01F0928N",
+          "prediction_id": "01F0928N_20250720_170042"
+        },
+        "distance": 4.832145017633577,
+        "predicted_arrival": "2025-07-20T17:12:18.811715",
+        "travel_time_minutes": 11.597148042320583,
+        "propagation_speed": 25,
+        "confidence": 0.289148291308126,
+        "prediction_time": "2025-07-20T17:00:42.982837"
+      },
+      "01F0980N": {
+        "target_station": "01F0980N",
+        "source_shock": {
+          "level": "mild",
+          "start_time": "2025/07/20 15:20",
+          "end_time": "2025/07/20 15:45",
+          "duration": 25,
+          "speed_drop": 17.0,
+          "initial_speed": 47.0,
+          "final_speed": 30.0,
+          "initial_density": 5.502661629921118,
+          "final_density": 10.467902323184113,
+          "density_increase": 4.965240693262995,
+          "avg_flow": 278.05243435902855,
+          "start_idx": 0,
+          "end_idx": 5,
+          "wave_speed": 11.159977232204609,
+          "shock_strength": 36.17021276595745,
+          "detection_time": "2025-07-20T17:00:42.982812",
+          "station": "01F0928N",
+          "prediction_id": "01F0928N_20250720_170042"
+        },
+        "distance": 1.8000000000000114,
+        "predicted_arrival": "2025-07-20T17:05:02.182839",
+        "travel_time_minutes": 4.320000000000027,
+        "propagation_speed": 25,
+        "confidence": 0.29836085106382976,
+        "prediction_time": "2025-07-20T17:00:42.982840"
+      },
+      "01F1045N": {
+        "target_station": "01F1045N",
+        "source_shock": {
+          "level": "mild",
+          "start_time": "2025/07/20 15:20",
+          "end_time": "2025/07/20 15:45",
+          "duration": 25,
+          "speed_drop": 17.0,
+          "initial_speed": 47.0,
+          "final_speed": 30.0,
+          "initial_density": 5.502661629921118,
+          "final_density": 10.467902323184113,
+          "density_increase": 4.965240693262995,
+          "avg_flow": 278.05243435902855,
+          "start_idx": 0,
+          "end_idx": 5,
+          "wave_speed": 11.159977232204609,
+          "shock_strength": 36.17021276595745,
+          "detection_time": "2025-07-20T17:00:42.982812",
+          "station": "01F0928N",
+          "prediction_id": "01F0928N_20250720_170042"
+        },
+        "distance": 9.115644957686737,
+        "predicted_arrival": "2025-07-20T17:22:35.635715",
+        "travel_time_minutes": 21.877547898448167,
+        "propagation_speed": 25,
+        "confidence": 0.27613374255409223,
+        "prediction_time": "2025-07-20T17:00:42.982842"
+      }
+    }
+  }
+}

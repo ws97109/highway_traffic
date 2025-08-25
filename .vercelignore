@@ -1,0 +1,11 @@
+# 後端 API 相關
+api/
+# 根目錄的 src（不是 frontend/src）
+/src/
+train_model/
+data/
+Procfile
+railway.json
+requirements.txt
+*.py
+.env*

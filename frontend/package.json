@@ -1,0 +1,65 @@
+{
+  "name": "highway-traffic-frontend",
+  "version": "1.0.0",
+  "description": "高速公路智慧交通預警決策支援系統 - 前端應用",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "type-check": "tsc --noEmit",
+    "test": "jest",
+    "test:watch": "jest --watch"
+  },
+  "dependencies": {
+    "@googlemaps/js-api-loader": "^1.16.10",
+    "@heroicons/react": "^2.2.0",
+    "@hookform/resolvers": "^5.2.0",
+    "@types/leaflet": "^1.9.20",
+    "axios": "^1.11.0",
+    "chart.js": "^4.5.0",
+    "date-fns": "^4.1.0",
+    "leaflet": "^1.9.4",
+    "next": "^15.4.4",
+    "react": "^18.2.0",
+    "react-chartjs-2": "^5.3.0",
+    "react-dom": "^18.2.0",
+    "react-hook-form": "^7.61.1",
+    "react-leaflet": "^4.2.1",
+    "recharts": "^3.1.0",
+    "socket.io-client": "^4.8.1",
+    "tailwindcss": "^3.3.0",
+    "yup": "^1.6.1"
+  },
+  "devDependencies": {
+    "@types/google.maps": "^3.58.1",
+    "@types/node": "20.19.11",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@types/socket.io-client": "^3.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "autoprefixer": "^10.4.0",
+    "eslint": "^8.0.0",
+    "eslint-config-next": "^14.0.0",
+    "postcss": "^8.4.0",
+    "typescript": "5.9.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "keywords": [
+    "highway",
+    "traffic",
+    "shockwave",
+    "prediction",
+    "ai",
+    "react",
+    "nextjs",
+    "typescript"
+  ],
+  "author": "Highway Traffic System Team",
+  "license": "MIT"
+}

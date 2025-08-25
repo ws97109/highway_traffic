@@ -1,0 +1,43 @@
+# 核心框架
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+websockets==12.0
+python-multipart==0.0.6
+pydantic==2.5.0
+
+# 資料處理與科學計算
+pandas==2.1.3
+numpy==1.25.2
+scipy>=1.10.0
+scikit-learn==1.3.2
+
+# 機器學習與深度學習 (可選)
+tensorflow-cpu ==2.15.0  # 深度學習功能需要
+
+# 視覺化
+matplotlib==3.8.2
+seaborn==0.13.0
+plotly==5.17.0
+
+# API相關
+requests==2.31.0
+python-dotenv==1.0.0
+aiofiles==23.2.1
+python-jose[cryptography]==3.3.0
+python-socketio==5.9.0
+
+# 系統與通訊
+asyncio-mqtt==0.16.1
+psutil>=5.9.0
+
+# 資料庫
+# sqlite3 is built-in with Python
+
+# 測試與開發工具 (可選)
+pytest>=7.0.0
+black>=22.0.0
+flake8>=5.0.0
+
+# 其他工具
+python-dateutil>=2.8.0
+pytz>=2023.3

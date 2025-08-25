@@ -1,0 +1,169 @@
+# ============================================================================
+# 高速公路智能交通系統
+# ============================================================================
+
+# 核心 Web 框架 (用於 main.py 和 controller_advisor.py)
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+pydantic-settings>=2.0.0
+python-multipart==0.0.6
+
+# HTTP 客戶端 (用於 ollama_client.py)
+httpx==0.25.2
+requests==2.31.0
+
+# 數據處理和分析 - 鎖定 NumPy 版本避免相容性問題
+pandas==2.1.4
+numpy==1.25.2  # 鎖定在 1.x 版本避免 NumPy 2.0 相容性問題
+scipy==1.11.4
+scikit-learn==1.3.2
+
+# 核心 AI/ML 套件 - 確保相容性
+ollama
+langchain>=0.1.0
+langchain-community>=0.0.20
+torch==2.1.2
+sentence-transformers==2.2.2
+transformers==4.36.2
+
+# 向量資料庫 - 使用相容版本
+chromadb==0.4.18
+faiss-cpu==1.7.4
+
+# 文本處理和中文自然語言處理 (用於 csv_processor.py)
+jieba==0.42.1
+opencc-python-reimplemented==0.1.7
+nltk>=3.8
+spacy>=3.6.0
+
+# 配置管理和日誌 (用於 config_manager.py 和所有模組)
+pyyaml==6.0.1
+loguru==0.7.2
+python-dotenv==1.0.0
+
+# 文件處理 (用於數據處理模組)
+openpyxl==3.1.2
+xlsxwriter==3.1.9
+
+# 時間和日期處理 (用於 controller_advisor.py)
+python-dateutil==2.8.2
+pytz==2023.3
+
+# 異步支援 (用於 main.py 和 ollama_client.py)
+asyncio-mqtt==0.16.1
+aiofiles==23.2.1
+
+# 系統資源監控 (用於 system_check.py)
+psutil==5.9.6
+
+# 命令行工具和進度條 (用於訓練腳本)
+tqdm==4.66.1
+click==8.1.7
+rich==13.7.0
+
+# 數據驗證 (用於 API 模型)
+jsonschema==4.20.0
+
+# 數學計算 (用於統計分析)
+sympy==1.12
+
+# 資料視覺化
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# 系統相容性
+colorama==0.4.6  # Windows 終端顏色支援
+
+# 安全性
+cryptography==41.0.8
+
+# ============================================================================
+# 開發和測試工具（可選）
+# ============================================================================
+
+# 測試框架
+pytest==7.4.3
+pytest-asyncio==0.21.1
+
+# 型別檢查
+mypy==1.7.1
+
+# 代碼格式化
+black==23.11.0
+isort==5.12.0
+
+# ============================================================================
+# 特定模組依賴說明
+# ============================================================================
+#
+# main.py: fastapi, uvicorn, pydantic, httpx
+# controller_advisor.py: fastapi, pydantic, uuid, datetime
+# ollama_client.py: httpx, asyncio, json, loguru, ollama
+# vector_store.py: chromadb, sentence-transformers, numpy
+# csv_processor.py: pandas, numpy, jieba, yaml
+# enhanced_csv_processor.py: pandas, numpy, json, pathlib
+# train_rag.py: asyncio, argparse, pathlib, loguru
+# langchain modules: langchain, langchain-community
+# 
+# ============================================================================
+# 平台特定說明
+# ============================================================================
+#
+# GPU 支援（如果需要）:
+# 取消以下註釋並註釋掉上面的 torch 行
+# torch==2.1.2+cu118 --find-links https://download.pytorch.org/whl/torch_stable.html
+# torchvision==0.16.2+cu118 --find-links https://download.pytorch.org/whl/torch_stable.html
+#
+# macOS M1/M2 用戶可能需要:
+# torch==2.1.2 --find-links https://download.pytorch.org/whl/torch_stable.html
+#
+# ============================================================================
+# 安裝指令
+# ============================================================================
+#
+# 基本安裝：
+# pip install -r requirements.txt
+#
+# 創建虛擬環境（建議）：
+# python -m venv rag_env
+# source rag_env/bin/activate  # Linux/macOS
+# rag_env\Scripts\activate     # Windows
+# pip install -r requirements.txt
+#
+# 升級所有包：
+# pip install -r requirements.txt --upgrade
+#
+# 安裝特定 NLP 模型：
+# python -m spacy download zh_core_web_sm  # 中文 spaCy 模型
+# python -c "import nltk; nltk.download('punkt')"  # NLTK 數據
+#
+# ============================================================================
+# 系統要求
+# ============================================================================
+#
+# - Python 3.8 或更高版本
+# - 建議 8GB+ RAM (AI 模型需要較多記憶體)
+# - 至少 10GB 可用磁碟空間 (模型和向量資料庫)
+# - Ollama 服務（需要單獨安裝）
+# - 網路連接（下載模型和依賴）
+#
+# ============================================================================
+# 重要注意事項
+# ============================================================================
+#
+# 1. Ollama 安裝：
+#    - macOS: brew install ollama
+#    - 其他: https://ollama.ai/download
+#    - 啟動: ollama serve
+#    - 拉取模型: ollama pull llama3.1:8b
+#
+# 2. 首次安裝可能需要較長時間（下載大型 AI 模型）
+#
+# 3. 如果遇到 ChromaDB 安裝問題：
+#    pip install chromadb --no-cache-dir
+#
+# 4. 如果 PyTorch 安裝失敗，可嘗試：
+#    pip install torch --index-url https://download.pytorch.org/whl/cpu
+#
+# ============================================================================

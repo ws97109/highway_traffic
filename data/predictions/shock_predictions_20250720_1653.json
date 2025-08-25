@@ -1,0 +1,44 @@
+{
+  "01F_N": {
+    "shocks": [
+      {
+        "level": "mild",
+        "start_time": "2025/07/20 15:20",
+        "end_time": "2025/07/20 15:45",
+        "duration": 25,
+        "speed_drop": 17.0,
+        "initial_speed": 47.0,
+        "final_speed": 30.0,
+        "initial_density": 5.502661629921118,
+        "final_density": 10.467902323184113,
+        "density_increase": 4.965240693262995,
+        "avg_flow": 278.05243435902855,
+        "start_idx": 0,
+        "end_idx": 5,
+        "wave_speed": 11.159977232204609,
+        "shock_strength": 36.17021276595745,
+        "detection_time": "2025-07-20T16:53:14.612392",
+        "station": "01F0928N",
+        "prediction_id": "01F0928N_20250720_165314"
+      }
+    ],
+    "propagation_predictions": {
+      "01F0956N": {
+        "target_station": "01F0956N",
+        "source_shock": {
+          "level": "mild",
+          "start_time": "2025/07/20 15:20",
+          "end_time": "2025/07/20 15:45",
+          "duration": 25,
+          "speed_drop": 17.0,
+          "initial_speed": 47.0,
+          "final_speed": 30.0,
+          "initial_density": 5.502661629921118,
+          "final_density": 10.467902323184113,
+          "density_increase": 4.965240693262995,
+          "avg_flow": 278.05243435902855,
+          "start_idx": 0,
+          "end_idx": 5,
+          "wave_speed": 11.159977232204609,
+          "shock_strength": 36.17021276595745,
+          "detection_time": 

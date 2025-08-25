@@ -1,0 +1,91 @@
+{
+  "warning_config.json": {
+    "email": {
+      "enabled": true,
+      "smtp_server": "smtp.gmail.com",
+      "smtp_port": 587,
+      "username": "${EMAIL_USERNAME}",
+      "password": "${EMAIL_PASSWORD}",
+      "from_address": "${EMAIL_FROM_ADDRESS}"
+    },
+    "monitoring": {
+      "check_interval": 30,
+      "max_warning_age": 60,
+      "auto_cleanup": true
+    },
+    "notification_settings": {
+      "cooldown_minutes": 5,
+      "max_notifications_per_hour": 10,
+      "quiet_hours": {
+        "enabled": true,
+        "start_time": "23:00",
+        "end_time": "07:00"
+      }
+    }
+  },
+  "predictor_config.json": {
+    "data_processing": {
+      "data_window_minutes": 60,
+      "min_data_points": 12,
+      "prediction_horizon": 30,
+      "monitoring_interval": 60,
+      "file_scan_interval": 30
+    },
+    "shock_detection": {
+      "sensitivity": "moderate",
+      "min_shock_strength": 15,
+      "min_confidence": 0.4,
+      "propagation_speed_range": [5, 80]
+    },
+    "performance": {
+      "max_buffer_size": 100,
+      "cache_duration_minutes": 30,
+      "parallel_processing": true,
+      "max_workers": 4
+    }
+  },
+  "location_config.json": {
+    "google_maps": {
+      "api_key": "${GOOGLE_MAPS_API_KEY}",
+      "language": "zh-TW",
+      "region": "tw"
+    },
+    "location_settings": {
+      "max_distance_km": 20,
+      "location_cache_minutes": 30,
+      "prediction_radius_km": 50,
+      "route_analysis": true,
+      "traffic_consideration": true
+    },
+    "risk_assessment": {
+      "distance_decay_factor": 0.05,
+      "time_urgency_factor": 0.5,
+      "confidence_weight": 0.8,
+      "strength_weight": 1.0
+    }
+  },
+  "system_config.json": {
+    "database": {
+      "backup_interval_hours": 24,
+      "retention_days": 30,
+      "compression": true
+    },
+    "logging": {
+      "level": "INFO",
+      "max_file_size_mb": 50,
+      "backup_count": 5,
+      "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    },
+    "security": {
+      "api_rate_limit": 1000,
+      "max_concurrent_users": 100,
+      "session_timeout_minutes": 60
+    },
+    "paths": {
+      "data_dir": "./data",
+      "log_dir": "logs",
+      "backup_dir": "backups",
+      "temp_dir": "temp"
+    }
+  }
+}

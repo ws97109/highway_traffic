@@ -1,0 +1,23 @@
+{
+  "build": {
+    "builder": "NIXPACKS",
+    "buildCommand": "pip install --no-cache-dir --timeout=1000 tensorflow-cpu==2.15.0"
+  },
+  "deploy": {
+    "startCommand": "cd api && python -m uvicorn main:app --host 0.0.0.0 --port $PORT --timeout-keep-alive 30",
+    "healthcheckPath": "/health",
+    "healthcheckTimeout": 300,
+    "restartPolicyType": "ON_FAILURE"
+  },
+  "environments": {
+    "production": {
+      "variables": {
+        "NIXPACKS_PYTHON_VERSION": "3.9",
+        "PYTHONPATH": ".",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PIP_NO_CACHE_DIR": "1",
+        "PIP_TIMEOUT": "1000"
+      }
+    }
+  }
+}

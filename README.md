@@ -463,60 +463,8 @@ python tests/performance_test.py
 - **空間範圍**: 台灣高速公路網
 - **更新頻率**: 每30秒
 
-## 開發貢獻
 
-### �️ 開發環境設定
-```bash
-# 複製開發分支
-git clone -b develop https://github.com/timwei0801/Highway_trafficwave.git
 
-# 安裝開發依賴
-pip install -r requirements.txt
-pip install -r requirements-dev.txt  # 如果存在
-
-# 前端開發環境
-cd frontend
-npm install --include=dev
-npm run dev
-```
-
-### 程式碼規範
-- **Python**: 遵循PEP 8，使用black進行格式化
-- **TypeScript**: 使用ESLint和Prettier
-- **提交訊息**: 採用Conventional Commits格式
-- **測試覆蓋**: 新功能必須包含對應測試
-
-### 問題回報
-請透過GitHub Issues回報問題，並包含：
-1. 詳細的問題描述和重現步驟
-2. 系統環境資訊 (`python check_environment.py`)
-3. 相關日誌檔案 (`data/logs/`)
-4. 預期行為與實際行為的差異
-
-## 聯絡資訊與支援
-
-- **專案首頁**: [GitHub Repository](https://github.com/timwei0801/Highway_trafficwave)
-- **問題回報**: [GitHub Issues](https://github.com/timwei0801/Highway_trafficwave/issues)
-- **開發者**: timwei0801
-- **許可證**: MIT License
-
-##  致謝
-
-感謝以下開源專案和研究團隊的貢獻：
-- **MT-STNet研究團隊** - 深度學習模型核心
-- **台灣交通部TDX平台** - 提供真實交通資料
-- **FastAPI團隊** - 高效能API框架
-- **Next.js團隊** - 現代化前端框架
-- **TensorFlow團隊** - 深度學習框架支援
-
----
-
-<div align="center">
-
-** 體驗革命性的智慧交通管理系統！**
-
-[![GitHub stars](https://img.shields.io/github/stars/timwei0801/Highway_trafficwave.svg?style=social&label=Star)](https://github.com/timwei0801/Highway_trafficwave)
-[![GitHub forks](https://img.shields.io/github/forks/timwei0801/Highway_trafficwave.svg?style=social&label=Fork)](https://github.com/timwei0801/Highway_trafficwave/fork)
 
 *讓AI為您的出行保駕護航，基於尖端科學研究的智慧交通解決方案* 🛣️✨
 

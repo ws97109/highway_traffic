@@ -252,7 +252,7 @@ confidence_score = hybrid_result['confidence']
 ## 系統功能
 
 ### 駕駛者功能
-
+![圖片描述](images/駕駛者介面.png)
 #### 智慧導航系統
 - **震波覆蓋層顯示**: 即時顯示交通震波位置、強度和影響範圍
 - **動態路況預測**: AI驅動的未來30-60分鐘交通狀況預測
@@ -287,7 +287,7 @@ const suggestions = await optimizer.getOptimalDepartureTimes();
 ```
 
 ### 管理者功能
-
+![圖片描述](images/管理者介面.jpg)
 #### 專業監控中心
 - **大屏幕設計**: 支援4K顯示器和多螢幕部署
 - **即時交通監控**: 全路網交通流量、速度、密度監控

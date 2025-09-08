@@ -465,9 +465,6 @@ python tests/performance_test.py
 
 
 
-
-*讓AI為您的出行保駕護航，基於尖端科學研究的智慧交通解決方案* 🛣️✨
-
 </div>
 # highway_traffic
 # highway_traffic

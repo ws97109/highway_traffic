@@ -2,24 +2,5 @@
   "buildCommand": "cd frontend && npm run build",
   "outputDirectory": "frontend/.next",
   "installCommand": "cd frontend && npm install",
-  "framework": "nextjs",
-  "rootDirectory": "frontend",
-  "functions": {
-    "frontend/pages/api/**/*.js": {
-      "maxDuration": 30
-    },
-    "frontend/pages/api/**/*.ts": {
-      "maxDuration": 30
-    }
-  },
-  "env": {
-    "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY": "@google_maps_api_key",
-    "NEXT_PUBLIC_API_BASE_URL": "@api_base_url",
-    "NEXT_PUBLIC_WS_BASE_URL": "@ws_base_url"
-  },
-  "build": {
-    "env": {
-      "NODE_ENV": "production"
-    }
-  }
+  "framework": "nextjs"
 }

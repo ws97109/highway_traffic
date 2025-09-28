@@ -63,6 +63,7 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
   const [trafficLayer, setTrafficLayer] = useState<google.maps.TrafficLayer | null>(null);
   const [shockwaveOverlays, setShockwaveOverlays] = useState<google.maps.Circle[]>([]);
   const [radarWaves, setRadarWaves] = useState<{ id: string; component: React.ReactElement }[]>([]);
+  const [userLocationMarker, setUserLocationMarker] = useState<google.maps.Marker | null>(null);
 
   // Google Maps API 載入
   useEffect(() => {
@@ -131,6 +132,8 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
       setMap(newMap);
     }
   }, [isLoaded, center, zoom, onLocationUpdate, showTrafficLayer]);
+
+
 
   // 更新交通資料標記
   useEffect(() => {
@@ -509,7 +512,7 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
     }
   };
 
-  // 載入 AI 推薦內容
+  // 載入真實 AI 推薦內容
   const loadAIRecommendation = async (shockwave: ShockwaveData): Promise<void> => {
     try {
       const recommendationElement = document.getElementById(`ai-recommendation-${shockwave.id}`);
@@ -521,27 +524,98 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
       // 顯示載入中狀態
       recommendationElement.innerHTML = `
         <div style="display: flex; align-items: center; color: rgba(255,255,255,0.8);">
-          <div style="margin-right: 8px;">⏳</div>
-          <div>AI 正在分析中...</div>
+          <div style="margin-right: 8px;">🤖</div>
+          <div>真實AI正在深度分析中...</div>
         </div>
       `;
 
-      // 模擬 API 調用 - 這裡你可以替換為實際的 API 調用
-      // 根據衝擊波數據生成建議
-      await new Promise(resolve => setTimeout(resolve, 1500)); // 模擬網路延遲
+      // 獲取用戶位置
+      navigator.geolocation.getCurrentPosition(async (position) => {
+        try {
+          const userLocation = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
 
-      const recommendations = generateAIRecommendations(shockwave);
-      
-      recommendationElement.innerHTML = `
-        <div style="line-height: 1.5;">
-          ${recommendations.map(rec => `
-            <div style="margin-bottom: 8px; display: flex; align-items: flex-start;">
-              <span style="margin-right: 6px; font-size: 12px;">${rec.icon}</span>
-              <span style="font-size: 13px;">${rec.text}</span>
+          // 調用真實的單震波AI分析API
+          const response = await fetch('/api/shockwave-ai/single-shockwave-analysis', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              user_location: userLocation,
+              shockwave: {
+                location_name: shockwave.description || `震波區域 ${shockwave.id}`,
+                latitude: shockwave.lat,
+                longitude: shockwave.lng,
+                intensity: (shockwave.intensity || 0) * 10, // 轉換為0-10範圍
+                shock_duration: 30, // 預設30分鐘
+                affected_area: shockwave.affectedArea || 5,
+                propagation_speed: shockwave.propagationSpeed || 50,
+                speed_drop: 30
+              }
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error('API請求失敗');
+          }
+
+          const aiResult = await response.json();
+          console.log('🤖 真實AI分析結果:', aiResult);
+
+          // 顯示AI分析結果
+          recommendationElement.innerHTML = `
+            <div style="line-height: 1.5; color: white;">
+              <div style="margin-bottom: 12px; padding: 8px; background: rgba(0,0,0,0.3); border-radius: 6px;">
+                <div style="font-weight: bold; margin-bottom: 6px; color: #4CAF50;">
+                  🤖 AI專家分析 (距離: ${aiResult.distance}km)
+                </div>
+                <div style="font-size: 12px; line-height: 1.4; white-space: pre-line;">
+                  ${aiResult.ai_analysis}
+                </div>
+              </div>
+              ${aiResult.recommendations.map((rec: any) => `
+                <div style="margin-bottom: 6px; display: flex; align-items: flex-start; padding: 4px; background: rgba(255,255,255,0.1); border-radius: 4px;">
+                  <span style="margin-right: 6px; font-size: 12px;">
+                    ${getRecommendationIcon(rec.type)}
+                  </span>
+                  <div>
+                    <div style="font-size: 12px; font-weight: bold;">${rec.title}</div>
+                    <div style="font-size: 11px; opacity: 0.9;">${rec.description}</div>
+                  </div>
+                </div>
+              `).join('')}
+              <div style="margin-top: 8px; font-size: 10px; opacity: 0.7; text-align: center;">
+                ⚠️ 此為真實AI運算結果，請結合實際路況謹慎駕駛
+              </div>
             </div>
-          `).join('')}
-        </div>
-      `;
+          `;
+
+        } catch (apiError) {
+          console.error('AI API 調用失敗:', apiError);
+          // 顯示錯誤並回退到基礎建議
+          recommendationElement.innerHTML = `
+            <div style="color: rgba(255,255,255,0.9);">
+              <div style="margin-bottom: 8px; color: #ffeb3b;">⚠️ AI服務暫時不可用</div>
+              <div style="font-size: 12px; line-height: 1.4;">
+                提供基礎分析建議：<br/>
+                • 震波強度: ${((shockwave.intensity || 0) * 10).toFixed(1)}/10<br/>
+                • 建議保持謹慎駕駛<br/>
+                • 必要時考慮替代路線
+              </div>
+            </div>
+          `;
+        }
+      }, (geoError) => {
+        console.error('無法獲取用戶位置:', geoError);
+        recommendationElement.innerHTML = `
+          <div style="color: rgba(255,255,255,0.8); font-size: 12px;">
+            需要位置權限才能提供AI分析建議
+          </div>
+        `;
+      });
 
     } catch (error) {
       console.error('載入 AI 推薦時發生錯誤:', error);
@@ -549,11 +623,23 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
       if (recommendationElement) {
         recommendationElement.innerHTML = `
           <div style="color: rgba(255,255,255,0.7); font-size: 13px;">
-            暫時無法載入 AI 建議，請稍後再試
+            AI分析載入失敗，請稍後再試
           </div>
         `;
       }
     }
+  };
+
+  // 獲取建議類型對應的圖標
+  const getRecommendationIcon = (type: string): string => {
+    const iconMap: { [key: string]: string } = {
+      'alternative_route': '🛣️',
+      'timing_adjustment': '⏰',
+      'rest_area': '🚫',
+      'speed_warning': '🚗',
+      'emergency': '🚨'
+    };
+    return iconMap[type] || '💡';
   };
 
   // 根據衝擊波數據生成 AI 推薦
@@ -682,6 +768,71 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
     }
   }, [map]);
 
+  // 更新使用者位置標記
+  const updateUserLocationMarker = useCallback((lat: number, lng: number) => {
+    if (!map) return;
+
+    // 移除現有的使用者位置標記
+    if (userLocationMarker) {
+      userLocationMarker.setMap(null);
+    }
+
+    // 創建新的使用者位置標記
+    const marker = new google.maps.Marker({
+      position: { lat, lng },
+      map: map,
+      title: '我的位置',
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 8,
+        fillColor: '#4285F4',
+        fillOpacity: 1,
+        strokeColor: '#ffffff',
+        strokeWeight: 3,
+      },
+      zIndex: 1000,
+    });
+
+    // 添加藍色圓圈表示精確度範圍
+    const accuracyCircle = new google.maps.Circle({
+      strokeColor: '#4285F4',
+      strokeOpacity: 0.8,
+      strokeWeight: 1,
+      fillColor: '#4285F4',
+      fillOpacity: 0.1,
+      map: map,
+      center: { lat, lng },
+      radius: 100, // 100米精確度範圍
+    });
+
+    // 保存標記引用
+    setUserLocationMarker(marker);
+
+    // 點擊標記顯示資訊
+    const infoWindow = new google.maps.InfoWindow({
+      content: `
+        <div style="padding: 8px;">
+          <h4 style="margin: 0 0 8px 0; color: #1976d2;">📍 我的位置</h4>
+          <p style="margin: 0; font-size: 12px; color: #666;">
+            緯度: ${lat.toFixed(6)}<br/>
+            經度: ${lng.toFixed(6)}
+          </p>
+        </div>
+      `
+    });
+
+    marker.addListener('click', () => {
+      infoWindow.open(map, marker);
+    });
+  }, [map, userLocationMarker]);
+
+  // 當center prop變更時，更新使用者位置標記
+  useEffect(() => {
+    if (map && center) {
+      updateUserLocationMarker(center.lat, center.lng);
+    }
+  }, [map, center, updateUserLocationMarker]);
+
   if (!isLoaded) {
     return (
       <div className="flex items-center justify-center h-full bg-gray-100">
@@ -714,24 +865,34 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
           
           <button
             onClick={() => {
-              // 取得用戶位置
+              // 取得使用者位置
               if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                   (position) => {
                     const lat = position.coords.latitude;
                     const lng = position.coords.longitude;
                     panTo(lat, lng);
+                    updateUserLocationMarker(lat, lng); // 添加使用者位置標記
                     onLocationUpdate?.(lat, lng);
                   },
                   (error) => {
                     console.error('無法取得位置:', error);
+                    alert('無法取得您的位置，請確認已允許位置權限');
+                  },
+                  {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 60000
                   }
                 );
+              } else {
+                alert('您的瀏覽器不支援地理位置功能');
               }
             }}
             className="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600"
+            title="點擊取得並標示我的位置"
           >
-            我的位置
+            📍 我的位置
           </button>
         </div>
       </div>
@@ -741,6 +902,14 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
         <h4 className="font-semibold mb-2 text-sm">圖例</h4>
         <div className="space-y-1 text-xs">
           <div className="mb-2">
+            <div className="text-xs font-medium text-gray-600 mb-1">位置標記</div>
+            <div className="flex items-center mb-1">
+              <div className="w-3 h-3 rounded-full bg-blue-500 mr-2 border-2 border-white"></div>
+              <span>我的位置</span>
+            </div>
+          </div>
+          
+          <div className="mb-2 border-t pt-2">
             <div className="text-xs font-medium text-gray-600 mb-1">交通狀況</div>
             <div className="flex items-center mb-1">
               <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>

@@ -115,8 +115,9 @@
 請親切且專業地回答：`;
 
                 console.log('🤖 發送到 Ollama:', prompt);
-                
-                const response = await fetch('http://localhost:11434/api/generate', {
+
+                const ollamaBaseUrl = 'http://localhost:11434'; // 可修改為您的 Ollama 服務地址
+                const response = await fetch(`${ollamaBaseUrl}/api/generate`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -152,7 +153,7 @@
                 responseDiv.className = 'response error';
                 responseContent.innerHTML = `
                     <strong>錯誤：</strong>${error.message}<br>
-                    <small>請確認 Ollama 服務是否在 http://localhost:11434 運行</small>
+                    <small>請確認 Ollama 服務是否在 ${ollamaBaseUrl} 運行</small>
                 `;
             } finally {
                 // 恢復按鈕狀態
@@ -171,7 +172,8 @@
         // 頁面載入時檢查 Ollama 狀態
         window.onload = async function() {
             try {
-                const response = await fetch('http://localhost:11434/api/tags');
+                const ollamaBaseUrl = 'http://localhost:11434'; // 可修改為您的 Ollama 服務地址
+                const response = await fetch(`${ollamaBaseUrl}/api/tags`);
                 if (response.ok) {
                     const data = await response.json();
                     console.log('✅ Ollama 服務正常，可用模型:', data.models.length);

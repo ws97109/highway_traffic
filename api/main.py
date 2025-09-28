@@ -16,7 +16,7 @@ from src.detection.final_optimized_detector import FinalOptimizedShockDetector
 from src.prediction.realtime_shock_predictor import RealtimeShockPredictor
 
 # 導入 API 路由
-from api.routes import traffic, shockwave, prediction, websocket, location, admin, smart, ollama_chat
+from api.routes import traffic, shockwave, prediction, websocket, location, admin, smart, ollama_chat, shockwave_ai
 
 # 建立 FastAPI 應用
 app = FastAPI(
@@ -85,6 +85,7 @@ app.include_router(location.router, prefix="/api/location", tags=["位置服務"
 app.include_router(admin.router, prefix="/api/admin", tags=["管理者功能"])
 app.include_router(smart.router, prefix="/api/smart", tags=["智慧建議"])
 app.include_router(ollama_chat.router, prefix="/api/ai", tags=["AI助手"])
+app.include_router(shockwave_ai.router, prefix="/api/shockwave-ai", tags=["震波AI分析"])
 app.include_router(websocket.router, prefix="/ws", tags=["即時通訊"])
 
 @app.get("/")

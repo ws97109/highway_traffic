@@ -377,6 +377,69 @@ class ShockwaveAnalysisResponse(BaseModel):
     summary: str
     ai_analysis: str
 
+def get_approximate_location(lat: float, lng: float) -> str:
+    """根據座標判斷台灣地區位置"""
+    regions = [
+        # 新北市
+        {'name': '新北市淡水區', 'bounds': {'north': 25.22, 'south': 25.15, 'east': 121.47, 'west': 121.41}},
+        {'name': '新北市三重區', 'bounds': {'north': 25.08, 'south': 25.04, 'east': 121.50, 'west': 121.47}},
+        {'name': '新北市板橋區', 'bounds': {'north': 25.02, 'south': 24.98, 'east': 121.47, 'west': 121.43}},
+        {'name': '新北市中和區', 'bounds': {'north': 25.00, 'south': 24.95, 'east': 121.52, 'west': 121.47}},
+        {'name': '新北市永和區', 'bounds': {'north': 25.02, 'south': 24.98, 'east': 121.52, 'west': 121.50}},
+        {'name': '新北市新店區', 'bounds': {'north': 25.00, 'south': 24.93, 'east': 121.55, 'west': 121.50}},
+        {'name': '新北市土城區', 'bounds': {'north': 24.98, 'south': 24.93, 'east': 121.47, 'west': 121.40}},
+        {'name': '新北市蘆洲區', 'bounds': {'north': 25.10, 'south': 25.07, 'east': 121.48, 'west': 121.45}},
+        {'name': '新北市五股區', 'bounds': {'north': 25.12, 'south': 25.07, 'east': 121.45, 'west': 121.41}},
+        {'name': '新北市泰山區', 'bounds': {'north': 25.07, 'south': 25.04, 'east': 121.43, 'west': 121.40}},
+        {'name': '新北市林口區', 'bounds': {'north': 25.12, 'south': 25.06, 'east': 121.40, 'west': 121.35}},
+
+        # 台北市
+        {'name': '台北市中正區', 'bounds': {'north': 25.05, 'south': 25.03, 'east': 121.53, 'west': 121.51}},
+        {'name': '台北市大同區', 'bounds': {'north': 25.07, 'south': 25.04, 'east': 121.52, 'west': 121.50}},
+        {'name': '台北市中山區', 'bounds': {'north': 25.08, 'south': 25.05, 'east': 121.55, 'west': 121.52}},
+        {'name': '台北市松山區', 'bounds': {'north': 25.07, 'south': 25.04, 'east': 121.58, 'west': 121.55}},
+        {'name': '台北市大安區', 'bounds': {'north': 25.04, 'south': 25.01, 'east': 121.56, 'west': 121.53}},
+        {'name': '台北市萬華區', 'bounds': {'north': 25.04, 'south': 25.01, 'east': 121.51, 'west': 121.48}},
+        {'name': '台北市信義區', 'bounds': {'north': 25.05, 'south': 25.02, 'east': 121.58, 'west': 121.55}},
+        {'name': '台北市士林區', 'bounds': {'north': 25.12, 'south': 25.08, 'east': 121.55, 'west': 121.50}},
+        {'name': '台北市北投區', 'bounds': {'north': 25.15, 'south': 25.10, 'east': 121.53, 'west': 121.48}},
+        {'name': '台北市內湖區', 'bounds': {'north': 25.10, 'south': 25.06, 'east': 121.60, 'west': 121.55}},
+        {'name': '台北市南港區', 'bounds': {'north': 25.07, 'south': 25.03, 'east': 121.62, 'west': 121.58}},
+        {'name': '台北市文山區', 'bounds': {'north': 25.01, 'south': 24.97, 'east': 121.57, 'west': 121.53}},
+
+        # 桃園市
+        {'name': '桃園市桃園區', 'bounds': {'north': 25.00, 'south': 24.95, 'east': 121.32, 'west': 121.28}},
+        {'name': '桃園市中壢區', 'bounds': {'north': 24.98, 'south': 24.93, 'east': 121.25, 'west': 121.20}},
+        {'name': '桃園市平鎮區', 'bounds': {'north': 24.95, 'south': 24.90, 'east': 121.25, 'west': 121.20}},
+        {'name': '桃園市八德區', 'bounds': {'north': 24.97, 'south': 24.92, 'east': 121.30, 'west': 121.25}},
+
+        # 新竹
+        {'name': '新竹市東區', 'bounds': {'north': 24.82, 'south': 24.78, 'east': 120.98, 'west': 120.94}},
+        {'name': '新竹市北區', 'bounds': {'north': 24.85, 'south': 24.81, 'east': 120.97, 'west': 120.93}},
+        {'name': '新竹市香山區', 'bounds': {'north': 24.78, 'south': 24.74, 'east': 120.94, 'west': 120.90}},
+    ]
+
+    # 尋找匹配的區域
+    for region in regions:
+        bounds = region['bounds']
+        if (lat >= bounds['south'] and lat <= bounds['north'] and
+            lng >= bounds['west'] and lng <= bounds['east']):
+            return region['name']
+
+    # 如果沒有精確匹配，提供大致區域
+    if 25.15 <= lat <= 25.22 and 121.40 <= lng <= 121.50:
+        return '新北市淡水地區'
+    elif 25.00 <= lat <= 25.15 and 121.45 <= lng <= 121.65:
+        return '台北都會區'
+    elif 24.90 <= lat <= 25.00 and 121.15 <= lng <= 121.35:
+        return '桃園市'
+    elif 24.70 <= lat <= 24.85 and 120.90 <= lng <= 121.00:
+        return '新竹地區'
+
+    # 最後備用：顯示座標
+    return f'位置 {lat:.4f}, {lng:.4f}'
+
+
 def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """計算兩點之間的距離 (Haversine公式)"""
     R = 6371  # 地球半徑 (公里)
@@ -511,20 +574,38 @@ async def analyze_shockwave_impact(request: ShockwaveAnalysisRequest):
         nearest_shock = analysis['nearest_shock']
         distance = analysis['min_distance']
         intensity = analysis['max_intensity']
-        
+
+        # 獲取用戶準確位置
+        user_location_name = get_approximate_location(request.user_location['lat'], request.user_location['lng'])
+        shock_location_name = get_approximate_location(nearest_shock['latitude'], nearest_shock['longitude']) if nearest_shock else '未知位置'
+
+        # 根據震波位置獲取精確的地理資訊
+        shock_lat = nearest_shock.get('latitude', 0)
+        shock_lng = nearest_shock.get('longitude', 0)
+        shock_station_id = nearest_shock.get('station_id', '未知測站')
+        shock_station_name = nearest_shock.get('station_name', '未知路段')
+
         detailed_prompt = f"""你是台灣的專業交通專家，請務必使用繁體中文（Traditional Chinese）進行分析，嚴禁使用簡體字：
 
 【台灣交通震波分析】
-位置：距離您{distance:.1f}公里處有強度{intensity}/10的震波
-風險：{analysis['risk_level']}風險等級
+用戶位置：{user_location_name}
+震波發生位置：{shock_location_name}
+震波精確座標：緯度{shock_lat:.6f}, 經度{shock_lng:.6f}
+測站編號：{shock_station_id}
+路段名稱：{shock_station_name}
+距離用戶：{distance:.1f}公里處有強度{intensity}/10的震波
+風險等級：{analysis['risk_level']}
 
-請用繁體中文提供：
-1. 路線建議（國道/省道替代方案）
-2. 時間調整（建議延後多久出發）
-3. 休息站建議（就近等待地點）
-4. 速度建議（行車注意事項）
+【重要】請基於震波實際發生位置（{shock_location_name}）提供建議，不要提及與震波位置無關的其他地區路線。
 
-重要：請務必使用繁體中文回答，嚴禁使用簡體字，簡潔回答，150字內："""
+請針對此震波位置用繁體中文提供：
+1. 🛣️ 針對{shock_location_name}震波的具體替代路線（國道/省道）
+2. ⏰ 時間調整建議（延後多久出發）
+3. 🅿️ {shock_location_name}附近的休息站或安全停靠點
+4. 🚗 行車速度和安全距離建議
+5. 📱 其他針對性注意事項
+
+重要：請務必使用繁體中文回答，嚴禁使用簡體字，建議必須針對震波實際位置，簡潔回答，200字內："""
 
         # 4. 使用真實Ollama AI進行分析
         try:
@@ -632,10 +713,14 @@ async def analyze_single_shockwave(request: SingleShockwaveAnalysisRequest):
         user_lng = request.user_location['lng']
         shock_lat = request.shockwave['latitude']
         shock_lng = request.shockwave['longitude']
-        
+
         distance = calculate_distance(user_lat, user_lng, shock_lat, shock_lng)
         intensity = request.shockwave.get('intensity', 0)
-        
+
+        # 獲取準確的地理位置
+        user_location_name = get_approximate_location(user_lat, user_lng)
+        shock_location_name = get_approximate_location(shock_lat, shock_lng)
+
         # 風險評估
         if distance < 5 and intensity > 8:
             risk_level = "high"
@@ -646,11 +731,16 @@ async def analyze_single_shockwave(request: SingleShockwaveAnalysisRequest):
         
         # 構建詳細的AI分析提示
         shock_info = request.shockwave
+        shock_station_id = shock_info.get('station_id', '未知測站')
+        shock_station_name = shock_info.get('station_name', '未知路段')
+
         ai_prompt = f"""你是台灣的專業交通專家，請務必使用繁體中文（Traditional Chinese）分析以下震波情況並提供專業建議，嚴禁使用簡體字：
 
 【震波詳細資訊】
-• 位置：{shock_info.get('location_name', '未知')}
-• 座標：緯度{shock_lat}，經度{shock_lng}
+• 發生位置：{shock_location_name}
+• 測站編號：{shock_station_id}
+• 路段名稱：{shock_station_name}
+• 精確座標：緯度{shock_lat:.6f}，經度{shock_lng:.6f}
 • 距離用戶：{distance:.1f}公里
 • 強度等級：{intensity}/10
 • 持續時間：{shock_info.get('shock_duration', '未知')}分鐘
@@ -659,16 +749,19 @@ async def analyze_single_shockwave(request: SingleShockwaveAnalysisRequest):
 • 預估降速：{shock_info.get('speed_drop', '未知')}%
 
 【使用者位置】
-緯度：{user_lat}，經度：{user_lng}
+位置：{user_location_name}
+精確座標：緯度{user_lat:.6f}，經度{user_lng:.6f}
 
-請用繁體中文提供：
-1. 🛣️ 具體的替代路線建議（國道/省道）
+【重要】請基於震波實際發生位置（{shock_location_name}）提供建議，不要提及與震波位置無關的其他地區路線。
+
+請針對{shock_location_name}震波用繁體中文提供：
+1. 🛣️ 針對{shock_location_name}的具體替代路線建議（國道/省道）
 2. ⏰ 精確的時間調整建議（何時出發最佳）
-3. 🅿️ 附近休息站或安全停靠點
+3. 🅿️ {shock_location_name}附近休息站或安全停靠點
 4. 🚗 行車速度和安全距離建議
-5. 📱 其他注意事項
+5. 📱 其他針對性注意事項
 
-重要：請務必使用繁體中文回答，嚴禁使用任何簡體字，以專業、簡潔的方式回答，控制在200字內："""
+重要：請務必使用繁體中文回答，嚴禁使用任何簡體字，建議必須針對震波實際位置，以專業、簡潔的方式回答，控制在200字內："""
 
         # 調用真實AI分析
         try:

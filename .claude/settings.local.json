@@ -5,7 +5,8 @@
       "Bash(find:*)",
       "Bash(ls:*)",
       "Bash(python test_ollama_api.py:*)",
-      "Bash(python test:*)"
+      "Bash(python test:*)",
+      "Bash(python3:*)"
     ],
     "deny": []
   }

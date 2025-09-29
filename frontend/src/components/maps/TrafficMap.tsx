@@ -32,7 +32,7 @@ interface ShockwaveData {
   lng: number;
   intensity: number;
   propagationSpeed: number;
-  estimatedArrival: Date;
+  estimatedArrivalTime: Date;
   affectedArea: number;
   severity?: 'low' | 'medium' | 'high' | 'critical';
   description?: string;
@@ -63,7 +63,6 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
   const [trafficLayer, setTrafficLayer] = useState<google.maps.TrafficLayer | null>(null);
   const [shockwaveOverlays, setShockwaveOverlays] = useState<google.maps.Circle[]>([]);
   const [radarWaves, setRadarWaves] = useState<{ id: string; component: React.ReactElement }[]>([]);
-  const [userLocationMarker, setUserLocationMarker] = useState<google.maps.Marker | null>(null);
 
   // Google Maps API 載入
   useEffect(() => {
@@ -132,8 +131,6 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
       setMap(newMap);
     }
   }, [isLoaded, center, zoom, onLocationUpdate, showTrafficLayer]);
-
-
 
   // 更新交通資料標記
   useEffect(() => {
@@ -225,16 +222,17 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
           }
 
           const content = createShockwaveInfoContent(shockwave);
-          
+
+          // 計算最佳彈窗位置，避免被圖例遮擋
+          const optimalPosition = calculateOptimalInfoWindowPosition(map, shockwave);
+
           const infoWindow = new google.maps.InfoWindow({
             content: content,
-            position: { 
-              lat: shockwave.lat || 0, 
-              lng: shockwave.lng || 0 
-            },
+            position: optimalPosition,
             maxWidth: 420,
+            pixelOffset: new google.maps.Size(0, -10), // 稍微向上偏移
           });
-          
+
           infoWindow.open(map);
 
           // 等待 InfoWindow 完全載入後再載入 AI 推薦
@@ -244,7 +242,7 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
 
         } catch (error) {
           console.error('開啟衝擊波資訊視窗時發生錯誤:', error);
-          
+
           // 顯示錯誤提示
           const errorInfoWindow = new google.maps.InfoWindow({
             content: `
@@ -254,9 +252,9 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
                 <div style="font-size: 12px; margin-top: 8px; color: #999;">請稍後再試或聯繫系統管理員</div>
               </div>
             `,
-            position: { 
-              lat: shockwave?.lat || 0, 
-              lng: shockwave?.lng || 0 
+            position: {
+              lat: shockwave?.lat || 0,
+              lng: shockwave?.lng || 0
             },
           });
           errorInfoWindow.open(map);
@@ -314,9 +312,95 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
       east: 122.0,
       west: 119.3
     };
-    
+
     return lat >= taiwanBounds.south && lat <= taiwanBounds.north &&
            lng >= taiwanBounds.west && lng <= taiwanBounds.east;
+  };
+
+  // 計算最佳 InfoWindow 位置，避免被圖例遮擋
+  const calculateOptimalInfoWindowPosition = (map: google.maps.Map, shockwave: ShockwaveData) => {
+    const projection = map.getProjection();
+    if (!projection) {
+      return { lat: shockwave.lat, lng: shockwave.lng };
+    }
+
+    const bounds = map.getBounds();
+    if (!bounds) {
+      return { lat: shockwave.lat, lng: shockwave.lng };
+    }
+
+    // 地圖可視區域
+    const ne = bounds.getNorthEast();
+    const sw = bounds.getSouthWest();
+
+    // 圖例位置 (左下角, 大約佔用 300x200 像素)
+    const legendWidth = 300; // 圖例寬度 (像素)
+    const legendHeight = 200; // 圖例高度 (像素)
+
+    // 計算地圖尺寸
+    const mapDiv = map.getDiv();
+    const mapWidth = mapDiv.offsetWidth;
+    const mapHeight = mapDiv.offsetHeight;
+
+    // 計算圖例佔用的地理範圍
+    const latRange = ne.lat() - sw.lat();
+    const lngRange = ne.lng() - sw.lng();
+
+    // 圖例佔用的地理區域 (左下角)
+    const legendLatRange = (legendHeight / mapHeight) * latRange;
+    const legendLngRange = (legendWidth / mapWidth) * lngRange;
+
+    const legendBounds = {
+      south: sw.lat(),
+      north: sw.lat() + legendLatRange,
+      west: sw.lng(),
+      east: sw.lng() + legendLngRange
+    };
+
+    // 檢查原始位置是否會被圖例遮擋
+    const originalLat = shockwave.lat;
+    const originalLng = shockwave.lng;
+
+    const isInLegendArea = originalLat >= legendBounds.south &&
+                          originalLat <= legendBounds.north &&
+                          originalLng >= legendBounds.west &&
+                          originalLng <= legendBounds.east;
+
+    if (!isInLegendArea) {
+      // 如果不在圖例區域，使用原始位置
+      return { lat: originalLat, lng: originalLng };
+    }
+
+    // 如果在圖例區域，計算替代位置
+    // 優先順序：右上 > 右下 > 上方中央
+    const alternatives = [
+      // 右上角
+      {
+        lat: Math.min(ne.lat() - legendLatRange * 0.1, originalLat + legendLatRange * 0.5),
+        lng: Math.max(ne.lng() - legendLngRange * 0.1, originalLng + legendLngRange * 0.5)
+      },
+      // 右下角 (圖例右側)
+      {
+        lat: originalLat,
+        lng: legendBounds.east + legendLngRange * 0.1
+      },
+      // 上方中央
+      {
+        lat: legendBounds.north + legendLatRange * 0.1,
+        lng: originalLng
+      }
+    ];
+
+    // 選擇第一個在地圖邊界內的替代位置
+    for (const alt of alternatives) {
+      if (alt.lat >= sw.lat() && alt.lat <= ne.lat() &&
+          alt.lng >= sw.lng() && alt.lng <= ne.lng()) {
+        return alt;
+      }
+    }
+
+    // 如果所有替代位置都不可用，使用原始位置
+    return { lat: originalLat, lng: originalLng };
   };
 
   // 根據衝擊波嚴重程度獲取樣式
@@ -374,12 +458,12 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
 
   // 計算衝擊波持續時間
   const calculateDuration = (shockwave: ShockwaveData): string => {
-    if (!shockwave.estimatedArrival) return '未知';
-    
+    if (!shockwave.estimatedArrivalTime) return '未知';
+
     const now = new Date();
-    const arrival = new Date(shockwave.estimatedArrival);
+    const arrival = new Date(shockwave.estimatedArrivalTime);
     const diffMinutes = Math.max(0, Math.floor((arrival.getTime() - now.getTime()) / 60000));
-    
+
     if (diffMinutes < 60) {
       return `${diffMinutes} 分鐘`;
     } else {
@@ -467,13 +551,13 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
             </div>
           </div>
 
-          ${shockwave.estimatedArrival ? `
+          ${shockwave.estimatedArrivalTime ? `
             <div style="margin-bottom: 12px; font-size: 14px;">
               <div style="color: #666; margin-bottom: 4px;">預估到達時間</div>
               <div style="font-weight: 600; color: #d73527;">
-                ${new Date(shockwave.estimatedArrival).toLocaleString('zh-TW', {
+                ${new Date(shockwave.estimatedArrivalTime).toLocaleString('zh-TW', {
                   year: 'numeric',
-                  month: '2-digit', 
+                  month: '2-digit',
                   day: '2-digit',
                   hour: '2-digit',
                   minute: '2-digit'
@@ -768,71 +852,6 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
     }
   }, [map]);
 
-  // 更新使用者位置標記
-  const updateUserLocationMarker = useCallback((lat: number, lng: number) => {
-    if (!map) return;
-
-    // 移除現有的使用者位置標記
-    if (userLocationMarker) {
-      userLocationMarker.setMap(null);
-    }
-
-    // 創建新的使用者位置標記
-    const marker = new google.maps.Marker({
-      position: { lat, lng },
-      map: map,
-      title: '我的位置',
-      icon: {
-        path: google.maps.SymbolPath.CIRCLE,
-        scale: 8,
-        fillColor: '#4285F4',
-        fillOpacity: 1,
-        strokeColor: '#ffffff',
-        strokeWeight: 3,
-      },
-      zIndex: 1000,
-    });
-
-    // 添加藍色圓圈表示精確度範圍
-    const accuracyCircle = new google.maps.Circle({
-      strokeColor: '#4285F4',
-      strokeOpacity: 0.8,
-      strokeWeight: 1,
-      fillColor: '#4285F4',
-      fillOpacity: 0.1,
-      map: map,
-      center: { lat, lng },
-      radius: 100, // 100米精確度範圍
-    });
-
-    // 保存標記引用
-    setUserLocationMarker(marker);
-
-    // 點擊標記顯示資訊
-    const infoWindow = new google.maps.InfoWindow({
-      content: `
-        <div style="padding: 8px;">
-          <h4 style="margin: 0 0 8px 0; color: #1976d2;">📍 我的位置</h4>
-          <p style="margin: 0; font-size: 12px; color: #666;">
-            緯度: ${lat.toFixed(6)}<br/>
-            經度: ${lng.toFixed(6)}
-          </p>
-        </div>
-      `
-    });
-
-    marker.addListener('click', () => {
-      infoWindow.open(map, marker);
-    });
-  }, [map, userLocationMarker]);
-
-  // 當center prop變更時，更新使用者位置標記
-  useEffect(() => {
-    if (map && center) {
-      updateUserLocationMarker(center.lat, center.lng);
-    }
-  }, [map, center, updateUserLocationMarker]);
-
   if (!isLoaded) {
     return (
       <div className="flex items-center justify-center h-full bg-gray-100">
@@ -865,51 +884,37 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
           
           <button
             onClick={() => {
-              // 取得使用者位置
+              // 取得用戶位置
               if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                   (position) => {
                     const lat = position.coords.latitude;
                     const lng = position.coords.longitude;
                     panTo(lat, lng);
-                    updateUserLocationMarker(lat, lng); // 添加使用者位置標記
                     onLocationUpdate?.(lat, lng);
                   },
                   (error) => {
                     console.error('無法取得位置:', error);
-                    alert('無法取得您的位置，請確認已允許位置權限');
-                  },
-                  {
-                    enableHighAccuracy: true,
-                    timeout: 10000,
-                    maximumAge: 60000
                   }
                 );
-              } else {
-                alert('您的瀏覽器不支援地理位置功能');
               }
             }}
             className="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600"
-            title="點擊取得並標示我的位置"
           >
-            📍 我的位置
+            我的位置
           </button>
         </div>
       </div>
 
-      {/* 圖例 */}
-      <div className="absolute bottom-4 left-4 bg-white rounded-lg shadow-lg p-3">
+      {/* 圖例 - 改進版本，可以在彈窗出現時調整透明度 */}
+      <div
+        id="map-legend"
+        className="absolute bottom-4 left-4 bg-white rounded-lg shadow-lg p-3 transition-opacity duration-300 hover:opacity-100"
+        style={{ zIndex: 100 }}
+      >
         <h4 className="font-semibold mb-2 text-sm">圖例</h4>
         <div className="space-y-1 text-xs">
           <div className="mb-2">
-            <div className="text-xs font-medium text-gray-600 mb-1">位置標記</div>
-            <div className="flex items-center mb-1">
-              <div className="w-3 h-3 rounded-full bg-blue-500 mr-2 border-2 border-white"></div>
-              <span>我的位置</span>
-            </div>
-          </div>
-          
-          <div className="mb-2 border-t pt-2">
             <div className="text-xs font-medium text-gray-600 mb-1">交通狀況</div>
             <div className="flex items-center mb-1">
               <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
@@ -924,7 +929,7 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
               <span>阻塞</span>
             </div>
           </div>
-          
+
           {showShockwaveOverlay && (
             <div className="border-t pt-2">
               <div className="text-xs font-medium text-gray-600 mb-1">衝擊波嚴重程度</div>
@@ -947,6 +952,20 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
             </div>
           )}
         </div>
+
+        {/* 添加收合按鈕 */}
+        <button
+          onClick={() => {
+            const legend = document.getElementById('map-legend');
+            if (legend) {
+              legend.style.opacity = legend.style.opacity === '0.3' ? '1' : '0.3';
+            }
+          }}
+          className="absolute -top-2 -right-2 w-6 h-6 bg-blue-500 text-white rounded-full text-xs hover:bg-blue-600 flex items-center justify-center"
+          title="切換圖例透明度"
+        >
+          📍
+        </button>
       </div>
 
       {/* 渲染雷達波組件 */}

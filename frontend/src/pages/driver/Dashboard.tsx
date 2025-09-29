@@ -578,37 +578,112 @@ const DriverDashboard: React.FC = () => {
                 </div>
               </div>
             </div>
-            
-            {/* 即時警告 */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200/50 p-6">              
-              {alerts.length > 0 ? (
-                <div className="space-y-3">
-                  {alerts.slice(0, 3).map((alert, index) => (
-                    <div
-                      key={index}
-                      className={`p-4 rounded-xl cursor-pointer transition-all duration-200 hover:scale-105 border-l-4 ${
-                        alert.level === 'high' ? 'border-l-red-500 bg-red-50 hover:bg-red-100' :
-                        alert.level === 'medium' ? 'border-l-yellow-500 bg-yellow-50 hover:bg-yellow-100' :
-                        'border-l-blue-500 bg-blue-50 hover:bg-blue-100'
-                      }`}
-                      onClick={() => setSelectedAlert(alert)}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="font-semibold text-sm text-gray-900">{alert.title}</div>
-                          <div className="text-xs mt-1 text-gray-600">{alert.description}</div>
-                          <div className="flex items-center text-xs mt-2 text-gray-500">
-                            <ClockIcon className="w-3 h-3 mr-1" />
-                            {alert.estimatedImpact}
+
+            {/* 震波警報列表 */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200/50 p-6">
+              <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                <div className="w-8 h-8 bg-gradient-to-r from-red-500 to-orange-600 rounded-lg flex items-center justify-center mr-3">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                </div>
+                🌊 交通震波警報
+                {shockwaves.length > 0 && (
+                  <span className="ml-2 bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                    {shockwaves.length}
+                  </span>
+                )}
+              </h2>
+
+              {shockwaves.length > 0 ? (
+                <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
+                  {/* 按距離排序震波 */}
+                  {shockwaves
+                    .map((shockwave: any) => ({
+                      ...shockwave,
+                      distance: userLocation ?
+                        Math.sqrt(
+                          Math.pow(shockwave.latitude - userLocation.lat, 2) +
+                          Math.pow(shockwave.longitude - userLocation.lng, 2)
+                        ) * 111 : 0 // 簡化距離計算，111km ≈ 1度
+                    }))
+                    .sort((a: any, b: any) => a.distance - b.distance)
+                    .map((shockwave: any, index: number) => {
+                      const severityConfig = {
+                        critical: { bg: 'bg-red-50 border-red-400', text: 'text-red-800', icon: '🚨', title: '極危險' },
+                        high: { bg: 'bg-orange-50 border-orange-400', text: 'text-orange-800', icon: '⚠️', title: '高風險' },
+                        medium: { bg: 'bg-yellow-50 border-yellow-400', text: 'text-yellow-800', icon: '⚡', title: '中度' },
+                        low: { bg: 'bg-blue-50 border-blue-400', text: 'text-blue-800', icon: '📍', title: '輕微' }
+                      };
+
+                      const severity = shockwave.severity || 'medium';
+                      const config = severityConfig[severity as keyof typeof severityConfig] || severityConfig.medium;
+
+                      return (
+                        <div
+                          key={shockwave.id || index}
+                          className={`rounded-lg p-4 border-l-4 cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-[1.02] ${config.bg}`}
+                        >
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex items-center space-x-2">
+                              <span className="text-lg">{config.icon}</span>
+                              <div>
+                                <h3 className={`font-semibold text-sm ${config.text}`}>
+                                  {shockwave.location_name || shockwave.station_name || `${config.title}震波警報`}
+                                </h3>
+                                <p className="text-xs text-gray-600">
+                                  {shockwave.description || `在測站 ${shockwave.station_id || '未知'} 檢測到真實交通衝擊波`}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-xs font-medium text-gray-500">
+                                距離 {shockwave.distance.toFixed(1)} km
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-3 gap-3 text-xs">
+                            <div className="bg-white/60 rounded-lg p-2 text-center">
+                              <div className={`font-bold text-lg ${config.text}`}>
+                                {(shockwave.intensity || 0).toFixed(1)}
+                              </div>
+                              <div className="text-gray-600">嚴重程度</div>
+                            </div>
+                            <div className="bg-white/60 rounded-lg p-2 text-center">
+                              <div className="font-bold text-lg text-blue-600">
+                                {shockwave.shock_duration || 30}
+                              </div>
+                              <div className="text-gray-600">持續時間(分)</div>
+                            </div>
+                            <div className="bg-white/60 rounded-lg p-2 text-center">
+                              <div className="font-bold text-lg text-purple-600">
+                                {(shockwave.affected_area || 4.3).toFixed(1)}
+                              </div>
+                              <div className="text-gray-600">影響半徑(km)</div>
+                            </div>
+                          </div>
+
+                          <div className="mt-3 pt-3 border-t border-white/50">
+                            <div className="flex items-center justify-between text-xs">
+                              <div className="flex items-center space-x-4">
+                                <span className="text-gray-600">
+                                  🚗 傳播速度: {(shockwave.propagation_speed || 20).toFixed(1)} km/h
+                                </span>
+                              </div>
+                              <div className="text-gray-500">
+                                {shockwave.estimated_arrival_time ?
+                                  new Date(shockwave.estimated_arrival_time).toLocaleTimeString('zh-TW', {
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  }) : '預估到達時間'
+                                }
+                              </div>
+                            </div>
                           </div>
                         </div>
-                        <div className={`w-2 h-2 rounded-full ${
-                          alert.level === 'high' ? 'bg-red-500 animate-pulse' :
-                          alert.level === 'medium' ? 'bg-yellow-500' : 'bg-blue-500'
-                        }`}></div>
-                      </div>
-                    </div>
-                  ))}
+                      );
+                    })}
                 </div>
               ) : (
                 <div className="text-center py-8">
@@ -617,8 +692,8 @@ const DriverDashboard: React.FC = () => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
-                  <p className="text-gray-500 text-sm font-medium">目前沒有警告</p>
-                  <p className="text-gray-400 text-xs mt-1">路況良好，安全出行</p>
+                  <p className="text-gray-500 text-sm font-medium">目前沒有震波警報</p>
+                  <p className="text-gray-400 text-xs mt-1">交通狀況良好，安全出行</p>
                 </div>
               )}
             </div>

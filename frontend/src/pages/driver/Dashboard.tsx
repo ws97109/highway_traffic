@@ -352,18 +352,24 @@ const DriverDashboard: React.FC = () => {
 
     if (shockwave_data && shockwave_data.shockwaves.length > 0) {
       prompt += `\n\n【震波警報】偵測到${shockwave_data.shockwaves.length}個交通震波事件`;
-      
+
       // 詳細震波資訊
       shockwave_data.shockwaves.forEach((shock: any, index: number) => {
-        const distance = user_location ? 
+        // 檢查必要的屬性是否存在
+        if (!shock || typeof shock.latitude !== 'number' || typeof shock.longitude !== 'number') {
+          console.warn(`震波${index + 1}缺少座標資訊`, shock);
+          return; // 跳過這個震波
+        }
+
+        const distance = user_location ?
           calculateDistance(user_location.lat, user_location.lng, shock.latitude, shock.longitude) : null;
-        
+
         prompt += `\n震波${index + 1}：`;
-        prompt += `\n- 位置：${shock.location_name} (${shock.latitude.toFixed(4)}, ${shock.longitude.toFixed(4)})`;
-        prompt += `\n- 強度：${shock.intensity}/10 (速度下降${shock.speed_drop}km/h)`;
-        prompt += `\n- 持續時間：${shock.shock_duration}分鐘`;
-        prompt += `\n- 影響範圍：半徑${shock.affected_area}公里`;
-        prompt += `\n- 傳播速度：${shock.propagation_speed}km/h`;
+        prompt += `\n- 位置：${shock.location_name || '未知位置'} (${shock.latitude.toFixed(4)}, ${shock.longitude.toFixed(4)})`;
+        prompt += `\n- 強度：${shock.intensity || 'N/A'}/10 (速度下降${shock.speed_drop || 'N/A'}km/h)`;
+        prompt += `\n- 持續時間：${shock.shock_duration || 'N/A'}分鐘`;
+        prompt += `\n- 影響範圍：半徑${shock.affected_area || 'N/A'}公里`;
+        prompt += `\n- 傳播速度：${shock.propagation_speed || 'N/A'}km/h`;
         if (distance) {
           prompt += `\n- 與您的距離：${distance.toFixed(1)}公里`;
         }

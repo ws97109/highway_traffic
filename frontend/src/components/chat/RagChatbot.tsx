@@ -102,15 +102,16 @@ const RAGChatbot: React.FC<RAGChatbotProps> = ({
     try {
       const startTime = Date.now();
       
-      const response = await fetch('/api/controller/chat', {
+      const response = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           message: userMessage.content,
-          session_id: 'control-center-' + Date.now(),
-          priority: "normal"
+          traffic_data: null,
+          shockwave_data: null,
+          user_location: null
         })
       });
 
@@ -122,14 +123,19 @@ const RAGChatbot: React.FC<RAGChatbotProps> = ({
       }
 
       const data = await response.json();
-      
+
+      // 處理可能的錯誤訊息
+      if (data.detail) {
+        throw new Error(data.detail);
+      }
+
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         content: data.response || '抱歉，我現在無法回答這個問題。',
         role: 'assistant',
         timestamp: new Date(),
-        sources: data.supporting_data || [],
-        confidence: data.confidence_score || 0,
+        sources: data.sources || data.supporting_data || [],
+        confidence: data.confidence || data.confidence_score || 0,
         processingTime: processingTime
       };
 

@@ -131,11 +131,15 @@ async def chat_with_ollama(request: ChatRequest):
         )
 
     except requests.exceptions.Timeout:
-        raise HTTPException(status_code=504, detail="AI 回應超時，請稍後再試")
+        raise HTTPException(status_code=504, detail="AI 回應超時，請稍後再試。請確認 Ollama 服務是否正在運行。")
     except requests.exceptions.ConnectionError:
-        raise HTTPException(status_code=503, detail="無法連接到 AI 服務")
+        raise HTTPException(status_code=503, detail=f"無法連接到 AI 服務 ({OLLAMA_BASE_URL})。請確認 Ollama 已啟動並在正確的端口運行。")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"AI 對話失敗: {str(e)}")
+        import traceback
+        error_detail = f"AI 對話失敗: {str(e)}"
+        print(f"❌ Ollama Chat Error: {error_detail}")
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=error_detail)
 
 @router.get("/advice")
 async def get_traffic_advice(

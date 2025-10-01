@@ -32,7 +32,7 @@ interface ShockwaveData {
   lng: number;
   intensity: number;
   propagationSpeed: number;
-  estimatedArrival: Date;
+  estimatedArrivalTime: Date;
   affectedArea: number;
   severity?: 'low' | 'medium' | 'high' | 'critical';
   description?: string;
@@ -222,16 +222,17 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
           }
 
           const content = createShockwaveInfoContent(shockwave);
-          
+
+          // 計算最佳彈窗位置，避免被圖例遮擋
+          const optimalPosition = calculateOptimalInfoWindowPosition(map, shockwave);
+
           const infoWindow = new google.maps.InfoWindow({
             content: content,
-            position: { 
-              lat: shockwave.lat || 0, 
-              lng: shockwave.lng || 0 
-            },
+            position: optimalPosition,
             maxWidth: 420,
+            pixelOffset: new google.maps.Size(0, -10), // 稍微向上偏移
           });
-          
+
           infoWindow.open(map);
 
           // 等待 InfoWindow 完全載入後再載入 AI 推薦
@@ -241,7 +242,7 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
 
         } catch (error) {
           console.error('開啟衝擊波資訊視窗時發生錯誤:', error);
-          
+
           // 顯示錯誤提示
           const errorInfoWindow = new google.maps.InfoWindow({
             content: `
@@ -251,9 +252,9 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
                 <div style="font-size: 12px; margin-top: 8px; color: #999;">請稍後再試或聯繫系統管理員</div>
               </div>
             `,
-            position: { 
-              lat: shockwave?.lat || 0, 
-              lng: shockwave?.lng || 0 
+            position: {
+              lat: shockwave?.lat || 0,
+              lng: shockwave?.lng || 0
             },
           });
           errorInfoWindow.open(map);
@@ -311,9 +312,95 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
       east: 122.0,
       west: 119.3
     };
-    
+
     return lat >= taiwanBounds.south && lat <= taiwanBounds.north &&
            lng >= taiwanBounds.west && lng <= taiwanBounds.east;
+  };
+
+  // 計算最佳 InfoWindow 位置，避免被圖例遮擋
+  const calculateOptimalInfoWindowPosition = (map: google.maps.Map, shockwave: ShockwaveData) => {
+    const projection = map.getProjection();
+    if (!projection) {
+      return { lat: shockwave.lat, lng: shockwave.lng };
+    }
+
+    const bounds = map.getBounds();
+    if (!bounds) {
+      return { lat: shockwave.lat, lng: shockwave.lng };
+    }
+
+    // 地圖可視區域
+    const ne = bounds.getNorthEast();
+    const sw = bounds.getSouthWest();
+
+    // 圖例位置 (左下角, 大約佔用 300x200 像素)
+    const legendWidth = 300; // 圖例寬度 (像素)
+    const legendHeight = 200; // 圖例高度 (像素)
+
+    // 計算地圖尺寸
+    const mapDiv = map.getDiv();
+    const mapWidth = mapDiv.offsetWidth;
+    const mapHeight = mapDiv.offsetHeight;
+
+    // 計算圖例佔用的地理範圍
+    const latRange = ne.lat() - sw.lat();
+    const lngRange = ne.lng() - sw.lng();
+
+    // 圖例佔用的地理區域 (左下角)
+    const legendLatRange = (legendHeight / mapHeight) * latRange;
+    const legendLngRange = (legendWidth / mapWidth) * lngRange;
+
+    const legendBounds = {
+      south: sw.lat(),
+      north: sw.lat() + legendLatRange,
+      west: sw.lng(),
+      east: sw.lng() + legendLngRange
+    };
+
+    // 檢查原始位置是否會被圖例遮擋
+    const originalLat = shockwave.lat;
+    const originalLng = shockwave.lng;
+
+    const isInLegendArea = originalLat >= legendBounds.south &&
+                          originalLat <= legendBounds.north &&
+                          originalLng >= legendBounds.west &&
+                          originalLng <= legendBounds.east;
+
+    if (!isInLegendArea) {
+      // 如果不在圖例區域，使用原始位置
+      return { lat: originalLat, lng: originalLng };
+    }
+
+    // 如果在圖例區域，計算替代位置
+    // 優先順序：右上 > 右下 > 上方中央
+    const alternatives = [
+      // 右上角
+      {
+        lat: Math.min(ne.lat() - legendLatRange * 0.1, originalLat + legendLatRange * 0.5),
+        lng: Math.max(ne.lng() - legendLngRange * 0.1, originalLng + legendLngRange * 0.5)
+      },
+      // 右下角 (圖例右側)
+      {
+        lat: originalLat,
+        lng: legendBounds.east + legendLngRange * 0.1
+      },
+      // 上方中央
+      {
+        lat: legendBounds.north + legendLatRange * 0.1,
+        lng: originalLng
+      }
+    ];
+
+    // 選擇第一個在地圖邊界內的替代位置
+    for (const alt of alternatives) {
+      if (alt.lat >= sw.lat() && alt.lat <= ne.lat() &&
+          alt.lng >= sw.lng() && alt.lng <= ne.lng()) {
+        return alt;
+      }
+    }
+
+    // 如果所有替代位置都不可用，使用原始位置
+    return { lat: originalLat, lng: originalLng };
   };
 
   // 根據衝擊波嚴重程度獲取樣式
@@ -371,12 +458,12 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
 
   // 計算衝擊波持續時間
   const calculateDuration = (shockwave: ShockwaveData): string => {
-    if (!shockwave.estimatedArrival) return '未知';
-    
+    if (!shockwave.estimatedArrivalTime) return '未知';
+
     const now = new Date();
-    const arrival = new Date(shockwave.estimatedArrival);
+    const arrival = new Date(shockwave.estimatedArrivalTime);
     const diffMinutes = Math.max(0, Math.floor((arrival.getTime() - now.getTime()) / 60000));
-    
+
     if (diffMinutes < 60) {
       return `${diffMinutes} 分鐘`;
     } else {
@@ -464,13 +551,13 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
             </div>
           </div>
 
-          ${shockwave.estimatedArrival ? `
+          ${shockwave.estimatedArrivalTime ? `
             <div style="margin-bottom: 12px; font-size: 14px;">
               <div style="color: #666; margin-bottom: 4px;">預估到達時間</div>
               <div style="font-weight: 600; color: #d73527;">
-                ${new Date(shockwave.estimatedArrival).toLocaleString('zh-TW', {
+                ${new Date(shockwave.estimatedArrivalTime).toLocaleString('zh-TW', {
                   year: 'numeric',
-                  month: '2-digit', 
+                  month: '2-digit',
                   day: '2-digit',
                   hour: '2-digit',
                   minute: '2-digit'
@@ -509,7 +596,7 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
     }
   };
 
-  // 載入 AI 推薦內容
+  // 載入真實 AI 推薦內容
   const loadAIRecommendation = async (shockwave: ShockwaveData): Promise<void> => {
     try {
       const recommendationElement = document.getElementById(`ai-recommendation-${shockwave.id}`);
@@ -521,27 +608,98 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
       // 顯示載入中狀態
       recommendationElement.innerHTML = `
         <div style="display: flex; align-items: center; color: rgba(255,255,255,0.8);">
-          <div style="margin-right: 8px;">⏳</div>
-          <div>AI 正在分析中...</div>
+          <div style="margin-right: 8px;">🤖</div>
+          <div>真實AI正在深度分析中...</div>
         </div>
       `;
 
-      // 模擬 API 調用 - 這裡你可以替換為實際的 API 調用
-      // 根據衝擊波數據生成建議
-      await new Promise(resolve => setTimeout(resolve, 1500)); // 模擬網路延遲
+      // 獲取用戶位置
+      navigator.geolocation.getCurrentPosition(async (position) => {
+        try {
+          const userLocation = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
 
-      const recommendations = generateAIRecommendations(shockwave);
-      
-      recommendationElement.innerHTML = `
-        <div style="line-height: 1.5;">
-          ${recommendations.map(rec => `
-            <div style="margin-bottom: 8px; display: flex; align-items: flex-start;">
-              <span style="margin-right: 6px; font-size: 12px;">${rec.icon}</span>
-              <span style="font-size: 13px;">${rec.text}</span>
+          // 調用真實的單震波AI分析API
+          const response = await fetch('/api/shockwave-ai/single-shockwave-analysis', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              user_location: userLocation,
+              shockwave: {
+                location_name: shockwave.description || `震波區域 ${shockwave.id}`,
+                latitude: shockwave.lat,
+                longitude: shockwave.lng,
+                intensity: (shockwave.intensity || 0) * 10, // 轉換為0-10範圍
+                shock_duration: 30, // 預設30分鐘
+                affected_area: shockwave.affectedArea || 5,
+                propagation_speed: shockwave.propagationSpeed || 50,
+                speed_drop: 30
+              }
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error('API請求失敗');
+          }
+
+          const aiResult = await response.json();
+          console.log('🤖 真實AI分析結果:', aiResult);
+
+          // 顯示AI分析結果
+          recommendationElement.innerHTML = `
+            <div style="line-height: 1.5; color: white;">
+              <div style="margin-bottom: 12px; padding: 8px; background: rgba(0,0,0,0.3); border-radius: 6px;">
+                <div style="font-weight: bold; margin-bottom: 6px; color: #4CAF50;">
+                  🤖 AI專家分析 (距離: ${aiResult.distance}km)
+                </div>
+                <div style="font-size: 12px; line-height: 1.4; white-space: pre-line;">
+                  ${aiResult.ai_analysis}
+                </div>
+              </div>
+              ${aiResult.recommendations.map((rec: any) => `
+                <div style="margin-bottom: 6px; display: flex; align-items: flex-start; padding: 4px; background: rgba(255,255,255,0.1); border-radius: 4px;">
+                  <span style="margin-right: 6px; font-size: 12px;">
+                    ${getRecommendationIcon(rec.type)}
+                  </span>
+                  <div>
+                    <div style="font-size: 12px; font-weight: bold;">${rec.title}</div>
+                    <div style="font-size: 11px; opacity: 0.9;">${rec.description}</div>
+                  </div>
+                </div>
+              `).join('')}
+              <div style="margin-top: 8px; font-size: 10px; opacity: 0.7; text-align: center;">
+                ⚠️ 此為真實AI運算結果，請結合實際路況謹慎駕駛
+              </div>
             </div>
-          `).join('')}
-        </div>
-      `;
+          `;
+
+        } catch (apiError) {
+          console.error('AI API 調用失敗:', apiError);
+          // 顯示錯誤並回退到基礎建議
+          recommendationElement.innerHTML = `
+            <div style="color: rgba(255,255,255,0.9);">
+              <div style="margin-bottom: 8px; color: #ffeb3b;">⚠️ AI服務暫時不可用</div>
+              <div style="font-size: 12px; line-height: 1.4;">
+                提供基礎分析建議：<br/>
+                • 震波強度: ${((shockwave.intensity || 0) * 10).toFixed(1)}/10<br/>
+                • 建議保持謹慎駕駛<br/>
+                • 必要時考慮替代路線
+              </div>
+            </div>
+          `;
+        }
+      }, (geoError) => {
+        console.error('無法獲取用戶位置:', geoError);
+        recommendationElement.innerHTML = `
+          <div style="color: rgba(255,255,255,0.8); font-size: 12px;">
+            需要位置權限才能提供AI分析建議
+          </div>
+        `;
+      });
 
     } catch (error) {
       console.error('載入 AI 推薦時發生錯誤:', error);
@@ -549,11 +707,23 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
       if (recommendationElement) {
         recommendationElement.innerHTML = `
           <div style="color: rgba(255,255,255,0.7); font-size: 13px;">
-            暫時無法載入 AI 建議，請稍後再試
+            AI分析載入失敗，請稍後再試
           </div>
         `;
       }
     }
+  };
+
+  // 獲取建議類型對應的圖標
+  const getRecommendationIcon = (type: string): string => {
+    const iconMap: { [key: string]: string } = {
+      'alternative_route': '🛣️',
+      'timing_adjustment': '⏰',
+      'rest_area': '🚫',
+      'speed_warning': '🚗',
+      'emergency': '🚨'
+    };
+    return iconMap[type] || '💡';
   };
 
   // 根據衝擊波數據生成 AI 推薦
@@ -736,8 +906,12 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
         </div>
       </div>
 
-      {/* 圖例 */}
-      <div className="absolute bottom-4 left-4 bg-white rounded-lg shadow-lg p-3">
+      {/* 圖例 - 改進版本，可以在彈窗出現時調整透明度 */}
+      <div
+        id="map-legend"
+        className="absolute bottom-4 left-4 bg-white rounded-lg shadow-lg p-3 transition-opacity duration-300 hover:opacity-100"
+        style={{ zIndex: 100 }}
+      >
         <h4 className="font-semibold mb-2 text-sm">圖例</h4>
         <div className="space-y-1 text-xs">
           <div className="mb-2">
@@ -755,7 +929,7 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
               <span>阻塞</span>
             </div>
           </div>
-          
+
           {showShockwaveOverlay && (
             <div className="border-t pt-2">
               <div className="text-xs font-medium text-gray-600 mb-1">衝擊波嚴重程度</div>
@@ -778,6 +952,20 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
             </div>
           )}
         </div>
+
+        {/* 添加收合按鈕 */}
+        <button
+          onClick={() => {
+            const legend = document.getElementById('map-legend');
+            if (legend) {
+              legend.style.opacity = legend.style.opacity === '0.3' ? '1' : '0.3';
+            }
+          }}
+          className="absolute -top-2 -right-2 w-6 h-6 bg-blue-500 text-white rounded-full text-xs hover:bg-blue-600 flex items-center justify-center"
+          title="切換圖例透明度"
+        >
+          📍
+        </button>
       </div>
 
       {/* 渲染雷達波組件 */}

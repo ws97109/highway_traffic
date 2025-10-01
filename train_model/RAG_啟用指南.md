@@ -34,7 +34,7 @@ curl -fsSL https://ollama.ai/install.sh | sh
 ### 2. 安裝 Python 依賴
 
 ```bash
-cd /Users/lishengfeng/Desktop/Highway_trafficwave-main/train_model
+cd train_model
 pip install -r requirements.txt
 ```
 
@@ -92,7 +92,7 @@ retrieval:
 ### 方法一：完整訓練流程
 
 ```bash
-cd /Users/lishengfeng/Desktop/Highway_trafficwave-main/train_model/scripts
+cd train_model/scripts
 python train_rag.py --mode train
 ```
 

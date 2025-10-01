@@ -29,7 +29,21 @@ async def chat_with_ollama(request: ChatRequest):
         # 構建包含交通數據的提示
         system_prompt = """你是一個專業的交通分析助手，專門為台灣的駕駛者提供智能建議。
 你會根據即時交通數據、震波預警和路況信息，提供實用的駕駛建議。
-請用繁體中文回答，語氣要親切且專業。"""
+
+當有交通震波事件時，你需要特別關注以下資訊並提供具體建議：
+- 震波位置與駕駛者的距離
+- 震波強度和影響範圍
+- 震波持續時間和預計影響時間
+- 駕駛者的當前位置和行駛方向
+
+請提供以下類型的具體建議：
+1. 🛣️ 替代路線：推薦具體的國道或省道替代方案
+2. ⏰ 時間調整：建議延緩或提前出發的具體時間
+3. 🛑 休息站策略：推薦就近的休息站名稱和等待時間
+4. ⚠️ 行車注意：前方多少公里後需要降速，建議時速
+5. 🚨 安全措施：緊急情況下的應對方式
+
+請用繁體中文回答，語氣要親切且專業，並提供可操作的具體建議。"""
 
         # 準備交通數據摘要
         traffic_summary = ""
@@ -47,7 +61,31 @@ async def chat_with_ollama(request: ChatRequest):
         if request.shockwave_data and request.shockwave_data.get('shockwaves'):
             shockwaves = request.shockwave_data['shockwaves']
             if shockwaves:
-                traffic_summary += f"\n⚠️ 偵測到 {len(shockwaves)} 個交通震波事件。"
+                traffic_summary += f"\n⚠️ 偵測到 {len(shockwaves)} 個交通震波事件："
+                
+                for i, shock in enumerate(shockwaves):
+                    # 計算用戶與震波的距離
+                    distance = None
+                    if request.user_location:
+                        user_lat = request.user_location.get('lat')
+                        user_lng = request.user_location.get('lng')
+                        if user_lat and user_lng:
+                            # Haversine公式計算距離
+                            import math
+                            R = 6371  # 地球半徑 (公里)
+                            dLat = math.radians(shock.get('latitude', 0) - user_lat)
+                            dLon = math.radians(shock.get('longitude', 0) - user_lng)
+                            a = (math.sin(dLat/2) * math.sin(dLat/2) + 
+                                math.cos(math.radians(user_lat)) * math.cos(math.radians(shock.get('latitude', 0))) * 
+                                math.sin(dLon/2) * math.sin(dLon/2))
+                            c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+                            distance = R * c
+                    
+                    traffic_summary += f"\n  震波{i+1}: {shock.get('location_name', '未知位置')}"
+                    traffic_summary += f" (強度{shock.get('intensity', 0)}/10, 影響範圍{shock.get('affected_area', 0)}km"
+                    if distance:
+                        traffic_summary += f", 距您{distance:.1f}km"
+                    traffic_summary += f", 持續{shock.get('shock_duration', 0)}分鐘)"
 
         # 用戶位置信息
         location_info = ""
@@ -109,8 +147,9 @@ async def get_traffic_advice(
     """根據當前位置獲取交通建議"""
     try:
         # 獲取當前交通數據
-        traffic_response = requests.get('http://localhost:8000/api/traffic/current', timeout=10)
-        shockwave_response = requests.get('http://localhost:8000/api/shockwave/active', timeout=10)
+        api_base = os.getenv('API_BASE_URL', 'http://localhost:8000')
+        traffic_response = requests.get(f'{api_base}/api/traffic/current', timeout=10)
+        shockwave_response = requests.get(f'{api_base}/api/shockwave/active', timeout=10)
         
         traffic_data = traffic_response.json() if traffic_response.ok else None
         shockwave_data = shockwave_response.json() if shockwave_response.ok else None

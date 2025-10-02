@@ -102,7 +102,8 @@ const RAGChatbot: React.FC<RAGChatbotProps> = ({
     try {
       const startTime = Date.now();
       
-      const response = await fetch('/api/ai/chat', {
+      // 使用新的 RAG API 端點
+      const response = await fetch('/api/rag/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -111,7 +112,8 @@ const RAGChatbot: React.FC<RAGChatbotProps> = ({
           message: userMessage.content,
           traffic_data: null,
           shockwave_data: null,
-          user_location: null
+          user_location: null,
+          use_rag: true  // 啟用 RAG 功能
         })
       });
 
@@ -135,7 +137,7 @@ const RAGChatbot: React.FC<RAGChatbotProps> = ({
         role: 'assistant',
         timestamp: new Date(),
         sources: data.sources || data.supporting_data || [],
-        confidence: data.confidence || data.confidence_score || 0,
+        confidence: data.confidence || data.confidence_score || 0.5,
         processingTime: processingTime
       };
 

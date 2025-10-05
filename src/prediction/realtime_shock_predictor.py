@@ -14,9 +14,9 @@ from collections import defaultdict, deque
 import warnings
 warnings.filterwarnings('ignore')
 
-# 導入現有的檢測器
-from ..detection.final_optimized_detector import FinalOptimizedShockDetector
-from .propagation_system import RealDataShockWavePropagationAnalyzer
+# 導入現有的檢測器（使用絕對導入）
+from src.detection.final_optimized_detector import FinalOptimizedShockDetector
+from src.prediction.propagation_system import RealDataShockWavePropagationAnalyzer
 
 class RealtimeShockPredictor:
     """

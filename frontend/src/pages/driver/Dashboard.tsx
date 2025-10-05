@@ -177,21 +177,18 @@ const DriverDashboard: React.FC = () => {
 
       advicePrompt += `\n\n請根據以上實際監測資料，提供專業的台灣本土化駕駛建議，包括詳細的路線規劃、行駛指引和注意事項。使用繁體中文回答。`;
 
-      const ollamaUrl = process.env.NEXT_PUBLIC_OLLAMA_URL || 'http://localhost:11434';
-      const response = await fetch(`${ollamaUrl}/api/generate`, {
+      // 使用新的 RAG API 取代直接呼叫 Ollama
+      const response = await fetch('/api/rag/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'qwen2.5:7b',
-          prompt: advicePrompt,
-          stream: false,
-          options: {
-            temperature: 0.2,
-            num_predict: 400,
-            stop: ["如果您還有", "祝您一路平安", "希望以上建議"]
-          }
+          message: advicePrompt,
+          traffic_data: { stations: trafficData },
+          shockwave_data: null,
+          user_location: userLocation,
+          use_rag: true  // 啟用 RAG 功能
         })
       });
 
@@ -201,13 +198,16 @@ const DriverDashboard: React.FC = () => {
 
       const result = await response.json();
       const advice = {
-        title: "🤖 AI 智能建議",
+        title: "🤖 AI 智能建議（RAG增強）",
         description: result.response || '暫無建議',
         priority: "medium",
         action_type: "route_optimization",
-        reasoning: "基於即時交通數據分析",
-        confidence: 0.85,
-        source: "Ollama AI"
+        reasoning: result.sources?.length > 0 ?
+          "基於交通知識庫和即時數據分析" :
+          "基於即時交通數據分析",
+        confidence: result.confidence_score || 0.85,
+        source: "RAG + Ollama AI",
+        sources: result.sources || []
       };
       setRagAdvice(advice);
       setShowRAGAdvice(true);
@@ -258,26 +258,22 @@ const DriverDashboard: React.FC = () => {
 
       console.log('📊 發送給AI的數據:', chatData);
 
-      // 直接調用 Ollama API
-      const ollamaUrl = process.env.NEXT_PUBLIC_OLLAMA_URL || 'http://localhost:11434';
-      const response = await fetch(`${ollamaUrl}/api/generate`, {
+      // 使用 RAG API 進行對話
+      const response = await fetch('/api/rag/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'qwen2.5:7b',
-          prompt: buildTrafficAnalysisPrompt(userMessage, chatData),
-          stream: false,
-          options: {
-            temperature: 0.2,
-            num_predict: 400,
-            stop: ["如果您還有", "祝您一路平安", "希望以上建議"]
-          }
+          message: userMessage,
+          traffic_data: chatData.traffic_data,
+          shockwave_data: chatData.shockwave_data,
+          user_location: chatData.user_location,
+          use_rag: true  // 啟用 RAG 功能
         })
       });
 
-      console.log('📡 Ollama API 回應狀態:', response.status);
+      console.log('📡 RAG API 回應狀態:', response.status);
 
       // 移除"思考中"消息
       setChatHistory(prev => prev.filter(msg => msg.type !== 'thinking'));
@@ -485,16 +481,7 @@ const DriverDashboard: React.FC = () => {
                 )}
               </div>
               
-              {/* RAG智能建議按鈕 */}
-              <button
-                onClick={getRAGAdvice}
-                disabled={ragLoading || ragStatus?.system_health === 'unavailable'}
-                className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 rounded-full text-sm font-medium hover:from-purple-700 hover:to-pink-700 flex items-center shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                title="獲取AI智能建議"
-              >
-                <SparklesIcon className="w-4 h-4 mr-2" />
-                {ragLoading ? 'AI分析中...' : 'AI建議'}
-              </button>
+
               
               {/* RAG對話按鈕 */}
               <button
@@ -507,20 +494,7 @@ const DriverDashboard: React.FC = () => {
                 AI助手
               </button>
               
-              {/* 震波AI分析按鈕 */}
-              {shockwaves.length > 0 && (
-                <button
-                  onClick={getShockwaveAIAnalysis}
-                  disabled={!userLocation || shockwaveAILoading}
-                  className="bg-gradient-to-r from-red-600 to-orange-600 text-white px-4 py-2 rounded-full text-sm font-medium hover:from-red-700 hover:to-orange-700 flex items-center shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed animate-pulse"
-                  title="獲取震波AI分析"
-                >
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z" />
-                  </svg>
-                  {shockwaveAILoading ? 'AI分析中...' : '震波分析'}
-                </button>
-              )}
+
               
               <button
                 onClick={() => setShowRouteInput(true)}
@@ -555,10 +529,7 @@ const DriverDashboard: React.FC = () => {
               <h3 className="text-lg font-semibold text-gray-900 mb-3">📊 系統狀態</h3>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span>交通數據:</span>
-                  <span className={trafficError ? 'text-red-600' : 'text-green-600'}>
-                    {trafficError ? '錯誤' : `${trafficData.length} 個站點`}
-                  </span>
+                  <span></span>
                 </div>
                 <div className="flex justify-between">
                   <span>震波事件:</span>
@@ -569,12 +540,6 @@ const DriverDashboard: React.FC = () => {
                 <div className="flex justify-between">
                   <span>預測數據:</span>
                   <span className="text-purple-600">{predictions.length} 個預測</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>警告數量:</span>
-                  <span className={alerts.length > 0 ? 'text-orange-600' : 'text-gray-600'}>
-                    {alerts.length} 個警告
-                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span>RAG系統:</span>
@@ -759,54 +724,6 @@ const DriverDashboard: React.FC = () => {
               </div>
             )}
 
-            {/* 交通預測 */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200/50 p-6">
-              <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg flex items-center justify-center mr-3">
-                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                </div>
-                交通預測
-              </h2>
-              
-              {predictions.length > 0 ? (
-                <div className="space-y-3">
-                  {predictions.slice(0, 2).map((prediction, index) => (
-                    <div key={index} className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4 border-l-4 border-green-400">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="text-sm font-semibold text-gray-900">{prediction.location}</div>
-                        <div className="flex items-center space-x-1">
-                          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                          <span className="text-xs text-green-600 font-medium">即時</span>
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-3 text-xs">
-                        <div className="bg-white/60 rounded-lg p-2 text-center">
-                          <div className="font-bold text-lg text-green-600">{prediction.predictedSpeed}</div>
-                          <div className="text-gray-600">km/h</div>
-                        </div>
-                        <div className="bg-white/60 rounded-lg p-2 text-center">
-                          <div className="font-bold text-lg text-blue-600">{(prediction.confidence * 100).toFixed(0)}%</div>
-                          <div className="text-gray-600">信心度</div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <svg className="w-8 h-8 text-blue-600 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                  </div>
-                  <p className="text-gray-500 text-sm font-medium">正在載入預測資料</p>
-                  <p className="text-gray-400 text-xs mt-1">AI 分析中...</p>
-                </div>
-              )}
-            </div>
           </div>
 
           {/* 主要地圖區域 */}

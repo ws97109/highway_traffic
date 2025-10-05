@@ -9,14 +9,22 @@ interface ShockwaveData {
   lng: number;
   intensity: number;
   propagationSpeed: number;
+  waveSpeed?: number;  // 實際波速（可能為負）
+  waveDirection?: 'upstream' | 'downstream';
   estimatedArrivalTime: Date;
   affectedArea: number;
+  shock_duration?: number;  // 持續時間（分鐘）
   severity: 'low' | 'medium' | 'high' | 'critical';
   description: string;
   recommendations: string[];
   alternativeRoutes?: AlternativeRoute[];
   shockOccurrenceTime?: string;
   speedDrop?: number;
+  initialSpeed?: number;
+  finalSpeed?: number;
+  initialFlow?: number;
+  finalFlow?: number;
+  queueGrowthRate?: number;  // 隊列增長率 (veh/hr)
 }
 
 interface AlternativeRoute {
@@ -91,14 +99,22 @@ export const useShockwaveData = (userLocation?: { lat: number; lng: number }): S
           lng: sw.longitude,
           intensity: sw.intensity,
           propagationSpeed: sw.propagation_speed,
+          waveSpeed: sw.wave_speed,  // 實際波速（可能為負）
+          waveDirection: sw.wave_direction,  // 'upstream' 或 'downstream'
           estimatedArrivalTime: new Date(sw.estimated_arrival),
           affectedArea: sw.affected_area,
+          shock_duration: sw.shock_duration,  // 持續時間（分鐘）
           severity: determineSeverity(sw.intensity, sw.propagation_speed),
           description: sw.description || `在 ${sw.location_name} 檢測到交通震波`,
           recommendations: generateRecommendations(sw.intensity, sw.propagation_speed),
           alternativeRoutes: sw.alternative_routes || [],
           shockOccurrenceTime: sw.shock_occurrence_time,
-          speedDrop: sw.speed_drop
+          speedDrop: sw.speed_drop,
+          initialSpeed: sw.initial_speed,
+          finalSpeed: sw.final_speed,
+          initialFlow: sw.initial_flow,
+          finalFlow: sw.final_flow,
+          queueGrowthRate: sw.queue_growth_rate  // 隊列增長率
         }));
       } else {
         console.log('⚠️ 沒有震波資料，使用模擬資料');

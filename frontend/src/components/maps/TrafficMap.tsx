@@ -32,8 +32,15 @@ interface ShockwaveData {
   lng: number;
   intensity: number;
   propagationSpeed: number;
+  waveSpeed?: number;  // 實際波速（可能為負）
+  waveDirection?: 'upstream' | 'downstream';
   estimatedArrivalTime: Date;
   affectedArea: number;
+  shock_duration?: number;  // 持續時間（分鐘），從後端計算
+  speedDrop?: number;
+  initialSpeed?: number;
+  finalSpeed?: number;
+  queueGrowthRate?: number;  // 隊列增長率 (veh/hr)
   severity?: 'low' | 'medium' | 'high' | 'critical';
   description?: string;
 }
@@ -456,8 +463,21 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
     return Math.max(baseRadius * intensityMultiplier, 300); // 最小300m
   };
 
-  // 計算衝擊波持續時間
+  // 計算衝擊波持續時間（從後端獲取的實際持續時間）
   const calculateDuration = (shockwave: ShockwaveData): string => {
+    // 如果後端已經提供持續時間（分鐘），直接使用
+    if (shockwave.shock_duration !== undefined && shockwave.shock_duration > 0) {
+      const duration = shockwave.shock_duration;
+      if (duration < 60) {
+        return `${Math.round(duration)} 分鐘`;
+      } else {
+        const hours = Math.floor(duration / 60);
+        const minutes = Math.round(duration % 60);
+        return `${hours} 小時 ${minutes} 分鐘`;
+      }
+    }
+    
+    // 備用：從預估到達時間計算
     if (!shockwave.estimatedArrivalTime) return '未知';
 
     const now = new Date();
@@ -527,7 +547,7 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 14px;">
               <div>
                 <span style="color: #666; display: block;">強度指數</span>
-                <span style="font-weight: 600; color: #333;">${(shockwave.intensity || 0).toFixed(2)}</span>
+                <span style="font-weight: 600; color: #333;">${(shockwave.intensity || 0).toFixed(2)} / 10</span>
               </div>
               <div>
                 <span style="color: #666; display: block;">持續時間</span>
@@ -542,6 +562,41 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
                 <span style="font-weight: 600; color: #333;">${(shockwave.propagationSpeed || 0).toFixed(1)} km/h</span>
               </div>
             </div>
+            
+            ${shockwave.waveSpeed !== undefined ? `
+              <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e0e0e0;">
+                <div style="font-size: 13px; color: #555;">
+                  <div style="margin-bottom: 6px;">
+                    <span style="color: #666;">波速 (vw):</span>
+                    <span style="font-weight: 600; color: ${shockwave.waveSpeed < 0 ? '#d32f2f' : '#388e3c'};">
+                      ${shockwave.waveSpeed.toFixed(2)} km/h
+                    </span>
+                    <span style="color: #999; font-size: 12px; margin-left: 4px;">
+                      (${shockwave.waveDirection === 'upstream' ? '向上游' : '向下游'})
+                    </span>
+                  </div>
+                  ${shockwave.speedDrop !== undefined ? `
+                    <div style="margin-bottom: 6px;">
+                      <span style="color: #666;">速度下降:</span>
+                      <span style="font-weight: 600; color: #d32f2f;">
+                        ${shockwave.speedDrop.toFixed(1)} km/h
+                      </span>
+                      <span style="color: #999; font-size: 12px;">
+                        (${shockwave.initialSpeed?.toFixed(0)} → ${shockwave.finalSpeed?.toFixed(0)} km/h)
+                      </span>
+                    </div>
+                  ` : ''}
+                  ${shockwave.queueGrowthRate !== undefined ? `
+                    <div>
+                      <span style="color: #666;">隊列增長率:</span>
+                      <span style="font-weight: 600; color: #f57c00;">
+                        ${shockwave.queueGrowthRate.toFixed(0)} 輛/小時
+                      </span>
+                    </div>
+                  ` : ''}
+                </div>
+              </div>
+            ` : ''}
           </div>
 
           <div style="margin-bottom: 12px; font-size: 14px;">

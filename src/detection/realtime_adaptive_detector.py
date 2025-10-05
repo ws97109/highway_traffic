@@ -3,7 +3,27 @@ import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 import warnings
+import sys
+import os
+
 warnings.filterwarnings('ignore')
+
+# 添加項目根目錄到路徑
+root_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+if root_dir not in sys.path:
+    sys.path.insert(0, root_dir)
+
+# 導入計算器
+try:
+    from src.core.shockwave_calculator import ShockwaveCalculator
+except ImportError:
+    # 如果上面失敗，嘗試直接導入
+    try:
+        from core.shockwave_calculator import ShockwaveCalculator
+    except ImportError:
+        # 最後嘗試：手動添加路徑
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+        from core.shockwave_calculator import ShockwaveCalculator
 
 # 設定中文字體
 plt.rcParams['font.sans-serif'] = ['Arial Unicode MS', 'SimHei', 'DejaVu Sans']
@@ -22,6 +42,9 @@ class RealtimeAdaptiveShockDetector:
     def __init__(self):
         self.free_flow_speed = 90  # km/h
         self.jam_density = 150     # veh/km
+        
+        # 初始化衝擊波計算器（使用文獻公式）
+        self.calculator = ShockwaveCalculator()
         
         # 🔧 適應真實資料的檢測標準
         self.shock_criteria = {
@@ -152,23 +175,42 @@ class RealtimeAdaptiveShockDetector:
         return shocks
     
     def calculate_density(self, flow, speed):
-        """計算密度"""
-        speed = np.where(speed <= 0.1, 0.1, speed)
-        return flow / speed
+        """
+        計算密度
+        使用基本公式: k = q / v
+        """
+        # 使用計算器的方法
+        if isinstance(flow, (pd.Series, np.ndarray)):
+            return np.array([self.calculator.calculate_density_from_flow_speed(f, s) 
+                           for f, s in zip(flow, speed)])
+        else:
+            return self.calculator.calculate_density_from_flow_speed(flow, speed)
     
     def _calculate_realistic_wave_speed(self, rho_i, rho_f, u_i, u_f):
-        """計算符合文獻的波速"""
-        if abs(rho_f - rho_i) < 0.1:
-            return 0
+        """
+        計算衝擊波速度（使用 Rankine-Hugoniot 條件）
         
-        # 使用簡化的Rankine-Hugoniot條件
-        flow_i = rho_i * u_i
-        flow_f = rho_f * u_f
+        公式: vw = (q₂ - q₁)/(k₂ - k₁) = Δq/Δk
         
-        raw_speed = (flow_f - flow_i) / (rho_f - rho_i)
+        參數:
+            rho_i: 初始密度 (veh/km)
+            rho_f: 最終密度 (veh/km)
+            u_i: 初始速度 (km/hr)
+            u_f: 最終速度 (km/hr)
+            
+        返回:
+            vw: 衝擊波速度 (km/hr)
+                負值 → 向上游傳播（逆車流方向）
+                正值 → 向下游傳播（順車流方向）
+        """
+        # 計算流量
+        q_i = rho_i * u_i  # 上游流量
+        q_f = rho_f * u_f  # 下游流量
         
-        # 限制在合理範圍內（根據文獻）
-        return max(-20, min(20, raw_speed))
+        # 使用文獻公式計算衝擊波速度
+        wave_speed = self.calculator.calculate_shockwave_speed(q_i, rho_i, q_f, rho_f)
+        
+        return wave_speed
     
     def _light_filtering(self, shocks):
         """輕度過濾重複事件"""

@@ -15,6 +15,7 @@ sys.path.insert(0, root_dir)
 from src.detection.final_optimized_detector import FinalOptimizedShockDetector
 from src.detection.realtime_adaptive_detector import RealtimeAdaptiveShockDetector
 from src.prediction.realtime_shock_predictor import RealtimeShockPredictor
+from src.core.shockwave_calculator import ShockwaveCalculator
 
 router = APIRouter()
 
@@ -130,8 +131,9 @@ async def get_active_shockwaves():
         
         # 🔧 修正：使用真實的震波檢測系統
         try:
-            # 1. 初始化適應性檢測器和預測器
+            # 1. 初始化適應性檢測器、預測器和計算器
             detector = RealtimeAdaptiveShockDetector()
+            calculator = ShockwaveCalculator()  # 使用文獻公式計算器
             # 使用相對路徑，從 API 根目錄找到 data 目錄
             predictor = RealtimeShockPredictor(
                 data_dir=os.path.join(root_dir, 'data')
@@ -195,10 +197,34 @@ async def get_active_shockwaves():
                 station_info = find_station_info(station, stations_info)
                 print(f"🔍 測站匹配結果: {station_info}")
                 
-                # 使用真實檢測的數值 - 確保轉換為Python原生型別
+                # === 使用文獻公式計算衝擊波參數 ===
+                
+                # 獲取檢測到的數值
                 speed_drop = float(shock.get('speed_drop', 0))
-                intensity = min(10.0, max(1.0, speed_drop / 5.0))  # 將速度下降轉換為強度 (1-10)
-                propagation_speed = abs(float(shock.get('theoretical_wave_speed', 15.0)))
+                initial_speed = float(shock.get('initial_speed', 70))
+                final_speed = float(shock.get('final_speed', 30))
+                initial_flow = float(shock.get('max_flow', 1000))
+                final_flow = float(shock.get('min_flow', 200))
+                
+                # 計算密度（使用 k = q / v 公式）
+                initial_density = calculator.calculate_density_from_flow_speed(initial_flow, initial_speed)
+                final_density = calculator.calculate_density_from_flow_speed(final_flow, final_speed)
+                
+                # 計算衝擊波速度（使用 Rankine-Hugoniot 條件）
+                # vw = (q₂ - q₁)/(k₂ - k₁)
+                wave_speed = calculator.calculate_shockwave_speed(
+                    initial_flow, initial_density,
+                    final_flow, final_density
+                )
+                propagation_speed = abs(wave_speed)  # 用於顯示的絕對值
+                
+                # 計算隊列增長率 (dN/dt = q₁ - q₂)
+                growth_rate = calculator.calculate_queue_growth_rate(initial_flow, final_flow)
+                
+                # 計算強度（基於速度下降）
+                intensity = calculator.calculate_intensity_from_speed_drop(speed_drop)
+                
+                # 信心度
                 confidence = 0.9 if shock.get('level') == 'severe' else 0.8 if shock.get('level') == 'moderate' else 0.7
                 
                 # 如果有測站資訊，使用真實位置；否則使用預設位置
@@ -211,9 +237,6 @@ async def get_active_shockwaves():
                     longitude = 121.5654 + (i * 0.01)
                     location_name = f"測站 {station}"
                 
-                # 計算預估到達時間（基於傳播速度）
-                estimated_arrival_minutes = int(30 / (propagation_speed / 20)) if propagation_speed > 0 else 30
-                
                 # 構建真實的衝擊波發生時間
                 shock_start_time = shock.get('start_time', '00:00')
                 shock_end_time = shock.get('end_time', '00:00')
@@ -225,8 +248,30 @@ async def get_active_shockwaves():
                 try:
                     start_hour, start_minute = map(int, shock_start_time.split(':'))
                     shock_datetime = datetime.strptime(f"{shock_date} {start_hour:02d}:{start_minute:02d}", '%Y/%m/%d %H:%M')
+                    
+                    end_hour, end_minute = map(int, shock_end_time.split(':'))
+                    shock_end_datetime = datetime.strptime(f"{shock_date} {end_hour:02d}:{end_minute:02d}", '%Y/%m/%d %H:%M')
+                    
+                    # 計算持續時間（分鐘）
+                    shock_duration = calculator.calculate_shock_duration_from_times(shock_datetime, shock_end_datetime)
                 except:
                     shock_datetime = current_time
+                    shock_duration = float(shock.get('duration', 0))
+                
+                # 計算影響範圍（基於強度、速度和持續時間）
+                affected_area = calculator.calculate_affected_area(
+                    intensity=intensity,
+                    wave_speed=propagation_speed,
+                    duration_minutes=shock_duration
+                )
+                
+                # 計算預估到達時間
+                # 假設下一個檢測點距離 5 km
+                estimated_arrival_time, arrival_minutes = calculator.estimate_arrival_time(
+                    distance_km=5.0,
+                    wave_speed_kmh=wave_speed,  # 使用實際波速（可能為負）
+                    current_time=shock_datetime
+                )
                 
                 shockwave_data = {
                     "id": f"real_sw_{station}_{shock_start_time.replace(':', '')}",
@@ -234,18 +279,34 @@ async def get_active_shockwaves():
                     "location_name": location_name,
                     "latitude": latitude,
                     "longitude": longitude,
-                    "intensity": round(float(intensity), 1),
-                    "propagation_speed": round(float(propagation_speed), 1),
-                    "estimated_arrival": (current_time + timedelta(minutes=estimated_arrival_minutes)).isoformat(),
-                    "affected_area": round(intensity * 0.5, 1),  # 基於強度計算影響範圍
-                    "description": f"在測站 {station} ({location_name}) 檢測到真實交通衝擊波 (信心度: {confidence:.2f})",
+                    
+                    # === 使用文獻公式計算的參數 ===
+                    "intensity": round(float(intensity), 2),
+                    "propagation_speed": round(float(propagation_speed), 2),  # |vw|
+                    "wave_speed": round(float(wave_speed), 2),  # vw (可能為負)
+                    "wave_direction": "upstream" if wave_speed < 0 else "downstream",
+                    "estimated_arrival": estimated_arrival_time.isoformat(),
+                    "estimated_arrival_minutes": round(arrival_minutes, 1),
+                    "affected_area": round(float(affected_area), 2),
+                    "shock_duration": round(float(shock_duration), 1),  # 分鐘
+                    
+                    # === 流量和密度資訊 ===
+                    "speed_drop": round(float(speed_drop), 1),
+                    "initial_speed": round(float(initial_speed), 1),
+                    "final_speed": round(float(final_speed), 1),
+                    "initial_flow": round(float(initial_flow), 1),
+                    "final_flow": round(float(final_flow), 1),
+                    "initial_density": round(float(initial_density), 2),
+                    "final_density": round(float(final_density), 2),
+                    "queue_growth_rate": round(float(growth_rate), 1),  # veh/hr
+                    
+                    # === 其他資訊 ===
+                    "description": f"在測站 {station} ({location_name}) 檢測到交通衝擊波 (強度: {intensity:.1f}/10, 波速: {wave_speed:.1f} km/h)",
                     "confidence": round(float(confidence), 3),
-                    "detection_method": "RealtimeAdaptiveShockDetector",
-                    "shock_occurrence_time": shock_datetime.isoformat(),  # 真實發生時間
+                    "detection_method": "RealtimeAdaptiveShockDetector + LiteratureFormulas",
+                    "shock_occurrence_time": shock_datetime.isoformat(),
                     "shock_start_time": shock_start_time,
                     "shock_end_time": shock_end_time,
-                    "shock_duration": float(shock.get('duration', 0)),
-                    "speed_drop": float(shock.get('speed_drop', 0)),
                     "data_source_time": datetime.fromtimestamp(os.path.getmtime(latest_file)).isoformat(),
                     "alternative_routes": []
                 }

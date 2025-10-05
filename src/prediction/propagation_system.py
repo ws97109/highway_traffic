@@ -9,8 +9,8 @@ warnings.filterwarnings('ignore')
 plt.rcParams['font.sans-serif'] = ['Arial Unicode MS', 'SimHei', 'DejaVu Sans']
 plt.rcParams['axes.unicode_minus'] = False
 
-# 導入我們已經驗證的震波檢測器
-from ..detection.final_optimized_detector import FinalOptimizedShockDetector
+# 導入我們已經驗證的震波檢測器（使用絕對導入）
+from src.detection.final_optimized_detector import FinalOptimizedShockDetector
 
 class RealDataShockWavePropagationAnalyzer:
     """

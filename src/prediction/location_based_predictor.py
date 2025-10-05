@@ -15,9 +15,9 @@ from typing import Dict, List, Tuple, Optional
 import warnings
 warnings.filterwarnings('ignore')
 
-# 導入現有的系統
-from .realtime_shock_predictor import RealtimeShockPredictor
-from ..systems.shock_warning_system import ShockWarningSystem
+# 導入現有的系統（使用絕對導入）
+from src.prediction.realtime_shock_predictor import RealtimeShockPredictor
+from src.systems.shock_warning_system import ShockWarningSystem
 
 class LocationBasedShockPredictor:
     """

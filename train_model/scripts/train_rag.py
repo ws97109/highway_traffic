@@ -21,7 +21,7 @@ from train_model.embeddings.vector_store import VectorStore, RAGRetriever
 from train_model.models.ollama_client import OllamaClient, RAGOllamaChat
 
 class RAGTrainer:
-    """RAG 系統訓練器"""
+    """RAG 系統訓練器qq"""
     
     def __init__(self, config_path: str = None):
         """初始化訓練器"""

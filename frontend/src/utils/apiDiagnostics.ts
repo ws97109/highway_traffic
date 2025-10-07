@@ -20,16 +20,17 @@ export interface APIDiagnosticsResult {
 }
 
 class APIDiagnostics {
-  private apiKey: string;
-
-  constructor() {
-    this.apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
+  private getApiKey(): string {
+    // 在執行時動態取得 API Key，而不是在建構函式中
+    return process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
   }
 
   /**
    * 執行完整診斷
    */
   async runDiagnostics(): Promise<APIDiagnosticsResult> {
+    const apiKey = this.getApiKey();
+
     const result: APIDiagnosticsResult = {
       apiKey: {
         exists: false,
@@ -47,10 +48,10 @@ class APIDiagnostics {
     };
 
     // 檢查 API Key
-    if (this.apiKey && this.apiKey !== 'your_google_maps_api_key_here') {
+    if (apiKey && apiKey !== 'your_google_maps_api_key_here') {
       result.apiKey.exists = true;
-      result.apiKey.masked = `${this.apiKey.substring(0, 10)}...`;
-      result.apiKey.valid = this.apiKey.startsWith('AIza');
+      result.apiKey.masked = `${apiKey.substring(0, 10)}...`;
+      result.apiKey.valid = apiKey.startsWith('AIza');
     }
 
     if (!result.apiKey.exists) {

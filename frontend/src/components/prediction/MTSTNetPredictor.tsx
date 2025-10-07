@@ -322,13 +322,6 @@ const MTSTNetPredictor: React.FC = () => {
                                 {pred.predicted_flow.toFixed(0)} 輛/h
                               </span>
                             </div>
-                            
-                            <div className="flex items-center space-x-2">
-                              <span className="text-sm text-gray-600">信心度</span>
-                              <span className={`px-2 py-1 rounded-full text-sm font-medium ${getConfidenceColor(pred.confidence)}`}>
-                                {(pred.confidence * 100).toFixed(1)}%
-                              </span>
-                            </div>
                           </div>
                         </div>
                       </div>

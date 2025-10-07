@@ -972,7 +972,6 @@ const DriverDashboard: React.FC = () => {
                   <span className="text-sm text-gray-600">優先級</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm text-gray-600">信心度</span>
                   <div className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium">
                     {(ragAdvice.confidence * 100).toFixed(0)}%
                   </div>

@@ -90,6 +90,11 @@ class MTSTNetRealtimePredictor:
         self.logger.info(f"📊 目標站點數: {len(self.target_stations)}")
         self.logger.info(f"⏱️ 預測間隔: {self.prediction_interval} 分鐘")
 
+    def set_data_collector(self, data_collector):
+        """設定外部資料收集器"""
+        self.data_collector = data_collector
+        self.logger.info("✅ 已設定外部資料收集器")
+
     def _setup_logging(self):
         """設定日誌系統"""
         log_dir = self.data_dir / "logs"

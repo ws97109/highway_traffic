@@ -570,14 +570,24 @@ const DriverDashboard: React.FC = () => {
                 <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
                   {/* 按距離排序震波 */}
                   {shockwaves
-                    .map((shockwave: any) => ({
-                      ...shockwave,
-                      distance: userLocation ?
-                        Math.sqrt(
-                          Math.pow(shockwave.latitude - userLocation.lat, 2) +
-                          Math.pow(shockwave.longitude - userLocation.lng, 2)
-                        ) * 111 : 0 // 簡化距離計算，111km ≈ 1度
-                    }))
+                    .map((shockwave: any) => {
+                      let distance = 0;
+                      if (userLocation && shockwave.lat && shockwave.lng) {
+                        // 使用 Haversine 公式計算精確距離
+                        const R = 6371; // 地球半徑 (km)
+                        const dLat = (shockwave.lat - userLocation.lat) * Math.PI / 180;
+                        const dLon = (shockwave.lng - userLocation.lng) * Math.PI / 180;
+                        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                                  Math.cos(userLocation.lat * Math.PI / 180) * Math.cos(shockwave.lat * Math.PI / 180) *
+                                  Math.sin(dLon/2) * Math.sin(dLon/2);
+                        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                        distance = R * c;
+                      }
+                      return {
+                        ...shockwave,
+                        distance
+                      };
+                    })
                     .sort((a: any, b: any) => a.distance - b.distance)
                     .map((shockwave: any, index: number) => {
                       const severityConfig = {
@@ -623,13 +633,13 @@ const DriverDashboard: React.FC = () => {
                             </div>
                             <div className="bg-white/60 rounded-lg p-2 text-center">
                               <div className="font-bold text-lg text-blue-600">
-                                {shockwave.shock_duration || 30}
+                                {shockwave.shock_duration || 13}
                               </div>
                               <div className="text-gray-600">持續時間(分)</div>
                             </div>
                             <div className="bg-white/60 rounded-lg p-2 text-center">
                               <div className="font-bold text-lg text-purple-600">
-                                {(shockwave.affected_area || 4.3).toFixed(1)}
+                                {(shockwave.affectedArea || 0).toFixed(1)}
                               </div>
                               <div className="text-gray-600">影響半徑(km)</div>
                             </div>
@@ -639,12 +649,12 @@ const DriverDashboard: React.FC = () => {
                             <div className="flex items-center justify-between text-xs">
                               <div className="flex items-center space-x-4">
                                 <span className="text-gray-600">
-                                  🚗 傳播速度: {(shockwave.propagation_speed || 20).toFixed(1)} km/h
+                                  🚗 傳播速度: {(shockwave.propagationSpeed || 0).toFixed(1)} km/h
                                 </span>
                               </div>
                               <div className="text-gray-500">
-                                {shockwave.estimated_arrival_time ?
-                                  new Date(shockwave.estimated_arrival_time).toLocaleTimeString('zh-TW', {
+                                {shockwave.estimatedArrivalTime ?
+                                  new Date(shockwave.estimatedArrivalTime).toLocaleTimeString('zh-TW', {
                                     hour: '2-digit',
                                     minute: '2-digit'
                                   }) : '預估到達時間'

@@ -123,18 +123,19 @@ def find_station_info(station_id, stations_info):
     
     return None
 
+# shockwave.py 的關鍵修改部分
+# 在原有的 get_active_shockwaves 函數中替換計算邏輯
+
 @router.get("/active", response_model=dict)
 async def get_active_shockwaves():
-    """獲取當前活躍的震波 - 使用真實檢測系統"""
+    """獲取當前活躍的震波 - 使用真實檢測系統（含熵條件驗證）"""
     try:
         current_time = datetime.now()
         
-        # 🔧 修正：使用真實的震波檢測系統
         try:
-            # 1. 初始化適應性檢測器、預測器和計算器
+            # 1. 初始化檢測器、預測器和計算器
             detector = RealtimeAdaptiveShockDetector()
-            calculator = ShockwaveCalculator()  # 使用文獻公式計算器
-            # 使用相對路徑，從 API 根目錄找到 data 目錄
+            calculator = ShockwaveCalculator()  # 使用改進的計算器
             predictor = RealtimeShockPredictor(
                 data_dir=os.path.join(root_dir, 'data')
             )
@@ -144,7 +145,6 @@ async def get_active_shockwaves():
             if not os.path.exists(realtime_dir):
                 raise Exception("即時資料目錄不存在，請確保 TDX 系統正在運行")
             
-            # 尋找最新的資料檔案
             pattern = os.path.join(realtime_dir, "realtime_shock_data_*.csv")
             data_files = sorted(glob.glob(pattern), reverse=True)
             
@@ -154,7 +154,6 @@ async def get_active_shockwaves():
             latest_file = data_files[0]
             file_age_minutes = (current_time - datetime.fromtimestamp(os.path.getmtime(latest_file))).total_seconds() / 60
             
-            # 檢查檔案新鮮度（超過10分鐘視為過時）
             if file_age_minutes > 10:
                 raise Exception(f"最新資料檔案過時 ({file_age_minutes:.1f} 分鐘前)，請檢查 TDX 收集器狀態")
             
@@ -166,98 +165,114 @@ async def get_active_shockwaves():
             # 4. 使用檢測器進行衝擊波分析
             detected_shocks = []
             stations = df['station'].unique()
-            
+
+            print(f"🔍 開始檢測 {len(stations)} 個測站...")
+
             for station in stations:
                 station_data = df[df['station'] == station].sort_values(['hour', 'minute'])
-                
-                if len(station_data) >= 3:  # 至少需要3個資料點
+
+                if len(station_data) >= 3:
                     try:
-                        # 檢測該站點的衝擊波
                         shocks = detector.detect_realtime_shocks(station_data)
-                        
+
+                        if shocks:
+                            print(f"✅ 測站 {station}: 檢測到 {len(shocks)} 個震波")
+
                         for shock in shocks:
                             shock['station'] = station
                             shock['detection_time'] = current_time
                             detected_shocks.append(shock)
                     except Exception as e:
-                        continue  # 單個站點失敗不影響其他站點
+                        print(f"❌ 測站 {station} 檢測失敗: {e}")
+                        continue
+
+            print(f"📊 總共檢測到 {len(detected_shocks)} 個震波")
             
             # 5. 載入測站位置資訊
             stations_info = load_station_data()
-            print(f"🔍 載入了 {len(stations_info)} 個測站")
+            print(f"📍 載入了 {len(stations_info)} 個測站")
             
-            # 6. 轉換為API格式
+            # 6. 轉換為API格式（含熵條件驗證和稀疏波標記）
             active_shockwaves_data = []
+            filtered_count = 0  # 被過濾掉的數量
+            rarefaction_count = 0  # 稀疏波數量
             
             for i, shock in enumerate(detected_shocks):
                 station = shock.get('station', '')
                 print(f"🔍 處理震波 {i+1}: 測站 {station}")
                 
-                # 查找測站資訊 - 使用新的匹配函數
+                # 查找測站資訊
                 station_info = find_station_info(station, stations_info)
-                print(f"🔍 測站匹配結果: {station_info}")
                 
-                # === 使用文獻公式計算衝擊波參數 ===
+                # === 使用改進的文獻公式計算衝擊波參數 ===
                 
-                # 獲取檢測到的數值
                 speed_drop = float(shock.get('speed_drop', 0))
                 initial_speed = float(shock.get('initial_speed', 70))
                 final_speed = float(shock.get('final_speed', 30))
                 initial_flow = float(shock.get('max_flow', 1000))
                 final_flow = float(shock.get('min_flow', 200))
                 
-                # 計算密度（使用 k = q / v 公式）
+                # 計算密度
                 initial_density = calculator.calculate_density_from_flow_speed(initial_flow, initial_speed)
                 final_density = calculator.calculate_density_from_flow_speed(final_flow, final_speed)
 
-                # 檢查密度計算是否有效
                 if initial_density is None or final_density is None:
-                    print(f"⚠️ 無法計算密度 - 測站 {station}: initial_speed={initial_speed}, final_speed={final_speed}")
-                    continue  # 跳過此震波
+                    print(f"⚠️ 無法計算密度 - 測站 {station}")
+                    continue
 
-                # 計算衝擊波速度（使用 Rankine-Hugoniot 條件）
-                # vw = (q₂ - q₁)/(k₂ - k₁)
+                # 🔥 關鍵：計算衝擊波速度並驗證 Lax 熵條件
                 wave_result = calculator.calculate_shockwave_speed(
                     initial_flow, initial_density,
-                    final_flow, final_density
+                    final_flow, final_density,
+                    verify_entropy=True  # 啟用熵條件驗證
                 )
 
-                # 檢查計算結果是否有效
+                # 🚫 過濾：不符合熵條件的不顯示
                 if not wave_result.get('valid', False):
-                    print(f"⚠️ 無效的衝擊波計算 - 測站 {station}: {wave_result.get('reason', 'Unknown')}")
-                    continue  # 跳過此震波
+                    print(f"❌ 過濾掉不符合熵條件的震波 - 測站 {station}: {wave_result.get('reason', 'Unknown')}")
+                    filtered_count += 1
+                    continue
 
-                # 提取波速數值
                 wave_speed = wave_result['speed']
-                propagation_speed = abs(wave_speed)  # 用於顯示的絕對值
+                wave_type = wave_result['type']  # 'shock' 或 'rarefaction'
                 
-                # 計算隊列增長率 (dN/dt = q₁ - q₂)
+                # 🎨 稀疏波標記
+                is_rarefaction = (wave_type == 'rarefaction')
+                if is_rarefaction:
+                    rarefaction_count += 1
+                
+                # 計算隊列增長率
                 growth_rate = calculator.calculate_queue_growth_rate(initial_flow, final_flow)
                 
-                # 計算強度（基於速度下降）
-                intensity = calculator.calculate_intensity_from_speed_drop(speed_drop)
+                # 使用改進的強度計算
+                density_increase = final_density - initial_density
+                flow_drop = initial_flow - final_flow
+                
+                intensity_result = calculator.calculate_shock_intensity(
+                    speed_drop, 
+                    density_increase, 
+                    flow_drop
+                )
+                intensity = intensity_result['intensity']
                 
                 # 信心度
                 confidence = 0.9 if shock.get('level') == 'severe' else 0.8 if shock.get('level') == 'moderate' else 0.7
                 
-                # 如果有測站資訊，使用真實位置；否則使用預設位置
+                # 位置資訊
                 if station_info:
                     latitude = station_info['latitude']
                     longitude = station_info['longitude']
                     location_name = station_info['name']
                 else:
-                    latitude = 25.0330 + (i * 0.01)  # 預設位置
+                    latitude = 25.0330 + (i * 0.01)
                     longitude = 121.5654 + (i * 0.01)
                     location_name = f"測站 {station}"
                 
-                # 構建真實的衝擊波發生時間
+                # 構建震波時間
                 shock_start_time = shock.get('start_time', '00:00')
                 shock_end_time = shock.get('end_time', '00:00')
-                
-                # 從資料中獲取日期
                 shock_date = df.iloc[0]['date'] if not df.empty else current_time.strftime('%Y/%m/%d')
                 
-                # 解析衝擊波實際發生時間
                 try:
                     start_hour, start_minute = map(int, shock_start_time.split(':'))
                     shock_datetime = datetime.strptime(f"{shock_date} {start_hour:02d}:{start_minute:02d}", '%Y/%m/%d %H:%M')
@@ -265,27 +280,35 @@ async def get_active_shockwaves():
                     end_hour, end_minute = map(int, shock_end_time.split(':'))
                     shock_end_datetime = datetime.strptime(f"{shock_date} {end_hour:02d}:{end_minute:02d}", '%Y/%m/%d %H:%M')
                     
-                    # 計算持續時間（分鐘）
                     shock_duration = calculator.calculate_shock_duration_from_times(shock_datetime, shock_end_datetime)
                 except:
                     shock_datetime = current_time
                     shock_duration = float(shock.get('duration', 0))
                 
-                # 計算影響範圍（基於強度、速度和持續時間）
-                affected_area = calculator.calculate_affected_area(
-                    intensity=intensity,
-                    wave_speed=propagation_speed,
-                    duration_minutes=shock_duration
+                # 使用改進的影響範圍計算
+                affected_area_result = calculator.calculate_affected_area(
+                    wave_speed=wave_speed,
+                    duration_minutes=shock_duration,
+                    num_lanes=4
                 )
+                affected_area = affected_area_result['longitudinal_km']
                 
-                # 計算預估到達時間
-                # 假設下一個檢測點距離 5 km
-                estimated_arrival_time, arrival_minutes = calculator.estimate_arrival_time(
+                # 使用考慮衰減的到達時間估算
+                arrival_result = calculator.estimate_arrival_time_with_decay(
                     distance_km=5.0,
-                    wave_speed_kmh=wave_speed,  # 使用實際波速（可能為負）
+                    initial_wave_speed=wave_speed,
+                    decay_rate=0.95,
                     current_time=shock_datetime
                 )
                 
+                if not arrival_result['dissipated']:
+                    estimated_arrival_time = arrival_result['arrival_time']
+                    arrival_minutes = arrival_result['travel_minutes']
+                else:
+                    estimated_arrival_time = shock_datetime
+                    arrival_minutes = 0
+                
+                # 🎨 構建 API 回應（含稀疏波標記）
                 shockwave_data = {
                     "id": f"real_sw_{station}_{shock_start_time.replace(':', '')}",
                     "station_id": station,
@@ -293,15 +316,43 @@ async def get_active_shockwaves():
                     "latitude": latitude,
                     "longitude": longitude,
                     
-                    # === 使用文獻公式計算的參數 ===
+                    # === 波類型與熵條件資訊 ===
+                    "wave_type": wave_type,  # 'shock' 或 'rarefaction'
+                    "is_rarefaction": is_rarefaction,
+                    "satisfies_entropy": wave_result['satisfies_entropy'],
+                    "entropy_validation": wave_result.get('reason', ''),
+                    
+                    # 🎨 稀疏波視覺標記
+                    "display_color": "#FF6B6B" if not is_rarefaction else "#4ECDC4",  # 紅色=衝擊波，青色=稀疏波
+                    "display_icon": "⚠️" if not is_rarefaction else "📈",
+                    "display_label": "衝擊波" if not is_rarefaction else "稀疏波",
+                    "border_style": "solid" if not is_rarefaction else "dashed",  # 實線=衝擊波，虛線=稀疏波
+                    
+                    # === 使用改進公式計算的參數 ===
                     "intensity": round(float(intensity), 2),
-                    "propagation_speed": round(float(propagation_speed), 2),  # |vw|
-                    "wave_speed": round(float(wave_speed), 2),  # vw (可能為負)
+                    "intensity_breakdown": {
+                        "speed_factor": round(intensity_result['speed_factor'], 3),
+                        "density_factor": round(intensity_result['density_factor'], 3),
+                        "flow_factor": round(intensity_result['flow_factor'], 3),
+                        "dominant_factor": intensity_result['dominant_factor']
+                    },
+                    "propagation_speed": round(abs(wave_speed), 2),
+                    "wave_speed": round(float(wave_speed), 2),
                     "wave_direction": "upstream" if wave_speed < 0 else "downstream",
                     "estimated_arrival": estimated_arrival_time.isoformat(),
                     "estimated_arrival_minutes": round(arrival_minutes, 1),
+                    "effective_wave_speed": round(arrival_result.get('effective_speed', wave_speed), 2),
+                    "decay_factor": round(arrival_result.get('decay_factor', 1.0), 3),
+                    
+                    # === 影響範圍（基於物理）===
                     "affected_area": round(float(affected_area), 2),
-                    "shock_duration": round(float(shock_duration), 1),  # 分鐘
+                    "affected_area_details": {
+                        "longitudinal_km": round(affected_area_result['longitudinal_km'], 2),
+                        "lateral_km": round(affected_area_result['lateral_km'], 3),
+                        "area_km2": round(affected_area_result['area_km2'], 3),
+                        "num_lanes": affected_area_result['num_lanes_affected']
+                    },
+                    "shock_duration": round(float(shock_duration), 1),
                     
                     # === 流量和密度資訊 ===
                     "speed_drop": round(float(speed_drop), 1),
@@ -311,12 +362,15 @@ async def get_active_shockwaves():
                     "final_flow": round(float(final_flow), 1),
                     "initial_density": round(float(initial_density), 2),
                     "final_density": round(float(final_density), 2),
-                    "queue_growth_rate": round(float(growth_rate), 1),  # veh/hr
+                    "density_change": round(float(density_increase), 2),
+                    "queue_growth_rate": round(float(growth_rate), 1),
                     
                     # === 其他資訊 ===
-                    "description": f"在測站 {station} ({location_name}) 檢測到交通衝擊波 (強度: {intensity:.1f}/10, 波速: {wave_speed:.1f} km/h)",
+                    "description": _generate_description(
+                        station, location_name, intensity, wave_speed, wave_type
+                    ),
                     "confidence": round(float(confidence), 3),
-                    "detection_method": "RealtimeAdaptiveShockDetector + LiteratureFormulas",
+                    "detection_method": "RealtimeAdaptiveDetector + EntropyValidation",
                     "shock_occurrence_time": shock_datetime.isoformat(),
                     "shock_start_time": shock_start_time,
                     "shock_end_time": shock_end_time,
@@ -324,8 +378,8 @@ async def get_active_shockwaves():
                     "alternative_routes": []
                 }
                 
-                # 為高強度衝擊波添加替代路線建議
-                if intensity >= 6.0:
+                # 為高強度衝擊波（非稀疏波）添加替代路線建議
+                if intensity >= 6.0 and not is_rarefaction:
                     shockwave_data["alternative_routes"] = [
                         {
                             "id": f"alt_real_{station}",
@@ -342,7 +396,7 @@ async def get_active_shockwaves():
                 "shockwaves": active_shockwaves_data,
                 "count": len(active_shockwaves_data),
                 "last_updated": current_time.isoformat(),
-                "data_source": "real_time_detector",  # 標記為真實檢測
+                "data_source": "real_time_detector_with_entropy_validation",
                 "data_file_used": os.path.basename(latest_file),
                 "data_file_age_minutes": round(file_age_minutes, 1),
                 "total_stations_analyzed": len(stations),
@@ -350,22 +404,37 @@ async def get_active_shockwaves():
                     "files_checked": len(data_files),
                     "latest_file": os.path.basename(latest_file),
                     "stations_with_data": len(stations),
-                    "shocks_detected": len(detected_shocks)
+                    "total_detected": len(detected_shocks),
+                    "valid_shocks": len([s for s in active_shockwaves_data if not s['is_rarefaction']]),
+                    "rarefaction_waves": rarefaction_count,
+                    "filtered_invalid": filtered_count
+                },
+                "legend": {
+                    "shock_wave": {
+                        "color": "#FF6B6B",
+                        "icon": "⚠️",
+                        "label": "衝擊波",
+                        "description": "密度增加，向上游傳播"
+                    },
+                    "rarefaction_wave": {
+                        "color": "#4ECDC4",
+                        "icon": "📈",
+                        "label": "稀疏波",
+                        "description": "密度降低，車流加速"
+                    }
                 }
             }
             
             return response_data
             
         except Exception as detection_error:
-            # 如果真實檢測失敗，記錄錯誤並使用最小化的模擬資料
             logger = logging.getLogger(__name__)
             logger.error(f"真實震波檢測失敗: {detection_error}")
             
-            # 回退到載入測站資訊但不生成假震波
             stations = load_station_data()
             
             return {
-                "shockwaves": [],  # 空列表，表示目前沒有檢測到震波
+                "shockwaves": [],
                 "count": 0,
                 "last_updated": current_time.isoformat(),
                 "data_source": "detector_failed",
@@ -377,219 +446,12 @@ async def get_active_shockwaves():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"獲取震波資料失敗: {str(e)}")
 
-@router.get("/status")
-async def get_system_status():
-    """獲取系統狀態 - 用於診斷"""
-    try:
-        current_time = datetime.now()
-        
-        # 檢查各個組件狀態
-        status_info = {
-            "timestamp": current_time.isoformat(),
-            "detector_available": False,
-            "predictor_available": False,
-            "data_files_status": {},
-            "tdx_system_status": "unknown"
-        }
-        
-        # 檢查檢測器
-        try:
-            detector = FinalOptimizedShockDetector()
-            status_info["detector_available"] = True
-        except Exception as e:
-            status_info["detector_error"] = str(e)
-        
-        # 檢查預測器
-        try:
-            predictor = RealtimeShockPredictor(os.path.join(root_dir, 'data'))
-            status_info["predictor_available"] = True
-        except Exception as e:
-            status_info["predictor_error"] = str(e)
-        
-        # 檢查資料檔案狀態
-        realtime_dir = os.path.join(root_dir, 'data', 'realtime_data')
-        if os.path.exists(realtime_dir):
-            pattern = os.path.join(realtime_dir, "realtime_shock_data_*.csv")
-            data_files = sorted(glob.glob(pattern), reverse=True)
-            
-            if data_files:
-                latest_file = data_files[0]
-                file_age = (current_time - datetime.fromtimestamp(os.path.getmtime(latest_file))).total_seconds() / 60
-                
-                status_info["data_files_status"] = {
-                    "total_files": len(data_files),
-                    "latest_file": os.path.basename(latest_file),
-                    "latest_file_age_minutes": round(file_age, 1),
-                    "data_freshness": "fresh" if file_age < 10 else "stale" if file_age < 60 else "old"
-                }
-                
-                # 檢查最新檔案內容
-                try:
-                    df = pd.read_csv(latest_file)
-                    status_info["data_files_status"]["latest_file_records"] = len(df)
-                    status_info["data_files_status"]["latest_file_stations"] = df['station'].nunique() if not df.empty else 0
-                except:
-                    status_info["data_files_status"]["latest_file_readable"] = False
-            else:
-                status_info["data_files_status"] = {"message": "沒有找到資料檔案"}
-        else:
-            status_info["data_files_status"] = {"message": "資料目錄不存在"}
-        
-        # 檢查測站資訊
-        try:
-            stations = load_station_data()
-            status_info["station_info"] = {
-                "total_stations": len(stations),
-                "stations_loaded": True
-            }
-        except Exception as e:
-            status_info["station_info"] = {
-                "stations_loaded": False,
-                "error": str(e)
-            }
-        
-        return status_info
-        
-    except Exception as e:
-        return {
-            "error": str(e),
-            "status": "failed",
-            "timestamp": datetime.now().isoformat()
-        }
 
-@router.get("/stations", response_model=dict)
-async def get_station_list():
-    """獲取所有測站列表"""
-    try:
-        stations = load_station_data()
-        return {
-            "stations": stations,
-            "total_count": len(stations)
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"獲取測站列表失敗: {str(e)}")
-
-@router.get("/predict")
-async def predict_shockwave_propagation(
-    shockwave_id: str,
-    time_horizon: int = 60  # 預測時間範圍（分鐘）
-):
-    """預測震波傳播路徑和到達時間"""
-    try:
-        # 這裡調用震波預測系統
-        # predictor = RealtimeShockPredictor()
-        # prediction = predictor.predict_propagation(shockwave_id, time_horizon)
-        
-        # 模擬預測結果
-        current_time = datetime.now()
-        prediction_data = {
-            "shockwave_id": shockwave_id,
-            "propagation_path": [
-                {
-                    "station_id": "001",
-                    "estimated_arrival": (current_time + timedelta(minutes=5)).isoformat(),
-                    "intensity": 7.0,
-                    "confidence": 0.92
-                },
-                {
-                    "station_id": "002", 
-                    "estimated_arrival": (current_time + timedelta(minutes=15)).isoformat(),
-                    "intensity": 6.5,
-                    "confidence": 0.87
-                },
-                {
-                    "station_id": "003",
-                    "estimated_arrival": (current_time + timedelta(minutes=25)).isoformat(), 
-                    "intensity": 5.8,
-                    "confidence": 0.78
-                }
-            ],
-            "total_affected_distance": 15.2,
-            "prediction_confidence": 0.85,
-            "generated_at": current_time.isoformat()
-        }
-        
-        return prediction_data
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"震波預測失敗: {str(e)}")
-
-@router.get("/history")
-async def get_shockwave_history(
-    start_time: Optional[datetime] = None,
-    end_time: Optional[datetime] = None,
-    limit: int = 50
-):
-    """獲取歷史震波記錄"""
-    try:
-        if not end_time:
-            end_time = datetime.now()
-        if not start_time:
-            start_time = end_time - timedelta(days=7)
-            
-        # 這裡實作歷史震波查詢
-        return {
-            "history": [],
-            "start_time": start_time.isoformat(),
-            "end_time": end_time.isoformat(),
-            "total_count": 0
-        }
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"獲取歷史震波失敗: {str(e)}")
-
-@router.post("/alert/dismiss")
-async def dismiss_shockwave_alert(alert_id: str):
-    """關閉震波警報"""
-    try:
-        # 實作警報關閉邏輯
-        return {
-            "message": f"警報 {alert_id} 已關閉",
-            "dismissed_at": datetime.now().isoformat()
-        }
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"關閉警報失敗: {str(e)}")
-
-@router.get("/statistics")
-async def get_shockwave_statistics():
-    """獲取震波統計資料"""
-    try:
-        # 計算震波統計
-        stats = {
-            "today_total": 12,
-            "active_count": 2,
-            "average_intensity": 5.8,
-            "most_affected_highway": "國道1號",
-            "prediction_accuracy": 0.87,
-            "last_24h_trend": "increasing"
-        }
-        
-        return stats
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"獲取統計資料失敗: {str(e)}")
-
-@router.get("/debug/latest-data")
-async def debug_latest_data():
-    """除錯端點：查看最新資料"""
-    try:
-        realtime_dir = os.path.join(root_dir, 'data', 'realtime_data')
-        pattern = os.path.join(realtime_dir, "realtime_shock_data_*.csv")
-        data_files = sorted(glob.glob(pattern), reverse=True)
-        
-        if not data_files:
-            return {"message": "沒有資料檔案"}
-        
-        latest_file = data_files[0]
-        df = pd.read_csv(latest_file)
-        
-        return {
-            "file": os.path.basename(latest_file),
-            "records": len(df),
-            "stations": df['station'].nunique() if not df.empty else 0,
-            "sample_data": df.head(5).to_dict('records') if not df.empty else [],
-            "columns": list(df.columns) if not df.empty else []
-        }
-    except Exception as e:
-        return {"error": str(e)}
+def _generate_description(station, location_name, intensity, wave_speed, wave_type):
+    """生成震波描述"""
+    if wave_type == 'rarefaction':
+        return (f"在測站 {station} ({location_name}) 檢測到交通稀疏波 "
+                f"(車流加速, 波速: {wave_speed:.1f} km/h)")
+    else:
+        return (f"在測站 {station} ({location_name}) 檢測到交通衝擊波 "
+                f"(強度: {intensity:.1f}/10, 波速: {wave_speed:.1f} km/h)")

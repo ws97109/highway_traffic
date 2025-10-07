@@ -1,2 +1,2 @@
-model_checkpoint_path: "."
-all_model_checkpoint_paths: "."
+model_checkpoint_path: "MT_STNet-7"
+all_model_checkpoint_paths: "MT_STNet-7"

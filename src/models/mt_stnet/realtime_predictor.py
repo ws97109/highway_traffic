@@ -74,6 +74,7 @@ class MTSTNetRealtimePredictor:
         
         # 模型相關
         self.model = None
+        self.sess = None
         self.is_model_loaded = False
         self.normalization_params = {'mean': 0, 'std': 1}
         
@@ -149,34 +150,88 @@ class MTSTNetRealtimePredictor:
     def load_model(self, model_path=None):
         """載入預訓練模型"""
         try:
+            # 載入正規化參數
+            self._load_normalization_params()
+
             if model_path is None:
                 # 尋找最新的模型檔案
                 model_path = self._find_latest_model()
-            
+
             if model_path and os.path.exists(model_path):
                 self.logger.info(f"📥 找到模型檔案: {model_path}")
-                
+
                 # 檢查是否為TensorFlow checkpoint目錄
                 if os.path.isdir(model_path):
                     checkpoint_file = os.path.join(model_path, "checkpoint")
                     if os.path.exists(checkpoint_file):
                         self.logger.info("📁 檢測到TensorFlow checkpoint格式")
-                        
-                        # 嘗試載入TensorFlow模型
+
+                        # 載入真正的MT-STNet模型
                         try:
-                            # 這裡需要實際的MT-STNet模型架構
-                            # 暫時標記為找到模型但未完全載入
-                            self.is_model_loaded = False  # 設為False，使用簡化預測
-                            self.logger.info("✅ 找到預訓練模型檔案")
-                            self.logger.info("ℹ️ 模型架構需要完整實作，目前使用簡化預測邏輯")
-                            
-                            # 載入正規化參數
-                            self._load_normalization_params()
-                            
+                            # 確保 TensorFlow 1.x 相容模式 (必須在導入 Model 之前)
+                            try:
+                                import tensorflow.compat.v1 as tf_v1
+                                tf_v1.disable_v2_behavior()
+                                self.logger.info("✅ 啟用 TensorFlow 1.x 相容模式")
+                            except Exception as e:
+                                self.logger.warning(f"⚠️ 無法啟用 TF1 相容模式: {e}")
+
+                            # 導入必要模組
+                            sys.path.insert(0, str(self.model_dir))
+                            from config.config import parameter
+                            from run_train import Model
+                            import argparse
+
+                            # 載入模型配置
+                            para = parameter(argparse.ArgumentParser())
+                            hp = para.get_para()
+                            hp.is_training = False
+                            hp.batch_size = 1
+
+                            # 修正檔案路徑為絕對路徑
+                            data_taiwan = self.data_dir / 'Taiwan'
+                            hp.file_train_f = str(data_taiwan / 'train.csv')
+                            hp.file_sp = str(data_taiwan / 'sp.csv')
+                            hp.file_dis = str(data_taiwan / 'dis.csv')
+                            hp.file_in_deg = str(data_taiwan / 'in_deg.csv')
+                            hp.file_out_deg = str(data_taiwan / 'out_deg.csv')
+                            hp.file_adj = str(data_taiwan / 'adjacent_fully.csv')
+
+                            # 建立 TensorFlow session (使用 TF 1.x 相容 API)
+                            import tensorflow.compat.v1 as tf_v1
+                            config = tf_v1.ConfigProto()
+                            config.gpu_options.allow_growth = True
+                            self.sess = tf_v1.Session(config=config)
+
+                            # 建立模型
+                            self.logger.info("🔨 建立 MT-STNet 模型架構...")
+                            self.model = Model(
+                                hp=hp,
+                                mean=self.normalization_params['mean'],
+                                std=self.normalization_params['std']
+                            )
+                            self.model.initialize_session(self.sess)
+
+                            # 載入模型權重
+                            self.logger.info(f"📥 載入模型權重: {model_path}")
+                            checkpoint_path = os.path.join(model_path, "MT_STNet-7")
+
+                            # 使用 TF 1.x 相容 API
+                            saver = tf_v1.train.Saver()
+                            saver.restore(self.sess, checkpoint_path)
+
+                            self.is_model_loaded = True
+                            self.logger.info("✅ MT-STNet 模型載入成功")
                             return True
+
                         except Exception as e:
-                            self.logger.warning(f"⚠️ TensorFlow模型載入失敗: {e}")
+                            self.logger.error(f"❌ TensorFlow模型載入失敗: {e}")
+                            import traceback
+                            self.logger.error(traceback.format_exc())
                             self.is_model_loaded = False
+                            if self.sess:
+                                self.sess.close()
+                                self.sess = None
                             return False
                     else:
                         self.logger.warning("⚠️ checkpoint檔案不存在")
@@ -187,13 +242,18 @@ class MTSTNetRealtimePredictor:
                     self.is_model_loaded = False
                     return False
             else:
-                self.logger.warning("⚠️ 未找到預訓練模型，將使用簡化預測")
+                self.logger.warning("⚠️ 未找到預訓練模型")
                 self.is_model_loaded = False
                 return False
-                
+
         except Exception as e:
             self.logger.error(f"❌ 模型載入失敗: {e}")
+            import traceback
+            self.logger.error(traceback.format_exc())
             self.is_model_loaded = False
+            if self.sess:
+                self.sess.close()
+                self.sess = None
             return False
 
     def _find_latest_model(self):
@@ -243,10 +303,50 @@ class MTSTNetRealtimePredictor:
                 # 使用預設值
                 self.normalization_params = {'mean': 1000, 'std': 500}
                 self.logger.info("📊 使用預設正規化參數")
-                
+
         except Exception as e:
             self.logger.error(f"❌ 載入正規化參數失敗: {e}")
             self.normalization_params = {'mean': 1000, 'std': 500}
+
+    def _load_auxiliary_data(self, filename: str) -> np.ndarray:
+        """載入輔助資料（sp, dis, in_deg, out_deg）"""
+        try:
+            file_path = self.data_dir / 'Taiwan' / filename
+            if file_path.exists():
+                # in_deg.csv 和 out_deg.csv 有表頭，需要跳過
+                if filename in ['in_deg.csv', 'out_deg.csv']:
+                    data = pd.read_csv(file_path)
+                    # 只取第二列（degree 列），轉換為 [1, site_num] 的形狀
+                    deg_values = data.iloc[:, 1].values
+                    # 確保有足夠的站點
+                    if len(deg_values) < self.model_params['site_num']:
+                        # 補零到正確大小
+                        deg_values = np.pad(deg_values, (0, self.model_params['site_num'] - len(deg_values)),
+                                          mode='constant', constant_values=0)
+                    return deg_values[:self.model_params['site_num']].reshape(1, -1).astype(np.int32)
+                else:
+                    # sp.csv 和 dis.csv 沒有表頭
+                    data = pd.read_csv(file_path, header=None)
+                    return data.values
+            else:
+                self.logger.warning(f"⚠️ {filename} 不存在")
+                # 返回預設值
+                if filename == 'sp.csv':
+                    return np.zeros((self.model_params['site_num'] * self.model_params['site_num'], 15), dtype=np.int32)
+                elif filename == 'dis.csv':
+                    return np.eye(self.model_params['site_num'], dtype=np.float32)
+                elif filename in ['in_deg.csv', 'out_deg.csv']:
+                    return np.zeros((1, self.model_params['site_num']), dtype=np.int32)
+        except Exception as e:
+            self.logger.error(f"❌ 載入 {filename} 失敗: {e}")
+            import traceback
+            self.logger.error(traceback.format_exc())
+            if filename == 'sp.csv':
+                return np.zeros((self.model_params['site_num'] * self.model_params['site_num'], 15), dtype=np.int32)
+            elif filename == 'dis.csv':
+                return np.eye(self.model_params['site_num'], dtype=np.float32)
+            elif filename in ['in_deg.csv', 'out_deg.csv']:
+                return np.zeros((1, self.model_params['site_num']), dtype=np.int32)
 
     def initialize_data_collector(self):
         """初始化資料收集系統"""
@@ -294,110 +394,199 @@ class MTSTNetRealtimePredictor:
             self.logger.error(f"❌ 取得即時資料失敗: {e}")
             return pd.DataFrame()
 
-    def preprocess_data_for_prediction(self, data: pd.DataFrame) -> Optional[np.ndarray]:
+    def preprocess_data_for_prediction(self, data: pd.DataFrame) -> Optional[Tuple]:
         """預處理資料用於預測"""
         try:
             if data.empty:
                 return None
-            
+
+            # 確保timestamp為datetime類型
+            if 'timestamp' in data.columns and not pd.api.types.is_datetime64_any_dtype(data['timestamp']):
+                data['timestamp'] = pd.to_datetime(data['timestamp'])
+
             # 確保有足夠的時間步長
             required_timesteps = self.model_params['input_length']
-            
+            total_timesteps = self.model_params['input_length'] + self.model_params['output_length']
+
             # 按站點和時間排序
             data = data.sort_values(['station', 'timestamp'])
-            
-            # 建立時間序列矩陣
+
+            # 建立時間序列矩陣和時間特徵
             station_sequences = {}
-            
+            timestamps_list = []
+
             for station in self.target_stations:
                 station_data = data[data['station'] == station].copy()
-                
+
                 if len(station_data) >= self.min_data_points:
                     # 取最近的資料點
                     recent_data = station_data.tail(required_timesteps)
-                    
-                    # 提取特徵（流量、速度、旅行時間）
+
+                    # 提取流量特徵（只使用flow，因為features=1）
                     features = []
                     for _, row in recent_data.iterrows():
-                        feature_vector = [
-                            row.get('flow', 0),
-                            row.get('median_speed', 0),
-                            row.get('avg_travel_time', 0)
-                        ]
+                        feature_vector = [row.get('flow', 0)]
                         features.append(feature_vector)
-                    
+
                     # 如果資料不足，用最後一個值填充
                     while len(features) < required_timesteps:
                         if features:
                             features.insert(0, features[0])
                         else:
-                            features.append([0, 0, 0])
-                    
+                            features.append([0])
+
                     station_sequences[station] = np.array(features[-required_timesteps:])
-            
+
+                    # 保存最後一個時間戳記
+                    if len(recent_data) > 0:
+                        timestamps_list.append(recent_data.iloc[-1]['timestamp'])
+
             if not station_sequences:
                 self.logger.warning("⚠️ 無足夠資料進行預測")
                 return None
-            
-            # 組合成批次格式 [batch_size, timesteps, stations, features]
+
+            # 組合成批次格式
             batch_data = []
             station_list = []
-            
-            for station, sequence in station_sequences.items():
-                batch_data.append(sequence)
-                station_list.append(station)
-            
+
+            for station in self.target_stations:
+                if station in station_sequences:
+                    batch_data.append(station_sequences[station])
+                    station_list.append(station)
+                else:
+                    # 用零填充缺失的站點
+                    batch_data.append(np.zeros((required_timesteps, 1)))
+                    station_list.append(station)
+
             if batch_data:
-                # 轉換為numpy陣列並正規化
+                # 轉換為numpy陣列
                 batch_array = np.array(batch_data)  # [stations, timesteps, features]
                 batch_array = np.transpose(batch_array, (1, 0, 2))  # [timesteps, stations, features]
                 batch_array = np.expand_dims(batch_array, axis=0)  # [1, timesteps, stations, features]
-                
+
                 # 正規化流量資料
-                batch_array[:, :, :, 0] = (batch_array[:, :, :, 0] - self.normalization_params['mean']) / self.normalization_params['std']
-                
-                self.logger.info(f"📊 預處理完成: {batch_array.shape}")
-                return batch_array, station_list
-            
-            return None
-            
-        except Exception as e:
-            self.logger.error(f"❌ 資料預處理失敗: {e}")
+                batch_array = (batch_array - self.normalization_params['mean']) / self.normalization_params['std']
+
+                # 生成時間特徵
+                base_time = timestamps_list[0] if timestamps_list else datetime.now()
+
+                # day_of_week 和 minute_of_day: [total_timesteps, site_num]
+                # 模型期望的形狀是 [?, site_num]，其中 ? 是 batch_size * total_timesteps
+                day_of_week = []
+                minute_of_day = []
+
+                for t in range(total_timesteps):
+                    current_time = base_time + timedelta(minutes=t * self.model_params.get('granularity', 5))
+                    dow = current_time.weekday()
+                    mod = (current_time.hour * 60 + current_time.minute) // self.model_params.get('granularity', 5)
+
+                    # 每個時間步一行，每行有 site_num 個相同的值
+                    day_of_week.append([dow] * self.model_params['site_num'])
+                    minute_of_day.append([mod] * self.model_params['site_num'])
+
+                # 轉換為 [total_timesteps, site_num]
+                day_of_week = np.array(day_of_week, dtype=np.int32)  # [24, 62]
+                minute_of_day = np.array(minute_of_day, dtype=np.int32)  # [24, 62]
+
+                # 生成 x_all (input + output長度)
+                # 對於預測，output部分用input最後的值填充
+                x_all = np.zeros((1, total_timesteps, self.model_params['site_num'], 1))
+                x_all[:, :required_timesteps, :, :] = batch_array
+                # 用最後一個時間步填充未來
+                x_all[:, required_timesteps:, :, :] = batch_array[:, -1:, :, :]
+
+                self.logger.info(f"📊 預處理完成: features={batch_array.shape}, x_all={x_all.shape}")
+
+                return {
+                    'features': batch_array,
+                    'x_all': x_all,
+                    'day_of_week': day_of_week,
+                    'minute_of_day': minute_of_day,
+                    'station_list': station_list
+                }
+
             return None
 
-    def predict_traffic(self, input_data: np.ndarray, station_list: List[str]) -> Dict:
+        except Exception as e:
+            self.logger.error(f"❌ 資料預處理失敗: {e}")
+            import traceback
+            self.logger.error(traceback.format_exc())
+            return None
+
+    def predict_traffic(self, input_data: Dict, station_list: List[str]) -> Dict:
         """執行交通預測"""
         try:
             current_time = datetime.now()
-            
-            if self.is_model_loaded and self.model is not None:
+
+            if self.is_model_loaded and self.model is not None and self.sess is not None:
                 # 使用真實模型預測
-                predictions = self.model.predict(input_data)
-                self.logger.info("🤖 使用MT-STNet模型預測")
+                try:
+                    # 載入輔助資料
+                    sys.path.insert(0, str(self.model_dir))
+                    from utils.utils import construct_feed_dict
+
+                    # 載入圖結構資料
+                    sp_data = self._load_auxiliary_data('sp.csv')
+                    dis_data = self._load_auxiliary_data('dis.csv')
+                    in_deg_data = self._load_auxiliary_data('in_deg.csv')
+                    out_deg_data = self._load_auxiliary_data('out_deg.csv')
+
+                    # 建立 feed_dict
+                    feed_dict = construct_feed_dict(
+                        features=input_data['features'],
+                        x_all=input_data['x_all'],
+                        adj=self.model.adj,
+                        labels=np.zeros((1, self.model_params['site_num'], self.model_params['output_length'])),  # dummy labels
+                        day_of_week=input_data['day_of_week'],
+                        minute_of_day=input_data['minute_of_day'],
+                        placeholders=self.model.placeholders,
+                        site_num=self.model_params['site_num'],
+                        sp=sp_data,
+                        dis=dis_data,
+                        in_deg=in_deg_data,
+                        out_deg=out_deg_data,
+                        is_training=False
+                    )
+
+                    # 執行預測
+                    predictions = self.sess.run(self.model.pre, feed_dict=feed_dict)
+                    self.logger.info(f"🤖 使用MT-STNet模型預測，輸出shape: {predictions.shape}")
+
+                except Exception as e:
+                    self.logger.error(f"❌ 模型預測失敗: {e}")
+                    import traceback
+                    self.logger.error(traceback.format_exc())
+                    # 回退到簡化預測
+                    predictions = self._simple_prediction(input_data['features'], station_list)
+                    self.logger.info("📊 回退使用簡化預測邏輯")
             else:
                 # 使用簡化預測邏輯
-                predictions = self._simple_prediction(input_data, station_list)
+                predictions = self._simple_prediction(input_data.get('features', input_data) if isinstance(input_data, dict) else input_data, station_list)
                 self.logger.info("📊 使用簡化預測邏輯")
             
             # 處理預測結果
             prediction_results = []
-            
+
             for i, station in enumerate(station_list):
                 station_info = self.station_mapping.get(station, {})
-                
-                # 計算預測值（這裡需要根據實際模型輸出調整）
+
+                # 計算預測值
+                # MT-STNet 輸出: [batch, site_num, output_length]
                 if isinstance(predictions, np.ndarray) and len(predictions.shape) >= 2:
                     if i < predictions.shape[1]:
+                        # 取第一個預測時間步的值
                         predicted_flow = float(predictions[0, i, 0] if len(predictions.shape) > 2 else predictions[0, i])
                     else:
                         predicted_flow = 0
                 else:
+                    # 簡化預測返回dict
                     predicted_flow = predictions.get(station, 0)
-                
-                # 反正規化
-                if isinstance(predicted_flow, (int, float)):
-                    predicted_flow = predicted_flow * self.normalization_params['std'] + self.normalization_params['mean']
-                    predicted_flow = max(0, predicted_flow)  # 確保非負值
+                    # 反正規化（簡化預測已經是正規化的值）
+                    if isinstance(predicted_flow, (int, float)):
+                        predicted_flow = predicted_flow * self.normalization_params['std'] + self.normalization_params['mean']
+
+                # 確保非負值
+                predicted_flow = max(0, predicted_flow)
                 
                 # 估算速度（基於流量的簡化模型）
                 predicted_speed = self._estimate_speed_from_flow(predicted_flow)
@@ -549,19 +738,25 @@ class MTSTNetRealtimePredictor:
         """執行單次預測"""
         try:
             self.logger.info("🔮 開始執行單次預測...")
-            
+
             # 取得即時資料
             realtime_data = self.get_realtime_data()
             if realtime_data.empty:
                 return {'predictions': [], 'error': '無可用的即時資料'}
-            
+
             # 預處理資料
             processed_result = self.preprocess_data_for_prediction(realtime_data)
             if processed_result is None:
                 return {'predictions': [], 'error': '資料預處理失敗'}
-            
-            input_data, station_list = processed_result
-            
+
+            # 新格式：processed_result 是 dict
+            if isinstance(processed_result, dict):
+                input_data = processed_result
+                station_list = processed_result['station_list']
+            else:
+                # 舊格式兼容
+                input_data, station_list = processed_result
+
             # 執行預測
             predictions = self.predict_traffic(input_data, station_list)
             
@@ -618,6 +813,15 @@ class MTSTNetRealtimePredictor:
         self.is_running = False
         if self.prediction_thread and self.prediction_thread.is_alive():
             self.prediction_thread.join(timeout=5)
+        # 清理 TensorFlow session
+        if self.sess is not None:
+            try:
+                self.sess.close()
+                self.logger.info("✅ TensorFlow session 已關閉")
+            except Exception as e:
+                self.logger.error(f"❌ 關閉 session 失敗: {e}")
+            finally:
+                self.sess = None
         self.logger.info("🛑 持續預測已停止")
 
     def get_system_status(self) -> Dict:

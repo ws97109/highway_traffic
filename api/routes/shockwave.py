@@ -209,13 +209,26 @@ async def get_active_shockwaves():
                 # 計算密度（使用 k = q / v 公式）
                 initial_density = calculator.calculate_density_from_flow_speed(initial_flow, initial_speed)
                 final_density = calculator.calculate_density_from_flow_speed(final_flow, final_speed)
-                
+
+                # 檢查密度計算是否有效
+                if initial_density is None or final_density is None:
+                    print(f"⚠️ 無法計算密度 - 測站 {station}: initial_speed={initial_speed}, final_speed={final_speed}")
+                    continue  # 跳過此震波
+
                 # 計算衝擊波速度（使用 Rankine-Hugoniot 條件）
                 # vw = (q₂ - q₁)/(k₂ - k₁)
-                wave_speed = calculator.calculate_shockwave_speed(
+                wave_result = calculator.calculate_shockwave_speed(
                     initial_flow, initial_density,
                     final_flow, final_density
                 )
+
+                # 檢查計算結果是否有效
+                if not wave_result.get('valid', False):
+                    print(f"⚠️ 無效的衝擊波計算 - 測站 {station}: {wave_result.get('reason', 'Unknown')}")
+                    continue  # 跳過此震波
+
+                # 提取波速數值
+                wave_speed = wave_result['speed']
                 propagation_speed = abs(wave_speed)  # 用於顯示的絕對值
                 
                 # 計算隊列增長率 (dN/dt = q₁ - q₂)

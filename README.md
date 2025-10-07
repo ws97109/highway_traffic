@@ -117,6 +117,12 @@ python main.py
 cd frontend
 npm run dev
 ```
+
+**啟動資料搜尋**
+```bush
+cd src/data
+python tdx_tisc_mix_system.py
+```
 > 前端應用運行在: http://localhost:3000
 
 ### 系統訪問地址

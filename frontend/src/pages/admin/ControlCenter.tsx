@@ -71,10 +71,25 @@ const ControlCenter: React.FC<ControlCenterProps> = () => {
   const [selectedView, setSelectedView] = useState<'overview' | 'shockwaves' | 'predictions' | 'control'>('overview');
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [chatbotOpen, setChatbotOpen] = useState(false);
+  const [selectedShockwaveId, setSelectedShockwaveId] = useState<string | null>(null);
+
+  // 使用 refs 來管理衝擊波列表的滾動
+  const shockwaveListRef = React.useRef<HTMLDivElement>(null);
+  const shockwaveItemRefs = React.useRef<Map<string, HTMLDivElement>>(new Map());
 
   // 使用 hooks 獲取即時資料
   const { trafficData } = useTrafficData();
   const { shockwaves, predictions, alerts } = useShockwaveData(); // 管理者介面不需要位置限制
+
+  // 當選中的衝擊波改變時，滾動列表到該項目
+  useEffect(() => {
+    if (selectedShockwaveId && shockwaveListRef.current) {
+      const selectedElement = shockwaveItemRefs.current.get(selectedShockwaveId);
+      if (selectedElement) {
+        selectedElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+  }, [selectedShockwaveId]);
 
   // 模擬即時資料更新
   useEffect(() => {
@@ -322,100 +337,252 @@ const ControlCenter: React.FC<ControlCenterProps> = () => {
           {/* 左側資訊面板 */}
           <div className="xl:col-span-1 space-y-6">
             
-            {/* 系統概況 */}
+            {/* 衝擊波列表 */}
             <div className="bg-white rounded-lg shadow p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <CpuChipIcon className="w-5 h-5 mr-2 text-blue-600" />
-                系統概況
-              </h2>
-              
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">活躍震波</span>
-                  <span className="font-bold text-lg text-red-600">
+                <BoltIcon className="w-5 h-5 mr-2 text-red-600" />
+                交通衝擊波監測
+                {shockwaves.length > 0 && (
+                  <span className="ml-2 bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
                     {shockwaves.length}
                   </span>
+                )}
+              </h2>
+
+              {shockwaves.length > 0 ? (
+                <div ref={shockwaveListRef} className="space-y-3 max-h-96 overflow-y-auto pr-2">
+                  {shockwaves
+                    .sort((a: any, b: any) => {
+                      const severityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
+                      return (severityOrder[b.severity as keyof typeof severityOrder] || 0) -
+                             (severityOrder[a.severity as keyof typeof severityOrder] || 0);
+                    })
+                    .map((shockwave: any, index: number) => {
+                      const severityConfig = {
+                        critical: { bg: 'bg-red-50 border-red-400', text: 'text-red-800', icon: '🚨', title: '極危險' },
+                        high: { bg: 'bg-orange-50 border-orange-400', text: 'text-orange-800', icon: '⚠️', title: '高風險' },
+                        medium: { bg: 'bg-yellow-50 border-yellow-400', text: 'text-yellow-800', icon: '⚡', title: '中度' },
+                        low: { bg: 'bg-blue-50 border-blue-400', text: 'text-blue-800', icon: '📍', title: '輕微' }
+                      };
+
+                      const severity = shockwave.severity || 'medium';
+                      const config = severityConfig[severity as keyof typeof severityConfig] || severityConfig.medium;
+                      const isSelected = selectedShockwaveId === shockwave.id;
+
+                      return (
+                        <div
+                          key={shockwave.id || index}
+                          ref={(el) => {
+                            if (el && shockwave.id) {
+                              shockwaveItemRefs.current.set(shockwave.id, el);
+                            }
+                          }}
+                          onClick={() => setSelectedShockwaveId(shockwave.id)}
+                          className={`rounded-lg p-4 border-l-4 cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-[1.02] ${config.bg} ${
+                            isSelected ? 'ring-2 ring-blue-500 shadow-lg' : ''
+                          }`}
+                        >
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex items-center space-x-2">
+                              <span className="text-lg">{config.icon}</span>
+                              <div>
+                                <h3 className={`font-semibold text-sm ${config.text}`}>
+                                  {shockwave.location || `${config.title}衝擊波`}
+                                </h3>
+                                <p className="text-xs text-gray-600">
+                                  {shockwave.description || '檢測到真實交通衝擊波'}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-3 gap-2 text-xs mt-2">
+                            <div className="bg-white/60 rounded p-2 text-center">
+                              <div className={`font-bold ${config.text}`}>
+                                {(shockwave.intensity || 0).toFixed(1)}
+                              </div>
+                              <div className="text-gray-600">強度</div>
+                            </div>
+                            <div className="bg-white/60 rounded p-2 text-center">
+                              <div className="font-bold text-blue-600">
+                                {shockwave.shock_duration || shockwave.duration || '-'}
+                              </div>
+                              <div className="text-gray-600">持續(分)</div>
+                            </div>
+                            <div className="bg-white/60 rounded p-2 text-center">
+                              <div className="font-bold text-purple-600">
+                                {(shockwave.affectedArea || shockwave.affected_area || 0).toFixed(1)}
+                              </div>
+                              <div className="text-gray-600">半徑(km)</div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                 </div>
-                
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">監測站點</span>
-                  <span className="font-bold text-lg text-green-600">
-                    {systemStatus.monitoringStations}
-                  </span>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">預測準確度</span>
-                  <span className="font-bold text-lg text-blue-600">
-                    {(systemStatus.predictionsAccuracy * 100).toFixed(1)}%
-                  </span>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">系統負載</span>
-                  <div className="flex items-center">
-                    <div className="w-20 bg-gray-200 rounded-full h-2 mr-2">
-                      <div 
-                        className="bg-blue-600 h-2 rounded-full" 
-                        style={{ width: `${systemStatus.systemLoad}%` }}
-                      ></div>
-                    </div>
-                    <span className="text-sm font-medium">{systemStatus.systemLoad}%</span>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
                   </div>
+                  <p className="text-gray-500 text-sm font-medium">目前沒有衝擊波</p>
+                  <p className="text-gray-400 text-xs mt-1">交通狀況正常</p>
                 </div>
-              </div>
+              )}
             </div>
 
-            {/* 交通指標 */}
+            {/* 衝擊波詳細資訊 */}
             <div className="bg-white rounded-lg shadow p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <ChartBarIcon className="w-5 h-5 mr-2 text-green-600" />
-                即時交通指標
+                <ExclamationTriangleIcon className="w-5 h-5 mr-2 text-orange-600" />
+                衝擊波詳細資訊
               </h2>
-              
-              <div className="space-y-4">
-                <div>
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-sm text-gray-600">總車流量</span>
-                    <span className="font-bold">{formatNumber(trafficMetrics.totalFlow)} 車/小時</span>
-                  </div>
-                </div>
-                
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm text-gray-600">平均車速</span>
-                      <span className="font-bold">{trafficMetrics.averageSpeed ? trafficMetrics.averageSpeed.toFixed(1) : '0.0'} km/h</span>
+
+              {selectedShockwaveId ? (
+                (() => {
+                  const selectedShockwave = shockwaves.find(sw => sw.id === selectedShockwaveId);
+                  if (!selectedShockwave) {
+                    return (
+                      <div className="text-center py-8 text-gray-500 text-sm">
+                        找不到選中的衝擊波資料
+                      </div>
+                    );
+                  }
+
+                  const severityConfig = {
+                    critical: { color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200' },
+                    high: { color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-200' },
+                    medium: { color: 'text-yellow-600', bg: 'bg-yellow-50', border: 'border-yellow-200' },
+                    low: { color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-200' }
+                  };
+                  const config = severityConfig[selectedShockwave.severity as keyof typeof severityConfig] || severityConfig.medium;
+
+                  return (
+                    <div className="space-y-4">
+                      {/* 基本資訊 */}
+                      <div className={`p-4 rounded-lg ${config.bg} border ${config.border}`}>
+                        <h3 className={`font-bold text-sm mb-2 ${config.color}`}>
+                          {selectedShockwave.location || '衝擊波事件'}
+                        </h3>
+                        <p className="text-xs text-gray-600">
+                          {selectedShockwave.description || '檢測到真實交通衝擊波'}
+                        </p>
+                      </div>
+
+                      {/* 關鍵指標 */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-gray-50 rounded-lg p-3">
+                          <div className="text-xs text-gray-600 mb-1">強度等級</div>
+                          <div className={`text-lg font-bold ${config.color}`}>
+                            {(selectedShockwave.intensity || 0).toFixed(1)}/10
+                          </div>
+                        </div>
+                        <div className="bg-gray-50 rounded-lg p-3">
+                          <div className="text-xs text-gray-600 mb-1">嚴重程度</div>
+                          <div className={`text-lg font-bold ${config.color}`}>
+                            {selectedShockwave.severity === 'critical' ? '極危險' :
+                             selectedShockwave.severity === 'high' ? '高風險' :
+                             selectedShockwave.severity === 'medium' ? '中度' : '輕微'}
+                          </div>
+                        </div>
+                        <div className="bg-gray-50 rounded-lg p-3">
+                          <div className="text-xs text-gray-600 mb-1">持續時間</div>
+                          <div className="text-lg font-bold text-blue-600">
+                            {selectedShockwave.shock_duration || '-'} 分鐘
+                          </div>
+                        </div>
+                        <div className="bg-gray-50 rounded-lg p-3">
+                          <div className="text-xs text-gray-600 mb-1">影響半徑</div>
+                          <div className="text-lg font-bold text-purple-600">
+                            {(selectedShockwave.affectedArea || selectedShockwave.affected_area || 0).toFixed(1)} km
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 管理者進階資訊 */}
+                      <div className="border-t pt-4">
+                        <h4 className="font-semibold text-sm text-gray-900 mb-3">管理者資訊</h4>
+                        <div className="space-y-2 text-sm">
+                          {selectedShockwave.propagationSpeed && (
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">傳播速度</span>
+                              <span className="font-medium">{selectedShockwave.propagationSpeed.toFixed(1)} km/h</span>
+                            </div>
+                          )}
+                          {selectedShockwave.waveSpeed !== undefined && (
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">波速</span>
+                              <span className="font-medium">{selectedShockwave.waveSpeed.toFixed(1)} km/h</span>
+                            </div>
+                          )}
+                          {selectedShockwave.waveDirection && (
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">波向</span>
+                              <span className="font-medium">
+                                {selectedShockwave.waveDirection === 'upstream' ? '上游' : '下游'}
+                              </span>
+                            </div>
+                          )}
+                          {selectedShockwave.speedDrop !== undefined && (
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">速度下降</span>
+                              <span className="font-medium text-red-600">{selectedShockwave.speedDrop.toFixed(1)} km/h</span>
+                            </div>
+                          )}
+                          {selectedShockwave.initialSpeed !== undefined && (
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">初始速度</span>
+                              <span className="font-medium">{selectedShockwave.initialSpeed.toFixed(1)} km/h</span>
+                            </div>
+                          )}
+                          {selectedShockwave.finalSpeed !== undefined && (
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">最終速度</span>
+                              <span className="font-medium">{selectedShockwave.finalSpeed.toFixed(1)} km/h</span>
+                            </div>
+                          )}
+                          {selectedShockwave.queueGrowthRate !== undefined && (
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">隊列增長率</span>
+                              <span className="font-medium">{selectedShockwave.queueGrowthRate.toFixed(0)} 車/小時</span>
+                            </div>
+                          )}
+                          {selectedShockwave.initialFlow !== undefined && (
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">初始流量</span>
+                              <span className="font-medium">{selectedShockwave.initialFlow.toFixed(0)} 車/小時</span>
+                            </div>
+                          )}
+                          {selectedShockwave.finalFlow !== undefined && (
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">最終流量</span>
+                              <span className="font-medium">{selectedShockwave.finalFlow.toFixed(0)} 車/小時</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* 座標資訊 */}
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <div className="text-xs text-gray-600 mb-1">座標位置</div>
+                        <div className="text-xs font-mono text-gray-800">
+                          {selectedShockwave.lat.toFixed(6)}, {selectedShockwave.lng.toFixed(6)}
+                        </div>
+                      </div>
                     </div>
+                  );
+                })()
+              ) : (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <ExclamationTriangleIcon className="w-8 h-8 text-gray-400" />
                   </div>
-                
-                <div>
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-sm text-gray-600">壅塞程度</span>
-                    <span className={`font-bold ${
-                      (trafficMetrics.congestionLevel || 0) > 70 ? 'text-red-600' :
-                      (trafficMetrics.congestionLevel || 0) > 40 ? 'text-yellow-600' : 'text-green-600'
-                    }`}>
-                      {trafficMetrics.congestionLevel ? trafficMetrics.congestionLevel.toFixed(0) : '0'}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div 
-                      className={`h-2 rounded-full ${
-                        trafficMetrics.congestionLevel > 70 ? 'bg-red-600' :
-                        trafficMetrics.congestionLevel > 40 ? 'bg-yellow-600' : 'bg-green-600'
-                      }`}
-                      style={{ width: `${trafficMetrics.congestionLevel || 0}%` }}
-                    ></div>
-                  </div>
+                  <p className="text-gray-500 text-sm font-medium">請選擇衝擊波</p>
+                  <p className="text-gray-400 text-xs mt-1">點擊左側列表或地圖上的衝擊波查看詳細資訊</p>
                 </div>
-                
-                <div>
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-sm text-gray-600">事件數量</span>
-                    <span className="font-bold text-orange-600">{trafficMetrics.incidentCount}</span>
-                  </div>
-                </div>
-              </div>
+              )}
             </div>
 
             {/* AI建議行動 */}
@@ -497,6 +664,8 @@ const ControlCenter: React.FC<ControlCenterProps> = () => {
                     showTrafficLayer={true}
                     showShockwaveOverlay={true}
                     zoom={9}
+                    selectedShockwaveId={selectedShockwaveId}
+                    onShockwaveClick={(id) => setSelectedShockwaveId(id)}
                   />
                 </div>
               </div>

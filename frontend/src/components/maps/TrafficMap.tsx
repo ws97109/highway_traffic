@@ -14,6 +14,8 @@ interface TrafficMapProps {
   zoom?: number;
   showTrafficLayer?: boolean;
   showShockwaveOverlay?: boolean;
+  selectedShockwaveId?: string | null;
+  onShockwaveClick?: (shockwaveId: string) => void;
 }
 
 interface TrafficData {
@@ -62,6 +64,8 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
   zoom = 10,
   showTrafficLayer = true,
   showShockwaveOverlay = true,
+  selectedShockwaveId = null,
+  onShockwaveClick,
 }) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
@@ -70,6 +74,7 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
   const [trafficLayer, setTrafficLayer] = useState<google.maps.TrafficLayer | null>(null);
   const [shockwaveOverlays, setShockwaveOverlays] = useState<google.maps.Circle[]>([]);
   const [radarWaves, setRadarWaves] = useState<{ id: string; component: React.ReactElement }[]>([]);
+  const shockwaveMarkersRef = useRef<Map<string, google.maps.Marker>>(new Map());
 
   // Google Maps API 載入
   useEffect(() => {
@@ -182,11 +187,16 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
     if (!map || !showShockwaveOverlay) {
       // 清理現有的雷達波
       setRadarWaves([]);
+      // 清理 marker 引用
+      shockwaveMarkersRef.current.forEach(marker => marker.setMap(null));
+      shockwaveMarkersRef.current.clear();
       return;
     }
 
-    // 清除現有覆蓋層
+    // 清除現有覆蓋層和舊的 markers
     shockwaveOverlays.forEach(overlay => overlay.setMap(null));
+    shockwaveMarkersRef.current.forEach(marker => marker.setMap(null));
+    shockwaveMarkersRef.current.clear();
 
     // 建立新覆蓋層和雷達波
     const newOverlays: google.maps.Circle[] = [];
@@ -219,9 +229,17 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
         zIndex: 1000
       });
 
+      // 儲存 marker 引用以便後續使用
+      shockwaveMarkersRef.current.set(shockwave.id, centerMarker);
+
       // 添加點擊事件顯示詳細資訊
       centerMarker.addListener('click', () => {
         try {
+          // 通知父組件更新選中的衝擊波
+          if (onShockwaveClick) {
+            onShockwaveClick(shockwave.id);
+          }
+
           // 安全檢查
           if (!map || !shockwave) {
             console.error('地圖或衝擊波資料遺失');
@@ -309,6 +327,26 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
     setShockwaveOverlays(newOverlays);
     setRadarWaves(newRadarWaves);
   }, [map, shockwaves, showShockwaveOverlay]);
+
+  // 當選中的衝擊波改變時，平移地圖到該位置並觸發點擊事件
+  useEffect(() => {
+    if (!map || !selectedShockwaveId) return;
+
+    const selectedShockwave = shockwaves.find(sw => sw.id === selectedShockwaveId);
+    if (selectedShockwave) {
+      // 平移地圖到選中的衝擊波位置
+      map.panTo({ lat: selectedShockwave.lat, lng: selectedShockwave.lng });
+      map.setZoom(12); // 放大到適合查看衝擊波的縮放級別
+
+      // 延遲一下，等待地圖平移完成後再觸發 marker 點擊事件
+      setTimeout(() => {
+        const marker = shockwaveMarkersRef.current.get(selectedShockwaveId);
+        if (marker) {
+          google.maps.event.trigger(marker, 'click');
+        }
+      }, 500); // 等待 500ms 讓平移動畫完成
+    }
+  }, [map, selectedShockwaveId, shockwaves]);
 
   // 驗證座標是否在台灣範圍內
   const isValidCoordinate = (lat: number, lng: number): boolean => {

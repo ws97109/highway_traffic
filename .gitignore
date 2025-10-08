@@ -94,3 +94,6 @@ Reference/paper/*.pdf
 
 # 備份文件
 *.backup
+
+#claude
+*.claude/

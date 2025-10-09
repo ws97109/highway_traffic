@@ -21,6 +21,11 @@ def get_predictor():
     global mt_stnet_predictor
     if mt_stnet_predictor is None:
         mt_stnet_predictor = MTSTNetRealtimePredictor()
+        # 設定全域資料收集器
+        from api.main import get_data_collector
+        data_collector = get_data_collector()
+        if data_collector:
+            mt_stnet_predictor.set_data_collector(data_collector)
         # 嘗試載入模型
         mt_stnet_predictor.load_model()
     return mt_stnet_predictor

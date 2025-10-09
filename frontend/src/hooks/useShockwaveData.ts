@@ -13,6 +13,7 @@ interface ShockwaveData {
   waveDirection?: 'upstream' | 'downstream';
   estimatedArrivalTime: Date;
   affectedArea: number;
+  affected_area?: number;  // 後端可能使用底線式命名
   shock_duration?: number;  // 持續時間（分鐘）
   severity: 'low' | 'medium' | 'high' | 'critical';
   description: string;

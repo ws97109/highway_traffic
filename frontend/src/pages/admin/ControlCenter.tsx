@@ -7,9 +7,7 @@ import {
   MapIcon, 
   ClockIcon,
   CpuChipIcon,
-  SignalIcon,
   BoltIcon,
-  UserGroupIcon,
   ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline';
 import TrafficMap from '../../components/maps/TrafficMap';
@@ -302,9 +300,7 @@ const ControlCenter: React.FC<ControlCenterProps> = () => {
           <nav className="flex space-x-8">
             {[
               { key: 'overview', label: '總覽', icon: ChartBarIcon },
-              { key: 'shockwaves', label: '震波監控', icon: BoltIcon },
-              { key: 'predictions', label: '預測分析', icon: CpuChipIcon },
-              { key: 'control', label: '交通管制', icon: SignalIcon }
+              { key: 'predictions', label: 'MT-STNet預測分析', icon: CpuChipIcon }
             ].map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
@@ -610,7 +606,6 @@ const ControlCenter: React.FC<ControlCenterProps> = () => {
                     
                     <div className="flex justify-between items-center text-xs text-gray-500">
                       <span>預期效果: {action.expectedImpact}</span>
-                      <span>信心度: {action.confidence ? (action.confidence * 100).toFixed(0) : '0'}%</span>
                     </div>
                     
                     <button
@@ -679,6 +674,9 @@ const ControlCenter: React.FC<ControlCenterProps> = () => {
         isOpen={chatbotOpen}
         onClose={() => setChatbotOpen(false)}
         position="fixed"
+        trafficData={trafficData}
+        shockwaves={shockwaves}
+        predictions={predictions}
       />
     </div>
   );

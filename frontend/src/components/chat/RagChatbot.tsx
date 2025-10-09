@@ -27,18 +27,24 @@ interface RAGChatbotProps {
   onClose: () => void;
   position?: 'fixed' | 'embedded';
   className?: string;
+  trafficData?: any;
+  shockwaves?: any[];
+  predictions?: any[];
 }
 
-const RAGChatbot: React.FC<RAGChatbotProps> = ({ 
-  isOpen, 
-  onClose, 
+const RAGChatbot: React.FC<RAGChatbotProps> = ({
+  isOpen,
+  onClose,
   position = 'fixed',
-  className = ''
+  className = '',
+  trafficData,
+  shockwaves,
+  predictions
 }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: '1',
-      content: '您好！我是高速公路智能助手，可以回答關於國道交通、路段規格、設計標準等問題。請問有什麼可以幫助您的嗎？',
+      content: '您好！我是高速公路交通管制決策助手，專門協助管理人員制定交通疏導策略。我可以提供匝道管制、車道管制、高乘載措施、道路擴建評估等政策層級建議。請問有什麼可以幫助您的嗎？',
       role: 'assistant',
       timestamp: new Date()
     }
@@ -102,7 +108,20 @@ const RAGChatbot: React.FC<RAGChatbotProps> = ({
     try {
       const startTime = Date.now();
       
-      // 使用新的 RAG API 端點
+      // 準備交通數據
+      const trafficPayload = trafficData ? {
+        stations: trafficData.stations || trafficData
+      } : null;
+
+      const shockwavePayload = shockwaves && shockwaves.length > 0 ? {
+        shockwaves: shockwaves
+      } : null;
+
+      const predictionPayload = predictions && predictions.length > 0 ? {
+        predictions: predictions
+      } : null;
+
+      // 使用新的 RAG API 端點，傳入真實數據
       const response = await fetch('/api/rag/chat', {
         method: 'POST',
         headers: {
@@ -110,8 +129,9 @@ const RAGChatbot: React.FC<RAGChatbotProps> = ({
         },
         body: JSON.stringify({
           message: userMessage.content,
-          traffic_data: null,
-          shockwave_data: null,
+          traffic_data: trafficPayload,
+          shockwave_data: shockwavePayload,
+          prediction_data: predictionPayload,
           user_location: null,
           use_rag: true  // 啟用 RAG 功能
         })
@@ -171,7 +191,7 @@ const RAGChatbot: React.FC<RAGChatbotProps> = ({
     setMessages([
       {
         id: '1',
-        content: '對話已清除。我是高速公路智能助手，有什麼可以幫助您的嗎？',
+        content: '對話已清除。我是高速公路交通管制決策助手，有什麼可以幫助您的嗎？',
         role: 'assistant',
         timestamp: new Date()
       }
@@ -179,23 +199,17 @@ const RAGChatbot: React.FC<RAGChatbotProps> = ({
   };
 
   const suggestedQuestions = [
-    "五股林口塞車問題可以怎麼解決？",
-    "國道一號桃園段的車道配置多少是表現最佳的？",
-    "八德到龍潭段有什麼交通特色？",
-    "國道三號土城段的車道配置多少是表現最佳的？"
+    "五股林口段壅塞嚴重，建議採取什麼管制措施？",
+    "如何透過高乘載管制改善尖峰時段車流？",
+    "國道一號桃園段是否需要進行道路擴建？",
+    "震波頻繁發生的路段，有什麼長期改善方案？"
   ];
 
   const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('zh-TW', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
+    return date.toLocaleTimeString('zh-TW', {
+      hour: '2-digit',
+      minute: '2-digit'
     });
-  };
-
-  const getConfidenceColor = (confidence: number) => {
-    if (confidence >= 0.8) return 'text-green-600 bg-green-100';
-    if (confidence >= 0.6) return 'text-yellow-600 bg-yellow-100';
-    return 'text-red-600 bg-red-100';
   };
 
   if (!isOpen) return null;
@@ -214,8 +228,8 @@ const RAGChatbot: React.FC<RAGChatbotProps> = ({
               <ChatBubbleLeftRightIcon className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-semibold">智能交通助手</h3>
-              <p className="text-xs text-white/80">基於 RAG 技術驅動</p>
+              <h3 className="font-semibold">管制決策助手</h3>
+              <p className="text-xs text-white/80">政策層級交通疏導建議</p>
             </div>
           </div>
           
@@ -260,16 +274,6 @@ const RAGChatbot: React.FC<RAGChatbotProps> = ({
               {/* 助手訊息的額外資訊 */}
               {message.role === 'assistant' && (
                 <div className="mt-2 space-y-2">
-                  {/* 信心度指標 */}
-                  {message.confidence !== undefined && (
-                    <div className="flex items-center space-x-2 text-xs">
-                      <span className="text-gray-500">準確度:</span>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getConfidenceColor(message.confidence)}`}>
-                        {(message.confidence * 100).toFixed(0)}%
-                      </span>
-                    </div>
-                  )}
-                  
                   {/* 資料來源 */}
                   {message.sources && message.sources.length > 0 && (
                     <div className="text-xs text-gray-500">
@@ -286,7 +290,7 @@ const RAGChatbot: React.FC<RAGChatbotProps> = ({
                       </div>
                     </div>
                   )}
-                  
+
                   {/* 處理時間 */}
                   {message.processingTime && (
                     <div className="flex items-center space-x-1 text-xs text-gray-500">

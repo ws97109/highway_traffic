@@ -14,6 +14,7 @@ sys.path.insert(0, root_dir)
 from src.core.integrated_system import IntegratedShockPredictionSystem
 from src.detection.final_optimized_detector import FinalOptimizedShockDetector
 from src.prediction.realtime_shock_predictor import RealtimeShockPredictor
+from src.data.tdx_tisc_mix_system import OptimizedIntegratedDataCollectionSystem
 
 # 導入 API 路由
 from api.routes import traffic, shockwave, prediction, websocket, location, admin, smart, ollama_chat, shockwave_ai, rag_integrated
@@ -51,28 +52,35 @@ except:
 integrated_system = None
 detector = None
 predictor = None
+data_collector = None
 
 @app.on_event("startup")
 async def startup_event():
     """應用啟動時初始化系統"""
-    global integrated_system, detector, predictor
-    
+    global integrated_system, detector, predictor, data_collector
+
     print("正在初始化高速公路智慧交通預警決策支援系統...")
-    
+
     try:
         # 設定資料目錄
         data_dir = os.path.join(root_dir, "data")
-        
+
+        # 初始化資料收集系統（最優先）
+        print("📡 正在初始化資料收集系統...")
+        data_collector = OptimizedIntegratedDataCollectionSystem(base_dir=data_dir)
+        data_collector.load_initial_historical_data()
+        print("✅ 資料收集系統已就緒")
+
         # 初始化後端系統
         integrated_system = IntegratedShockPredictionSystem()
         detector = FinalOptimizedShockDetector()
         predictor = RealtimeShockPredictor(data_dir=data_dir)
-        
+
         print("✅ 系統初始化完成!")
         print("🚀 智慧交通預警系統已啟動")
         print("📊 震波檢測系統已就緒")
         print("🔮 AI預測引擎已載入")
-        
+
     except Exception as e:
         print(f"⚠️ 系統初始化警告: {e}")
         print("🔄 使用模擬模式運行...")
@@ -166,6 +174,10 @@ def get_detector():
 def get_predictor():
     """獲取預測器實例"""
     return predictor
+
+def get_data_collector():
+    """獲取資料收集器實例"""
+    return data_collector
 
 # 錯誤處理
 from fastapi import Request

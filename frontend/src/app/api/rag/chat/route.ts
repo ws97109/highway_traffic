@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
       hasUserLocation: !!body.user_location
     });
 
-    const { message, traffic_data, shockwave_data, user_location, use_rag = true } = body;
+    const { message, traffic_data, shockwave_data, prediction_data, user_location, use_rag = true } = body;
 
     if (!message) {
       console.error('❌ 訊息為空');
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     console.log('🔧 使用配置:', { ollamaUrl, model });
 
     // 建立詳細的提示詞
-    let fullPrompt = buildPrompt(message, traffic_data, shockwave_data, user_location);
+    let fullPrompt = buildPrompt(message, traffic_data, shockwave_data, prediction_data, user_location);
 
     console.log('🤖 發送請求到 Ollama:', {
       url: ollamaUrl,
@@ -129,64 +129,120 @@ function buildPrompt(
   userMessage: string,
   trafficData: any,
   shockwaveData: any,
+  predictionData: any,
   userLocation: any
 ): string {
   try {
-    let prompt = `你是一個專業的台灣高速公路交通資訊助手。請用繁體中文回答以下問題。\n\n`;
+    // 管理者導向的系統提示詞
+    let prompt = `你是專業的台灣高速公路交通管制決策助手，專門協助交通管理中心的管理人員制定政策層級的交通疏導策略。
 
-    // 加入使用者位置資訊
-    if (userLocation && typeof userLocation.lat === 'number' && typeof userLocation.lng === 'number') {
-      prompt += `【使用者位置】\n`;
-      prompt += `緯度: ${userLocation.lat.toFixed(4)}, 經度: ${userLocation.lng.toFixed(4)}\n\n`;
+你的職責是:
+1. 分析系統層級的交通狀況，識別壅塞熱點和趨勢
+2. 提供政府可執行的交通管制策略建議
+3. 評估不同策略的成本、效益和可行性
+4. 考量交通政策、法規和多車輛協調
+5. 解讀預測模型結果和震波偵測資料
+
+你應該提供的建議類型包括:
+- 🚦 匝道儀控管制 (Ramp Metering): 控制匝道車流進入主線的速率
+- 🚧 車道管制: 封閉特定車道、開放路肩、調整車道配置
+- 🔀 替代路線引導: 透過 CMS 可變標誌引導車流改道
+- 👥 高乘載管制 (HOV): 實施高乘載車輛優先措施
+- 🚗 車種管制: 限制大型車輛通行時段或路段
+- 🏗️ 道路擴建評估: 評估長期道路容量改善需求
+- ⏰ 尖峰時段調控: 建議彈性上下班、分流措施
+- 📱 智慧交通系統 (ITS): 動態速限、事故偵測、資訊發布
+- 🚨 應急管理: 事故快速清理、緊急車道開放
+
+回答原則:
+- 使用繁體中文，語氣專業但易懂
+- 基於提供的即時資料，引用具體數字和站點
+- 提供結構化的分析和建議 (問題診斷 → 策略建議 → 預期效果)
+- 明確說明建議的理由、實施成本、預期效果、實施時間
+- 當資料不足時，誠實說明並建議收集哪些資料
+- 提供 2-3 個可選方案，而非單一建議
+- 考慮短期應急措施和長期改善方案
+
+\n\n`;
+
+    // 加入交通數據
+    if (trafficData?.stations && trafficData.stations.length > 0) {
+      const avgSpeed = trafficData.stations.reduce((sum: number, s: any) => sum + (s.speed || 0), 0) / trafficData.stations.length;
+      const congestedCount = trafficData.stations.filter((s: any) => s.speed < 50).length;
+      const smoothCount = trafficData.stations.filter((s: any) => s.speed >= 80).length;
+
+      prompt += `【系統即時交通數據】\n`;
+      prompt += `- 監測站點總數: ${trafficData.stations.length} 個\n`;
+      prompt += `- 平均車速: ${avgSpeed.toFixed(1)} km/h\n`;
+      prompt += `- 順暢站點: ${smoothCount} 個 (車速 ≥80 km/h)\n`;
+      prompt += `- 壅塞站點: ${congestedCount} 個 (車速 <50 km/h)\n`;
+      prompt += `- 壅塞比例: ${((congestedCount / trafficData.stations.length) * 100).toFixed(1)}%\n\n`;
     }
 
-  // 加入交通數據
-  if (trafficData?.stations && trafficData.stations.length > 0) {
-    const avgSpeed = trafficData.stations.reduce((sum: number, s: any) => sum + (s.speed || 0), 0) / trafficData.stations.length;
-    const congestedCount = trafficData.stations.filter((s: any) => s.speed < 50).length;
-    const smoothCount = trafficData.stations.filter((s: any) => s.speed >= 80).length;
+    // 加入震波數據
+    if (shockwaveData?.shockwaves && shockwaveData.shockwaves.length > 0) {
+      prompt += `【交通震波檢測】\n`;
+      prompt += `⚠️ 系統檢測到 ${shockwaveData.shockwaves.length} 個交通震波事件:\n`;
 
-    prompt += `【即時交通數據】\n`;
-    prompt += `- 監測站點總數: ${trafficData.stations.length} 個\n`;
-    prompt += `- 平均車速: ${avgSpeed.toFixed(1)} km/h\n`;
-    prompt += `- 順暢站點: ${smoothCount} 個 (車速 ≥80 km/h)\n`;
-    prompt += `- 壅塞站點: ${congestedCount} 個 (車速 <50 km/h)\n\n`;
-  }
+      shockwaveData.shockwaves.slice(0, 3).forEach((shock: any, index: number) => {
+        prompt += `\n震波事件 ${index + 1}:\n`;
+        prompt += `- 位置: ${shock.location_name || shock.station_name || '未知'}\n`;
+        prompt += `- 座標: (${shock.latitude?.toFixed(4) || 'N/A'}, ${shock.longitude?.toFixed(4) || 'N/A'})\n`;
+        prompt += `- 嚴重程度: ${shock.intensity || 'N/A'}/10\n`;
+        prompt += `- 持續時間: ${shock.shock_duration || 'N/A'} 分鐘\n`;
+        prompt += `- 影響範圍: 半徑 ${shock.affected_area || 'N/A'} 公里\n`;
+        prompt += `- 速度下降: ${shock.speed_drop || 'N/A'} km/h\n`;
+      });
+      prompt += `\n`;
+    }
 
-  // 加入震波數據
-  if (shockwaveData?.shockwaves && shockwaveData.shockwaves.length > 0) {
-    prompt += `【交通震波警報】\n`;
-    prompt += `檢測到 ${shockwaveData.shockwaves.length} 個交通震波事件:\n`;
+    // 加入預測車流數據
+    if (predictionData?.predictions && predictionData.predictions.length > 0) {
+      prompt += `【車流預測分析】\n`;
+      prompt += `📈 系統預測未來 ${predictionData.predictions.length} 個時段的車流狀況:\n`;
 
-    shockwaveData.shockwaves.slice(0, 3).forEach((shock: any, index: number) => {
-      prompt += `\n震波 ${index + 1}:\n`;
-      prompt += `- 位置: ${shock.location_name || shock.station_name || '未知'}\n`;
-      prompt += `- 座標: ${shock.latitude?.toFixed(4) || 'N/A'}, ${shock.longitude?.toFixed(4) || 'N/A'}\n`;
-      prompt += `- 嚴重程度: ${shock.intensity || 'N/A'}/10\n`;
-      prompt += `- 持續時間: ${shock.shock_duration || 'N/A'} 分鐘\n`;
-      prompt += `- 影響範圍: 半徑 ${shock.affected_area || 'N/A'} 公里\n`;
-    });
-    prompt += `\n`;
-  }
+      predictionData.predictions.slice(0, 5).forEach((pred: any, index: number) => {
+        prompt += `\n預測時段 ${index + 1}:\n`;
+        prompt += `- 時間: ${pred.time || pred.timestamp || 'N/A'}\n`;
+        prompt += `- 預測車速: ${pred.predicted_speed || pred.speed || 'N/A'} km/h\n`;
+        prompt += `- 預測車流: ${pred.predicted_flow || pred.flow || 'N/A'} 輛/小時\n`;
+        prompt += `- 預測壅塞程度: ${pred.congestion_level || 'N/A'}%\n`;
+        if (pred.location) {
+          prompt += `- 預測位置: ${pred.location}\n`;
+        }
+      });
+      prompt += `\n`;
+    }
 
-    // 加入使用者問題
-    prompt += `【使用者問題】\n${userMessage}\n\n`;
+    // 加入管理員問題
+    prompt += `【管理員諮詢】\n${userMessage}\n\n`;
 
     // 加入回答指引
-    prompt += `【回答要求】\n`;
-    prompt += `1. 請基於以上實際監測資料提供專業的台灣本土化駕駛建議\n`;
-    prompt += `2. 回答要準確、具體，包括詳細的路線規劃和行駛指引\n`;
-    prompt += `3. 如果有震波警報，請特別說明如何應對\n`;
-    prompt += `4. 提供有用的補充資訊和注意事項\n`;
-    prompt += `5. 回答要結構化且易於理解\n`;
-    prompt += `6. 使用繁體中文回答\n\n`;
+    prompt += `【回答格式要求】\n`;
+    prompt += `請以以下結構回答:\n\n`;
+    prompt += `📊 **問題診斷**\n`;
+    prompt += `- 當前交通狀況分析\n`;
+    prompt += `- 壅塞成因判斷\n`;
+    prompt += `- 影響範圍評估\n\n`;
+    prompt += `🎯 **建議策略** (提供 2-3 個選項)\n`;
+    prompt += `選項 1: [策略名稱]\n`;
+    prompt += `- 具體措施: [詳細說明]\n`;
+    prompt += `- 實施位置: [具體地點]\n`;
+    prompt += `- 預期效果: [量化指標]\n`;
+    prompt += `- 實施成本: [估算]\n`;
+    prompt += `- 實施時間: [所需時間]\n`;
+    prompt += `- 優先級: 高/中/低\n\n`;
+    prompt += `💡 **實施建議**\n`;
+    prompt += `- 短期應急措施\n`;
+    prompt += `- 長期改善方案\n`;
+    prompt += `- 配套措施建議\n\n`;
     prompt += `請開始回答:\n`;
 
     return prompt;
   } catch (error) {
     console.error('❌ buildPrompt 錯誤:', error);
     // 如果建立提示詞時發生錯誤，返回基本提示詞
-    return `你是一個專業的台灣高速公路交通資訊助手。請用繁體中文回答以下問題：\n\n${userMessage}`;
+    return `你是專業的台灣高速公路交通管制決策助手。請用繁體中文，從政府管理者角度回答以下問題：\n\n${userMessage}`;
   }
 }
 

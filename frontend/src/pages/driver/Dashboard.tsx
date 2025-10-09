@@ -30,6 +30,11 @@ const DriverDashboard: React.FC = () => {
   const [shockwaveAnalysis, setShockwaveAnalysis] = useState<any>(null);
   const [showShockwaveAnalysis, setShowShockwaveAnalysis] = useState(false);
   const [shockwaveAILoading, setShockwaveAILoading] = useState(false);
+  const [selectedShockwaveId, setSelectedShockwaveId] = useState<string | null>(null);
+
+  // 使用 refs 來管理衝擊波列表的滾動
+  const shockwaveListRef = React.useRef<HTMLDivElement>(null);
+  const shockwaveItemRefs = React.useRef<Map<string, HTMLDivElement>>(new Map());
 
   // Google 服務 Hooks
   const { 
@@ -55,7 +60,17 @@ const DriverDashboard: React.FC = () => {
 
   // 交通資料 Hooks
   const { trafficData, loading: trafficLoading, error: trafficError } = useTrafficData();
-  const { shockwaves, predictions, alerts, loading: shockwaveLoading, error: shockwaveError } = useShockwaveData(userLocation);
+  const { shockwaves, predictions, alerts, loading: shockwaveLoading, error: shockwaveError } = useShockwaveData(userLocation || undefined);
+
+  // 當選中的衝擊波改變時，滾動列表到該項目
+  useEffect(() => {
+    if (selectedShockwaveId && shockwaveListRef.current) {
+      const selectedElement = shockwaveItemRefs.current.get(selectedShockwaveId);
+      if (selectedElement) {
+        selectedElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+  }, [selectedShockwaveId]);
 
   // 調試：打印數據狀態
   useEffect(() => {
@@ -567,17 +582,27 @@ const DriverDashboard: React.FC = () => {
               </h2>
 
               {shockwaves.length > 0 ? (
-                <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
+                <div ref={shockwaveListRef} className="space-y-3 max-h-80 overflow-y-auto pr-2">
                   {/* 按距離排序震波 */}
                   {shockwaves
-                    .map((shockwave: any) => ({
-                      ...shockwave,
-                      distance: userLocation ?
-                        Math.sqrt(
-                          Math.pow(shockwave.latitude - userLocation.lat, 2) +
-                          Math.pow(shockwave.longitude - userLocation.lng, 2)
-                        ) * 111 : 0 // 簡化距離計算，111km ≈ 1度
-                    }))
+                    .map((shockwave: any) => {
+                      let distance = 0;
+                      if (userLocation && shockwave.lat && shockwave.lng) {
+                        // 使用 Haversine 公式計算精確距離
+                        const R = 6371; // 地球半徑 (km)
+                        const dLat = (shockwave.lat - userLocation.lat) * Math.PI / 180;
+                        const dLon = (shockwave.lng - userLocation.lng) * Math.PI / 180;
+                        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                                  Math.cos(userLocation.lat * Math.PI / 180) * Math.cos(shockwave.lat * Math.PI / 180) *
+                                  Math.sin(dLon/2) * Math.sin(dLon/2);
+                        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                        distance = R * c;
+                      }
+                      return {
+                        ...shockwave,
+                        distance
+                      };
+                    })
                     .sort((a: any, b: any) => a.distance - b.distance)
                     .map((shockwave: any, index: number) => {
                       const severityConfig = {
@@ -589,11 +614,20 @@ const DriverDashboard: React.FC = () => {
 
                       const severity = shockwave.severity || 'medium';
                       const config = severityConfig[severity as keyof typeof severityConfig] || severityConfig.medium;
+                      const isSelected = selectedShockwaveId === shockwave.id;
 
                       return (
                         <div
                           key={shockwave.id || index}
-                          className={`rounded-lg p-4 border-l-4 cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-[1.02] ${config.bg}`}
+                          ref={(el) => {
+                            if (el && shockwave.id) {
+                              shockwaveItemRefs.current.set(shockwave.id, el);
+                            }
+                          }}
+                          onClick={() => setSelectedShockwaveId(shockwave.id)}
+                          className={`rounded-lg p-4 border-l-4 cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-[1.02] ${config.bg} ${
+                            isSelected ? 'ring-2 ring-blue-500 shadow-lg' : ''
+                          }`}
                         >
                           <div className="flex items-start justify-between mb-2">
                             <div className="flex items-center space-x-2">
@@ -623,13 +657,13 @@ const DriverDashboard: React.FC = () => {
                             </div>
                             <div className="bg-white/60 rounded-lg p-2 text-center">
                               <div className="font-bold text-lg text-blue-600">
-                                {shockwave.shock_duration || 30}
+                                {shockwave.shock_duration || 13}
                               </div>
                               <div className="text-gray-600">持續時間(分)</div>
                             </div>
                             <div className="bg-white/60 rounded-lg p-2 text-center">
                               <div className="font-bold text-lg text-purple-600">
-                                {(shockwave.affected_area || 4.3).toFixed(1)}
+                                {(shockwave.affectedArea || 0).toFixed(1)}
                               </div>
                               <div className="text-gray-600">影響半徑(km)</div>
                             </div>
@@ -639,12 +673,12 @@ const DriverDashboard: React.FC = () => {
                             <div className="flex items-center justify-between text-xs">
                               <div className="flex items-center space-x-4">
                                 <span className="text-gray-600">
-                                  🚗 傳播速度: {(shockwave.propagation_speed || 20).toFixed(1)} km/h
+                                  🚗 傳播速度: {(shockwave.propagationSpeed || 0).toFixed(1)} km/h
                                 </span>
                               </div>
                               <div className="text-gray-500">
-                                {shockwave.estimated_arrival_time ?
-                                  new Date(shockwave.estimated_arrival_time).toLocaleTimeString('zh-TW', {
+                                {shockwave.estimatedArrivalTime ?
+                                  new Date(shockwave.estimatedArrivalTime).toLocaleTimeString('zh-TW', {
                                     hour: '2-digit',
                                     minute: '2-digit'
                                   }) : '預估到達時間'
@@ -773,6 +807,8 @@ const DriverDashboard: React.FC = () => {
                   onLocationUpdate={setCustomLocation}
                   showTrafficLayer={true}
                   showShockwaveOverlay={true}
+                  selectedShockwaveId={selectedShockwaveId}
+                  onShockwaveClick={(id) => setSelectedShockwaveId(id)}
                 />
                 
                 {/* 地圖控制按鈕 */}

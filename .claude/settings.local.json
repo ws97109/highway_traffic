@@ -3,7 +3,12 @@
     "allow": [
       "Bash(git add:*)",
       "Bash(bash:*)",
-      "Bash(python:*)"
+      "Bash(cat:*)",
+      "Bash(mkdir:*)",
+      "Bash(curl -s http://localhost:11434/api/tags)",
+      "Bash(curl -s http://localhost:11434/api/generate -X POST -H \"Content-Type: application/json\" -d '{\"\"\"\"model\"\"\"\":\"\"\"\"qwen2.5:7b\"\"\"\",\"\"\"\"prompt\"\"\"\":\"\"\"\"你好\"\"\"\",\"\"\"\"stream\"\"\"\":false}')",
+      "Bash(lsof:*)",
+      "Bash(xargs kill:*)"
     ],
     "deny": [],
     "ask": []

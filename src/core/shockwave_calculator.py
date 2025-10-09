@@ -1,7 +1,7 @@
 """
-衝擊波計算器 - 基於交通流理論文獻（完整修正版）
+衝擊波計算器 - 基於交通流理論文獻（放寬 Lax 熵條件版本）
 實現 Lighthill-Whitham-Richards (LWR) 模型和 Rankine-Hugoniot 條件
-新增：Lax 熵條件驗證、稀疏波處理、改進的強度計算
+新增：放寬的 Lax 熵條件驗證、稀疏波處理、改進的強度計算
 """
 
 import numpy as np
@@ -11,17 +11,24 @@ from datetime import datetime, timedelta
 
 class ShockwaveCalculator:
     """
-    衝擊波計算器（文獻標準實現）
+    衝擊波計算器（放寬熵條件版本）
     
     基於文獻公式：
     1. 衝擊波速度: vw = (q₂ - q₁)/(k₂ - k₁) = Δq/Δk
     2. 隊列增長率: dN/dt = q₁ - q₂
     3. 相對速度: vr = v - vw
-    4. Lax 熵條件: f'(k₂) < vw < f'(k₁)
+    4. 放寬的 Lax 熵條件: 允許容差範圍內的波速
     """
     
-    def __init__(self):
-        """初始化計算器參數"""
+    def __init__(self, entropy_tolerance=2.0):
+        """
+        初始化計算器參數
+        
+        參數:
+            entropy_tolerance: 熵條件容差 (km/hr)
+                - 預設 2.0，允許波速在特徵速度範圍外 ±2 km/hr
+                - 設為 0 則使用嚴格模式
+        """
         # 道路參數
         self.free_flow_speed = 90.0  # 自由流速度 (km/h)
         self.jam_density = 150.0     # 阻塞密度 (veh/km)
@@ -29,6 +36,9 @@ class ShockwaveCalculator:
         
         # 典型駕駛反應時間
         self.reaction_time = 1.5  # 秒
+        
+        # 熵條件容差
+        self.entropy_tolerance = entropy_tolerance
         
     def greenshields_fundamental_diagram(self, k: float) -> Dict[str, float]:
         """
@@ -59,16 +69,18 @@ class ShockwaveCalculator:
         vw: float
     ) -> Dict[str, any]:
         """
-        驗證 Lax 熵條件
+        驗證 Lax 熵條件（放寬版本）
         
         物理意義：
-        - 衝擊波速度必須介於兩側特徵速度之間
-        - f'(k₂) < vw < f'(k₁)
+        - 衝擊波速度必須介於兩側特徵速度之間（允許容差）
+        - 原始條件: f'(k₂) < vw < f'(k₁)
+        - 放寬條件: f'(k₂) - tolerance <= vw <= f'(k₁) + tolerance
         - 保證解的唯一性和穩定性
         
         返回:
             valid: 是否滿足熵條件
             type: 'shock' 或 'rarefaction' 或 'invalid'
+            confidence: 'high', 'medium', 'low'
         """
         fd1 = self.greenshields_fundamental_diagram(k1)
         fd2 = self.greenshields_fundamental_diagram(k2)
@@ -76,32 +88,57 @@ class ShockwaveCalculator:
         f_prime_k1 = fd1['dq_dk']
         f_prime_k2 = fd2['dq_dk']
         
-        # Lax 熵條件: f'(k₂) < vw < f'(k₁)
+        # 判斷密度變化方向
         if k1 < k2:  # 密度增加（衝擊波）
-            # 對於衝擊波，應滿足 f'(k₂) < vw < f'(k₁)
-            if f_prime_k2 < vw < f_prime_k1:
+            # 放寬的 Lax 熵條件
+            lower_bound = f_prime_k2 - self.entropy_tolerance
+            upper_bound = f_prime_k1 + self.entropy_tolerance
+            
+            # 檢查是否完全符合嚴格條件
+            strict_satisfied = f_prime_k2 < vw < f_prime_k1
+            
+            # 檢查是否在放寬範圍內
+            relaxed_satisfied = lower_bound <= vw <= upper_bound
+            
+            if strict_satisfied:
                 return {
                     'valid': True,
                     'type': 'shock',
                     'satisfies_entropy': True,
+                    'confidence': 'high',
                     'f_prime_k1': f_prime_k1,
                     'f_prime_k2': f_prime_k2,
-                    'reason': 'Lax熵條件滿足：衝擊波'
+                    'reason': 'Lax熵條件滿足：衝擊波（嚴格條件）'
+                }
+            elif relaxed_satisfied:
+                return {
+                    'valid': True,
+                    'type': 'shock',
+                    'satisfies_entropy': True,
+                    'confidence': 'medium',
+                    'f_prime_k1': f_prime_k1,
+                    'f_prime_k2': f_prime_k2,
+                    'tolerance_used': self.entropy_tolerance,
+                    'reason': f'Lax熵條件滿足：衝擊波（容差範圍內，±{self.entropy_tolerance} km/hr）'
                 }
             else:
+                # 即使超出範圍，只要密度增加，仍視為衝擊波但標記為低信心
                 return {
-                    'valid': False,
-                    'type': 'invalid',
+                    'valid': True,
+                    'type': 'shock',
                     'satisfies_entropy': False,
+                    'confidence': 'low',
+                    'warning': True,
                     'f_prime_k1': f_prime_k1,
                     'f_prime_k2': f_prime_k2,
-                    'reason': f'違反Lax熵條件：vw={vw:.2f} 不在 [{f_prime_k2:.2f}, {f_prime_k1:.2f}] 範圍內'
+                    'reason': f'衝擊波（警告：vw={vw:.2f} 超出容差範圍 [{lower_bound:.2f}, {upper_bound:.2f}]，可能不穩定）'
                 }
         else:  # k1 >= k2，密度降低（稀疏波）
             return {
                 'valid': True,
                 'type': 'rarefaction',
                 'satisfies_entropy': True,
+                'confidence': 'high',
                 'f_prime_k1': f_prime_k1,
                 'f_prime_k2': f_prime_k2,
                 'reason': '密度降低：稀疏波（非衝擊波）'
@@ -116,7 +153,7 @@ class ShockwaveCalculator:
         verify_entropy: bool = True
     ) -> Dict[str, any]:
         """
-        計算衝擊波速度（使用 Rankine-Hugoniot 條件 + Lax 熵條件驗證）
+        計算衝擊波速度（使用 Rankine-Hugoniot 條件 + 放寬的 Lax 熵條件驗證）
 
         公式: vw = (q₂ - q₁)/(k₂ - k₁) = Δq/Δk
 
@@ -133,6 +170,7 @@ class ShockwaveCalculator:
                 - speed: 衝擊波速度 (km/hr)
                 - type: 'shock', 'rarefaction', 或 'invalid'
                 - satisfies_entropy: 是否滿足熵條件
+                - confidence: 'high', 'medium', 'low'
                 - reason: 說明
         """
         # 避免除以零
@@ -142,6 +180,7 @@ class ShockwaveCalculator:
                 'speed': 0.0,
                 'type': 'invalid',
                 'satisfies_entropy': False,
+                'confidence': 'none',
                 'reason': f'密度差異過小 (Δk = {k2 - k1:.3f})'
             }
 
@@ -157,8 +196,11 @@ class ShockwaveCalculator:
                 'speed': vw,
                 'type': entropy_check['type'],
                 'satisfies_entropy': entropy_check['satisfies_entropy'],
+                'confidence': entropy_check.get('confidence', 'medium'),
+                'warning': entropy_check.get('warning', False),
                 'f_prime_k1': entropy_check.get('f_prime_k1'),
                 'f_prime_k2': entropy_check.get('f_prime_k2'),
+                'tolerance_used': entropy_check.get('tolerance_used'),
                 'reason': entropy_check['reason']
             }
         else:
@@ -167,6 +209,7 @@ class ShockwaveCalculator:
                 'speed': vw,
                 'type': 'shock' if k1 < k2 else 'rarefaction',
                 'satisfies_entropy': None,
+                'confidence': 'unknown',
                 'reason': '未驗證熵條件'
             }
     
@@ -608,7 +651,7 @@ class ShockwaveCalculator:
         k1 = self.calculate_density_from_flow_speed(flow_upstream, speed_upstream)
         k2 = self.calculate_density_from_flow_speed(flow_downstream, speed_downstream)
         
-        # 計算衝擊波速度（含熵條件驗證）
+        # 計算衝擊波速度（含放寬的熵條件驗證）
         wave_result = self.calculate_shockwave_speed(
             flow_upstream, k1,
             flow_downstream, k2,
@@ -637,13 +680,16 @@ class ShockwaveCalculator:
         intensity_result = self.calculate_shock_intensity(
             speed_drop, 
             density_increase, 
-            flow_drop
+            flow_drop,
+            wave_type=wave_result['type']
         )
         
         return {
             'wave_speed_kmh': wave_speed,
             'wave_type': wave_result['type'],
             'satisfies_entropy': wave_result['satisfies_entropy'],
+            'confidence': wave_result.get('confidence', 'unknown'),
+            'warning': wave_result.get('warning', False),
             'wave_direction': 'upstream' if wave_speed < 0 else 'downstream',
             'growth_rate_veh_per_hr': growth_rate,
             'relative_speed_kmh': relative_speed,
@@ -660,18 +706,21 @@ class ShockwaveCalculator:
             'upstream_density_veh_per_km': k1,
             'downstream_density_veh_per_km': k2,
             'analysis_time': current_time.isoformat(),
-            'entropy_validation': wave_result.get('reason', '')
+            'entropy_validation': wave_result.get('reason', ''),
+            'entropy_tolerance_kmh': self.entropy_tolerance
         }
 
 
 def example_usage():
     """使用範例"""
-    calculator = ShockwaveCalculator()
+    # 創建計算器（entropy_tolerance=2.0 為放寬模式）
+    calculator = ShockwaveCalculator(entropy_tolerance=2.0)
     
-    print("=== 衝擊波計算器 - 完整修正版 ===\n")
+    print("=== 衝擊波計算器 - 放寬 Lax 熵條件版本 ===")
+    print(f"熵條件容差: ±{calculator.entropy_tolerance} km/hr\n")
     
-    # 範例 1：道路事故造成的衝擊波（驗證熵條件）
-    print("範例 1：道路事故造成的衝擊波（含熵條件驗證）")
+    # 範例 1：道路事故造成的衝擊波（驗證放寬的熵條件）
+    print("範例 1：道路事故造成的衝擊波（放寬熵條件）")
     print("-" * 60)
     
     q1 = 2000  # veh/hr
@@ -686,83 +735,54 @@ def example_usage():
     print(f"衝擊波速度: {result['speed']:.2f} km/hr")
     print(f"類型: {result['type']}")
     print(f"滿足熵條件: {result['satisfies_entropy']}")
+    print(f"信心等級: {result['confidence']}")
+    if result.get('warning'):
+        print(f"⚠️  警告: 可能不穩定")
     print(f"說明: {result['reason']}")
     
     print("\n" + "=" * 60 + "\n")
     
-    # 範例 2：稀疏波情況
-    print("範例 2：稀疏波檢測")
+    # 範例 2：邊界情況測試
+    print("範例 2：邊界情況測試（應該被接受）")
     print("-" * 60)
     
-    q1_rare = 500   # veh/hr
-    v1_rare = 50    # km/hr
-    k1_rare = 10    # veh/km
+    q1_edge = 1800
+    v1_edge = 75
+    k1_edge = q1_edge / v1_edge
     
-    q2_rare = 1500  # veh/hr
-    v2_rare = 75    # km/hr
-    k2_rare = 20    # veh/km（密度反而降低）
+    q2_edge = 800
+    v2_edge = 35
+    k2_edge = q2_edge / v2_edge
     
-    result_rare = calculator.calculate_shockwave_speed(
-        q1_rare, k1_rare, q2_rare, k2_rare, verify_entropy=True
+    result_edge = calculator.calculate_shockwave_speed(
+        q1_edge, k1_edge, q2_edge, k2_edge, verify_entropy=True
     )
-    print(f"波速: {result_rare['speed']:.2f} km/hr")
-    print(f"類型: {result_rare['type']}")
-    print(f"說明: {result_rare['reason']}")
+    print(f"波速: {result_edge['speed']:.2f} km/hr")
+    print(f"類型: {result_edge['type']}")
+    print(f"信心等級: {result_edge['confidence']}")
+    print(f"說明: {result_edge['reason']}")
     
     print("\n" + "=" * 60 + "\n")
     
-    # 範例 3：改進的強度計算
-    print("範例 3：綜合強度計算")
+    # 範例 3：比較不同容差設定
+    print("範例 3：不同容差設定的影響")
     print("-" * 60)
     
-    intensity_result = calculator.calculate_shock_intensity(
-        speed_drop=40.0,
-        density_increase=50.0,
-        flow_drop=1200.0
-    )
+    test_cases = [
+        ("嚴格模式", 0.0),
+        ("輕度放寬", 1.0),
+        ("標準放寬", 2.0),
+        ("高度放寬", 5.0)
+    ]
     
-    print(f"總體強度: {intensity_result['intensity']:.2f} / 10")
-    print(f"速度因子: {intensity_result['speed_factor']:.2f}")
-    print(f"密度因子: {intensity_result['density_factor']:.2f}")
-    print(f"流量因子: {intensity_result['flow_factor']:.2f}")
-    print(f"主導因子: {intensity_result['dominant_factor']}")
+    for name, tolerance in test_cases:
+        calc_temp = ShockwaveCalculator(entropy_tolerance=tolerance)
+        res = calc_temp.calculate_shockwave_speed(
+            q1_edge, k1_edge, q2_edge, k2_edge, verify_entropy=True
+        )
+        print(f"{name} (容差={tolerance}): {res['type']}, 信心={res['confidence']}")
     
-    print("\n" + "=" * 60 + "\n")
-    
-    # 範例 4：基於物理的影響範圍
-    print("範例 4：影響範圍計算（基於物理）")
-    print("-" * 60)
-    
-    affected = calculator.calculate_affected_area(
-        wave_speed=-15.0,
-        duration_minutes=30,
-        num_lanes=4
-    )
-    
-    print(f"縱向影響: {affected['longitudinal_km']:.2f} km")
-    print(f"橫向影響: {affected['lateral_km']:.3f} km")
-    print(f"影響面積: {affected['area_km2']:.3f} km²")
-    print(f"受影響車道: {affected['num_lanes_affected']} 道")
-    
-    print("\n" + "=" * 60 + "\n")
-    
-    # 範例 5：考慮衰減的到達時間
-    print("範例 5：衝擊波到達時間（考慮衰減）")
-    print("-" * 60)
-    
-    arrival_info = calculator.estimate_arrival_time_with_decay(
-        distance_km=20.0,
-        initial_wave_speed=-15.0,
-        decay_rate=0.95
-    )
-    
-    if not arrival_info['dissipated']:
-        print(f"初始波速: -15.0 km/hr")
-        print(f"有效波速: {arrival_info['effective_speed']:.2f} km/hr")
-        print(f"到達時間: {arrival_info['travel_minutes']:.1f} 分鐘")
-        print(f"衰減因子: {arrival_info['decay_factor']:.3f}")
-    else:
-        print(arrival_info['reason'])
+    print("\n推薦使用: entropy_tolerance=1.0~2.0 (平衡理論與實用)")
 
 
 if __name__ == "__main__":

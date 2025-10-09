@@ -574,10 +574,6 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
           
           <div style="margin-bottom: 12px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <span style="font-weight: 600; color: #555;">嚴重程度</span>
-              <span style="color: ${severityColor}; font-weight: bold; padding: 4px 8px; background: ${severityColor}15; border-radius: 6px; border: 1px solid ${severityColor}40;">
-                ${severityText}
-              </span>
             </div>
           </div>
 

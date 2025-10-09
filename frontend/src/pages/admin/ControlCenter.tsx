@@ -315,15 +315,7 @@ const ControlCenter: React.FC<ControlCenterProps> = () => {
                 {label}
               </button>
             ))}
-            
-            {/* AI智能助手標籤 */}
-            <button
-              onClick={() => setChatbotOpen(true)}
-              className="flex items-center px-3 py-2 text-sm font-medium rounded-md bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 transition-all"
-            >
-              <ChatBubbleLeftRightIcon className="w-4 h-4 mr-2" />
-              AI智能助手
-            </button>
+        
           </nav>
         </div>
 

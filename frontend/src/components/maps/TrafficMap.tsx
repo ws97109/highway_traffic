@@ -1010,24 +1010,7 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
           <div className="mb-2">
             <div className="text-xs font-medium text-gray-600 mb-1">交通狀況</div>
             <div className="flex items-center mb-1">
-              <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
-              <span>順暢</span>
-            </div>
-            <div className="flex items-center mb-1">
-              <div className="w-3 h-3 rounded-full bg-orange-500 mr-2"></div>
-              <span>壅塞</span>
-            </div>
-            <div className="flex items-center">
-              <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
-              <span>阻塞</span>
-            </div>
-          </div>
-
-          {showShockwaveOverlay && (
-            <div className="border-t pt-2">
-              <div className="text-xs font-medium text-gray-600 mb-1">衝擊波嚴重程度</div>
-              <div className="flex items-center mb-1">
-                <div className="w-3 h-3 rounded-full bg-green-500 mr-2 opacity-60"></div>
+              <div className="w-3 h-3 rounded-full bg-green-500 mr-2 opacity-60"></div>
                 <span>輕微</span>
               </div>
               <div className="flex items-center mb-1">
@@ -1041,6 +1024,16 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
               <div className="flex items-center">
                 <div className="w-3 h-3 rounded-full bg-red-700 mr-2 opacity-90"></div>
                 <span>極危險</span>
+              </div>
+            </div>
+
+          
+          {showShockwaveOverlay && (
+            <div className="border-t pt-2">
+              <div className="text-xs font-medium text-gray-600 mb-1">衝擊波</div>
+              <div className="flex items-center mb-1">
+                <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+                <span>發生衝擊波</span>
               </div>
             </div>
           )}

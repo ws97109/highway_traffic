@@ -26,7 +26,7 @@ const DriverDashboard: React.FC = () => {
   const [ragStatus, setRagStatus] = useState<any>(null);
   const [chatLoading, setChatLoading] = useState(false);
   
-  // 震波AI分析相關狀態
+  // 衝擊波AI分析相關狀態
   const [shockwaveAnalysis, setShockwaveAnalysis] = useState<any>(null);
   const [showShockwaveAnalysis, setShowShockwaveAnalysis] = useState(false);
   const [shockwaveAILoading, setShockwaveAILoading] = useState(false);
@@ -76,11 +76,11 @@ const DriverDashboard: React.FC = () => {
   useEffect(() => {
     console.log('📊 Dashboard 數據狀態更新:');
     console.log('- 交通數據:', trafficData.length, '個站點');
-    console.log('- 震波數據:', shockwaves.length, '個事件');
+    console.log('- 衝擊波數據:', shockwaves.length, '個事件');
     console.log('- 預測數據:', predictions.length, '個預測');
     console.log('- 警告數據:', alerts.length, '個警告');
     console.log('- 交通錯誤:', trafficError);
-    console.log('- 震波錯誤:', shockwaveError);
+    console.log('- 衝擊波錯誤:', shockwaveError);
   }, [trafficData, shockwaves, predictions, alerts, trafficError, shockwaveError]);
 
   // 初始化時取得位置、RAG狀態和API診斷
@@ -121,16 +121,16 @@ const DriverDashboard: React.FC = () => {
     }
   };
 
-  // 獲取震波AI分析
+  // 獲取衝擊波AI分析
   const getShockwaveAIAnalysis = async () => {
     if (!userLocation || shockwaves.length === 0) {
-      alert('需要使用者位置和震波資料才能進行分析');
+      alert('需要使用者位置和衝擊波資料才能進行分析');
       return;
     }
 
     setShockwaveAILoading(true);
     try {
-      console.log('🚨 發送震波數據到AI分析:', shockwaves);
+      console.log('🚨 發送衝擊波數據到AI分析:', shockwaves);
       
       const response = await fetch('/api/shockwave-ai/shockwave-analysis', {
         method: 'POST',
@@ -140,22 +140,22 @@ const DriverDashboard: React.FC = () => {
         body: JSON.stringify({
           user_location: userLocation,
           shockwaves: shockwaves,
-          user_message: "請用繁體中文分析當前的震波情況並提供詳細的駕駛建議"
+          user_message: "請用繁體中文分析當前的衝擊波情況並提供詳細的駕駛建議"
         })
       });
 
       if (!response.ok) {
-        throw new Error('震波AI分析服務暫時無法使用');
+        throw new Error('衝擊波AI分析服務暫時無法使用');
       }
 
       const analysis = await response.json();
       setShockwaveAnalysis(analysis);
       setShowShockwaveAnalysis(true);
       
-      console.log('✅ 震波AI分析完成:', analysis);
+      console.log('✅ 衝擊波AI分析完成:', analysis);
     } catch (error) {
-      console.error('❌ 震波AI分析失敗:', error);
-      alert('震波AI分析失敗，請稍後再試');
+      console.error('❌ 衝擊波AI分析失敗:', error);
+      alert('衝擊波AI分析失敗，請稍後再試');
     } finally {
       setShockwaveAILoading(false);
     }
@@ -362,20 +362,20 @@ const DriverDashboard: React.FC = () => {
     }
 
     if (shockwave_data && shockwave_data.shockwaves.length > 0) {
-      prompt += `\n\n【震波警報】偵測到${shockwave_data.shockwaves.length}個交通震波事件`;
+      prompt += `\n\n【衝擊波警報】偵測到${shockwave_data.shockwaves.length}個交通衝擊波事件`;
 
-      // 詳細震波資訊
+      // 詳細衝擊波資訊
       shockwave_data.shockwaves.forEach((shock: any, index: number) => {
         // 檢查必要的屬性是否存在
         if (!shock || typeof shock.latitude !== 'number' || typeof shock.longitude !== 'number') {
-          console.warn(`震波${index + 1}缺少座標資訊`, shock);
-          return; // 跳過這個震波
+          console.warn(`衝擊波${index + 1}缺少座標資訊`, shock);
+          return; // 跳過這個衝擊波
         }
 
         const distance = user_location ?
           calculateDistance(user_location.lat, user_location.lng, shock.latitude, shock.longitude) : null;
 
-        prompt += `\n震波${index + 1}：`;
+        prompt += `\n衝擊波${index + 1}：`;
         prompt += `\n- 位置：${shock.location_name || '未知位置'} (${shock.latitude.toFixed(4)}, ${shock.longitude.toFixed(4)})`;
         prompt += `\n- 強度：${shock.intensity || 'N/A'}/10 (速度下降${shock.speed_drop || 'N/A'}km/h)`;
         prompt += `\n- 持續時間：${shock.shock_duration || 'N/A'}分鐘`;
@@ -393,14 +393,14 @@ const DriverDashboard: React.FC = () => {
 
     prompt += `\n\n【駕駛問題】${userMessage}`;
     
-    // 如果有震波事件，要求AI提供具體的行動建議
+    // 如果有衝擊波事件，要求AI提供具體的行動建議
     if (shockwave_data && shockwave_data.shockwaves.length > 0) {
-      prompt += `\n\n【要求AI分析】請根據震波位置、強度、持續時間、影響範圍與我的位置，提供以下類型的具體建議：
+      prompt += `\n\n【要求AI分析】請根據衝擊波位置、強度、持續時間、影響範圍與我的位置，提供以下類型的具體建議：
 1. 🛣️ 替代路線建議（如果有合適的替代道路）
 2. ⏰ 出行時間調整（建議延緩或提前多少分鐘出發）
-3. 🛑 休息站建議（前往最近的休息站等待震波通過）
+3. 🛑 休息站建議（前往最近的休息站等待衝擊波通過）
 4. ⚠️ 行車注意事項（前方多少公里後需要降速，建議車速等）
-5. 🚨 緊急應對（如果震波即將到達的安全措施）`;
+5. 🚨 緊急應對（如果衝擊波即將到達的安全措施）`;
     }
     
     prompt += `\n\n請根據以上實際監測資料，提供台灣本土化的專業駕駛建議，包括詳細的路線指引和行駛方式（使用繁體中文）：`;
@@ -547,7 +547,7 @@ const DriverDashboard: React.FC = () => {
                   <span></span>
                 </div>
                 <div className="flex justify-between">
-                  <span>震波事件:</span>
+                  <span>衝擊波事件:</span>
                   <span className={shockwaveError ? 'text-red-600' : 'text-blue-600'}>
                     {shockwaveError ? '錯誤' : `${shockwaves.length} 個事件`}
                   </span>
@@ -565,7 +565,7 @@ const DriverDashboard: React.FC = () => {
               </div>
             </div>
 
-            {/* 震波警報列表 */}
+            {/* 衝擊波警報列表 */}
             <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200/50 p-6">
               <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
                 <div className="w-8 h-8 bg-gradient-to-r from-red-500 to-orange-600 rounded-lg flex items-center justify-center mr-3">
@@ -573,7 +573,7 @@ const DriverDashboard: React.FC = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z" />
                   </svg>
                 </div>
-                🌊 交通震波警報
+                🌊 交通衝擊波警報
                 {shockwaves.length > 0 && (
                   <span className="ml-2 bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
                     {shockwaves.length}
@@ -583,7 +583,7 @@ const DriverDashboard: React.FC = () => {
 
               {shockwaves.length > 0 ? (
                 <div ref={shockwaveListRef} className="space-y-3 max-h-80 overflow-y-auto pr-2">
-                  {/* 按距離排序震波 */}
+                  {/* 按距離排序衝擊波 */}
                   {shockwaves
                     .map((shockwave: any) => {
                       let distance = 0;
@@ -634,7 +634,7 @@ const DriverDashboard: React.FC = () => {
                               <span className="text-lg">{config.icon}</span>
                               <div>
                                 <h3 className={`font-semibold text-sm ${config.text}`}>
-                                  {shockwave.location_name || shockwave.station_name || `${config.title}震波警報`}
+                                  {shockwave.location_name || shockwave.station_name || `${config.title}衝擊波警報`}
                                 </h3>
                                 <p className="text-xs text-gray-600">
                                   {shockwave.description || `在測站 ${shockwave.station_id || '未知'} 檢測到真實交通衝擊波`}
@@ -697,7 +697,7 @@ const DriverDashboard: React.FC = () => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
-                  <p className="text-gray-500 text-sm font-medium">目前沒有震波警報</p>
+                  <p className="text-gray-500 text-sm font-medium">目前沒有衝擊波警報</p>
                   <p className="text-gray-400 text-xs mt-1">交通狀況良好，安全出行</p>
                 </div>
               )}
@@ -791,7 +791,7 @@ const DriverDashboard: React.FC = () => {
                       </div>
                       <div className="flex items-center space-x-1">
                         <div className="w-3 h-3 bg-purple-400 rounded-full animate-pulse"></div>
-                        <span className="text-xs">震波</span>
+                        <span className="text-xs">衝擊波</span>
                       </div>
                     </div>
                   </div>
@@ -1199,7 +1199,7 @@ const DriverDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* 震波AI分析結果對話框 */}
+      {/* 衝擊波AI分析結果對話框 */}
       {showShockwaveAnalysis && shockwaveAnalysis && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 w-full max-w-4xl mx-4 max-h-[80vh] overflow-y-auto">
@@ -1211,8 +1211,8 @@ const DriverDashboard: React.FC = () => {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-gray-900">🚨 震波AI智能分析</h3>
-                  <p className="text-sm text-gray-600">基於您的位置和震波數據的精準建議</p>
+                  <h3 className="text-xl font-bold text-gray-900">🚨 衝擊波AI智能分析</h3>
+                  <p className="text-sm text-gray-600">基於您的位置和衝擊波數據的精準建議</p>
                 </div>
               </div>
               <button
@@ -1292,7 +1292,7 @@ const DriverDashboard: React.FC = () => {
             
             <div className="flex justify-between items-center mt-8 pt-6 border-t border-gray-200">
               <div className="text-sm text-gray-500">
-                由震波AI專家系統提供 • 建議僅供參考，請以實際路況為準
+                由衝擊波AI專家系統提供 • 建議僅供參考，請以實際路況為準
               </div>
               <button
                 onClick={() => setShowShockwaveAnalysis(false)}
@@ -1314,7 +1314,7 @@ const DriverDashboard: React.FC = () => {
             {trafficLoading && '載入交通資料...'}
             {routeLoading && '規劃路線中...'}
             {ragLoading && 'AI分析中...'}
-            {shockwaveAILoading && '震波AI分析中...'}
+            {shockwaveAILoading && '衝擊波AI分析中...'}
           </span>
         </div>
       )}

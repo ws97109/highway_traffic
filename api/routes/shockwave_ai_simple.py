@@ -9,7 +9,7 @@ router = APIRouter()
 class ShockwaveAnalysisRequest(BaseModel):
     user_location: Dict[str, float]  # {lat, lng}
     shockwaves: List[Dict[str, Any]]
-    user_message: Optional[str] = "請分析當前的交通震波情況並給予建議"
+    user_message: Optional[str] = "請分析當前的交通衝擊波情況並給予建議"
 
 class ShockwaveRecommendation(BaseModel):
     type: str
@@ -37,13 +37,13 @@ def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
 
 @router.post("/shockwave-analysis", response_model=ShockwaveAnalysisResponse)
 async def analyze_shockwave_impact(request: ShockwaveAnalysisRequest):
-    """分析交通震波對駕駛者的影響並提供具體建議"""
+    """分析交通衝擊波對駕駛者的影響並提供具體建議"""
     try:
         if not request.shockwaves:
             return ShockwaveAnalysisResponse(
                 recommendations=[],
                 risk_level="low",
-                summary="目前沒有檢測到震波事件",
+                summary="目前沒有檢測到衝擊波事件",
                 ai_analysis="路況良好，請安全駕駛。"
             )
         
@@ -81,7 +81,7 @@ async def analyze_shockwave_impact(request: ShockwaveAnalysisRequest):
                 type="emergency",
                 priority="urgent",
                 title="⚠️ 緊急注意",
-                description=f"前方{nearest_distance:.1f}公里處有高強度震波，建議立即減速或尋找替代路線",
+                description=f"前方{nearest_distance:.1f}公里處有高強度衝擊波，建議立即減速或尋找替代路線",
                 action_time="立即"
             ))
         elif risk_level == "medium":
@@ -89,7 +89,7 @@ async def analyze_shockwave_impact(request: ShockwaveAnalysisRequest):
                 type="alternative_route",
                 priority="medium",
                 title="建議使用替代路線",
-                description=f"前方{nearest_distance:.1f}公里處有震波影響，建議考慮其他路線",
+                description=f"前方{nearest_distance:.1f}公里處有衝擊波影響，建議考慮其他路線",
                 action_time="盡快"
             ))
         
@@ -103,17 +103,17 @@ async def analyze_shockwave_impact(request: ShockwaveAnalysisRequest):
         
         # 生成摘要
         if risk_level == "high":
-            summary = f"⚠️ 高風險：距離您{nearest_distance:.1f}公里處有強度{max_intensity}/10的震波，請立即採取避險措施"
+            summary = f"⚠️ 高風險：距離您{nearest_distance:.1f}公里處有強度{max_intensity}/10的衝擊波，請立即採取避險措施"
         elif risk_level == "medium":
-            summary = f"⚡ 中等風險：距離您{nearest_distance:.1f}公里處有強度{max_intensity}/10的震波，建議調整行駛計畫"
+            summary = f"⚡ 中等風險：距離您{nearest_distance:.1f}公里處有強度{max_intensity}/10的衝擊波，建議調整行駛計畫"
         else:
-            summary = f"ℹ️ 低風險：震波距離較遠，請持續關注路況變化"
+            summary = f"ℹ️ 低風險：衝擊波距離較遠，請持續關注路況變化"
         
         # 簡單的AI分析（不調用Ollama避免超時）
-        ai_analysis = f"""根據震波分析結果：
+        ai_analysis = f"""根據衝擊波分析結果：
         
-📍 最近震波距離：{nearest_distance:.1f}公里
-📊 最高震波強度：{max_intensity}/10
+📍 最近衝擊波距離：{nearest_distance:.1f}公里
+📊 最高衝擊波強度：{max_intensity}/10
 ⚠️ 風險等級：{risk_level.upper()}
 
 建議採取以下措施：
@@ -132,11 +132,11 @@ async def analyze_shockwave_impact(request: ShockwaveAnalysisRequest):
         )
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"震波分析失敗: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"衝擊波分析失敗: {str(e)}")
 
 @router.get("/shockwave-status")
 async def get_shockwave_status():
-    """獲取震波分析系統狀態"""
+    """獲取衝擊波分析系統狀態"""
     return {
         "status": "operational",
         "ollama_status": "bypassed",  # 暫時繞過Ollama

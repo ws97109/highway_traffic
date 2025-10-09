@@ -23,13 +23,13 @@ const SimpleTest: React.FC = () => {
         setTrafficData(trafficResult);
       }
       
-      // 測試震波數據
+      // 測試衝擊波數據
       const shockwaveResponse = await fetch('/api/shockwave/active');
-      console.log('震波 API 狀態:', shockwaveResponse.status);
+      console.log('衝擊波 API 狀態:', shockwaveResponse.status);
       
       if (shockwaveResponse.ok) {
         const shockwaveResult = await shockwaveResponse.json();
-        console.log('震波數據:', shockwaveResult);
+        console.log('衝擊波數據:', shockwaveResult);
         setShockwaveData(shockwaveResult);
       }
       
@@ -87,17 +87,17 @@ const SimpleTest: React.FC = () => {
             )}
           </div>
 
-          {/* 震波數據 */}
+          {/* 衝擊波數據 */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">震波數據</h2>
+            <h2 className="text-xl font-semibold mb-4">衝擊波數據</h2>
             {shockwaveData ? (
               <div>
                 <p className="text-green-600 mb-2">✅ 成功載入</p>
-                <p>震波數量: {shockwaveData.shockwaves ? shockwaveData.shockwaves.length : 0}</p>
+                <p>衝擊波數量: {shockwaveData.shockwaves ? shockwaveData.shockwaves.length : 0}</p>
                 <p>更新時間: {shockwaveData.last_updated}</p>
                 {shockwaveData.shockwaves && shockwaveData.shockwaves.length > 0 && (
                   <div className="mt-4">
-                    <h3 className="font-medium mb-2">第一個震波:</h3>
+                    <h3 className="font-medium mb-2">第一個衝擊波:</h3>
                     <pre className="bg-gray-100 p-2 rounded text-sm">
                       {JSON.stringify(shockwaveData.shockwaves[0], null, 2)}
                     </pre>

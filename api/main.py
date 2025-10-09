@@ -78,7 +78,7 @@ async def startup_event():
 
         print("✅ 系統初始化完成!")
         print("🚀 智慧交通預警系統已啟動")
-        print("📊 震波檢測系統已就緒")
+        print("📊 衝擊波檢測系統已就緒")
         print("🔮 AI預測引擎已載入")
 
     except Exception as e:
@@ -87,13 +87,13 @@ async def startup_event():
 
 # 註冊所有路由
 app.include_router(traffic.router, prefix="/api/traffic", tags=["交通資料"])
-app.include_router(shockwave.router, prefix="/api/shockwave", tags=["震波檢測"])
+app.include_router(shockwave.router, prefix="/api/shockwave", tags=["衝擊波檢測"])
 app.include_router(prediction.router, prefix="/api/prediction", tags=["AI預測"])
 app.include_router(location.router, prefix="/api/location", tags=["位置服務"])
 app.include_router(admin.router, prefix="/api/admin", tags=["管理者功能"])
 app.include_router(smart.router, prefix="/api/smart", tags=["智慧建議"])
 app.include_router(ollama_chat.router, prefix="/api/ai", tags=["AI助手"])
-app.include_router(shockwave_ai.router, prefix="/api/shockwave-ai", tags=["震波AI分析"])
+app.include_router(shockwave_ai.router, prefix="/api/shockwave-ai", tags=["衝擊波AI分析"])
 app.include_router(rag_integrated.router, prefix="/api/rag", tags=["RAG智能助手（完整系統）"])
 app.include_router(websocket.router, prefix="/ws", tags=["即時通訊"])
 
@@ -107,7 +107,7 @@ async def root():
         "status": "running",
         "features": [
             "🚗 即時交通監控",
-            "⚡ 震波檢測與預警", 
+            "⚡ 衝擊波檢測與預警", 
             "🤖 AI驅動的交通預測",
             "🎯 智慧出發時間建議",
             "📊 管理者決策支援",
@@ -145,7 +145,7 @@ async def api_status():
         "api_version": "2.0.0",
         "available_endpoints": {
             "traffic": "交通資料相關API",
-            "shockwave": "震波檢測與預測API", 
+            "shockwave": "衝擊波檢測與預測API", 
             "prediction": "AI交通預測API",
             "location": "位置與地理服務API",
             "admin": "管理者專用API",
@@ -154,7 +154,7 @@ async def api_status():
         },
         "system_capabilities": [
             "即時交通資料處理",
-            "震波檢測與傳播預測",
+            "衝擊波檢測與傳播預測",
             "深度學習交通預測",
             "智慧路線規劃",
             "管理決策支援",
@@ -168,7 +168,7 @@ def get_integrated_system():
     return integrated_system
 
 def get_detector():
-    """獲取震波檢測器實例"""
+    """獲取衝擊波檢測器實例"""
     return detector
 
 def get_predictor():

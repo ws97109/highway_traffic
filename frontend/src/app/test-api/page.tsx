@@ -71,7 +71,7 @@ export default function TestAPIPage() {
     }
   };
 
-  // 測試震波分析 API
+  // 測試衝擊波分析 API
   const testShockwaveAnalysis = async () => {
     setLoading(true);
     setError('');
@@ -98,7 +98,7 @@ export default function TestAPIPage() {
               severity: 'high'
             }
           ],
-          user_message: '請分析目前的震波情況並提供建議'
+          user_message: '請分析目前的衝擊波情況並提供建議'
         })
       });
 
@@ -146,7 +146,7 @@ export default function TestAPIPage() {
               disabled={loading}
               className="w-full bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {loading ? '測試中...' : '3. 測試震波分析 API'}
+              {loading ? '測試中...' : '3. 測試衝擊波分析 API'}
             </button>
           </div>
         </div>

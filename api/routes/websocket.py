@@ -55,11 +55,11 @@ async def websocket_traffic_updates(websocket: WebSocket):
 
 @router.websocket("/shockwave")
 async def websocket_shockwave_alerts(websocket: WebSocket):
-    """提供即時震波警報的 WebSocket 端點"""
+    """提供即時衝擊波警報的 WebSocket 端點"""
     await manager.connect(websocket)
     try:
         while True:
-            # 模擬發送震波警報
+            # 模擬發送衝擊波警報
             shockwave_alert = {
                 "timestamp": datetime.now().isoformat(),
                 "type": "shockwave_alert",

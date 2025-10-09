@@ -128,7 +128,7 @@ def find_station_info(station_id, stations_info):
 
 @router.get("/active", response_model=dict)
 async def get_active_shockwaves():
-    """獲取當前活躍的震波 - 使用真實檢測系統（含熵條件驗證）"""
+    """獲取當前活躍的衝擊波 - 使用真實檢測系統（含熵條件驗證）"""
     try:
         current_time = datetime.now()
         
@@ -176,7 +176,7 @@ async def get_active_shockwaves():
                         shocks = detector.detect_realtime_shocks(station_data)
 
                         if shocks:
-                            print(f"✅ 測站 {station}: 檢測到 {len(shocks)} 個震波")
+                            print(f"✅ 測站 {station}: 檢測到 {len(shocks)} 個衝擊波")
 
                         for shock in shocks:
                             shock['station'] = station
@@ -186,7 +186,7 @@ async def get_active_shockwaves():
                         print(f"❌ 測站 {station} 檢測失敗: {e}")
                         continue
 
-            print(f"📊 總共檢測到 {len(detected_shocks)} 個震波")
+            print(f"📊 總共檢測到 {len(detected_shocks)} 個衝擊波")
             
             # 5. 載入測站位置資訊
             stations_info = load_station_data()
@@ -199,7 +199,7 @@ async def get_active_shockwaves():
             
             for i, shock in enumerate(detected_shocks):
                 station = shock.get('station', '')
-                print(f"🔍 處理震波 {i+1}: 測站 {station}")
+                print(f"🔍 處理衝擊波 {i+1}: 測站 {station}")
                 
                 # 查找測站資訊
                 station_info = find_station_info(station, stations_info)
@@ -229,7 +229,7 @@ async def get_active_shockwaves():
 
                 # 🚫 過濾：不符合熵條件的不顯示
                 if not wave_result.get('valid', False):
-                    print(f"❌ 過濾掉不符合熵條件的震波 - 測站 {station}: {wave_result.get('reason', 'Unknown')}")
+                    print(f"❌ 過濾掉不符合熵條件的衝擊波 - 測站 {station}: {wave_result.get('reason', 'Unknown')}")
                     filtered_count += 1
                     continue
 
@@ -268,7 +268,7 @@ async def get_active_shockwaves():
                     longitude = 121.5654 + (i * 0.01)
                     location_name = f"測站 {station}"
                 
-                # 構建震波時間
+                # 構建衝擊波時間
                 shock_start_time = shock.get('start_time', '00:00')
                 shock_end_time = shock.get('end_time', '00:00')
                 shock_date = df.iloc[0]['date'] if not df.empty else current_time.strftime('%Y/%m/%d')
@@ -429,7 +429,7 @@ async def get_active_shockwaves():
             
         except Exception as detection_error:
             logger = logging.getLogger(__name__)
-            logger.error(f"真實震波檢測失敗: {detection_error}")
+            logger.error(f"真實衝擊波檢測失敗: {detection_error}")
             
             stations = load_station_data()
             
@@ -444,11 +444,11 @@ async def get_active_shockwaves():
             }
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"獲取震波資料失敗: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"獲取衝擊波資料失敗: {str(e)}")
 
 
 def _generate_description(station, location_name, intensity, wave_speed, wave_type):
-    """生成震波描述"""
+    """生成衝擊波描述"""
     if wave_type == 'rarefaction':
         return (f"在測站 {station} ({location_name}) 檢測到交通稀疏波 "
                 f"(車流加速, 波速: {wave_speed:.1f} km/h)")

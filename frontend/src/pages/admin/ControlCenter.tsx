@@ -592,7 +592,7 @@ const ControlCenter: React.FC<ControlCenterProps> = () => {
                         <div className="w-3 h-3 bg-red-500 rounded-full"></div>
                         <span>阻塞</span>
                         <div className="w-3 h-3 bg-purple-500 rounded-full animate-pulse"></div>
-                        <span>震波</span>
+                        <span>衝擊波</span>
                       </div>
                     </div>
                   </div>

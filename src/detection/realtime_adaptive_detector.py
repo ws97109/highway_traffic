@@ -33,7 +33,7 @@ plt.rcParams['axes.unicode_minus'] = False
 
 class RealtimeAdaptiveShockDetector:
     """
-    即時適應性震波檢測器（含熵條件驗證）
+    即時適應性衝擊波檢測器（含熵條件驗證）
     
     新增功能：
     - Lax 熵條件驗證
@@ -106,7 +106,7 @@ class RealtimeAdaptiveShockDetector:
             return "00:00"
 
     def detect_realtime_shocks(self, station_data):
-        """檢測即時震波事件 - 適應真實資料間隔"""
+        """檢測即時衝擊波事件 - 適應真實資料間隔"""
         data = station_data.copy().reset_index(drop=True)
         data['density'] = self.calculate_density(data['flow'], data['median_speed'])
 
@@ -327,7 +327,7 @@ def test_realtime_detector():
     # 初始化檢測器
     detector = RealtimeAdaptiveShockDetector()
     
-    print("=== 即時適應性震波檢測器（含熵條件驗證）===")
+    print("=== 即時適應性衝擊波檢測器（含熵條件驗證）===")
     
     # 測試所有站點
     all_shocks = []

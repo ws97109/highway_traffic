@@ -19,7 +19,7 @@ const DataConnectionStatus: React.FC = () => {
 
   const endpoints = [
     { name: '交通資料', endpoint: '/api/traffic/current' },
-    { name: '震波資料', endpoint: '/api/shockwave/active' },
+    { name: '衝擊波資料', endpoint: '/api/shockwave/active' },
     { name: '預測資料', endpoint: '/api/prediction/traffic' },
     { name: 'RAG狀態', endpoint: '/api/smart/rag-status' },
   ];
@@ -181,7 +181,7 @@ const DataConnectionStatus: React.FC = () => {
                   {api.endpoint.includes('traffic') && api.data.stations && 
                     ` 載入 ${api.data.stations.length} 個交通站點`}
                   {api.endpoint.includes('shockwave') && api.data.shockwaves && 
-                    ` 發現 ${api.data.shockwaves.length} 個震波事件`}
+                    ` 發現 ${api.data.shockwaves.length} 個衝擊波事件`}
                   {api.endpoint.includes('prediction') && api.data.predictions && 
                     ` 載入 ${api.data.predictions.length} 個預測資料`}
                   {api.endpoint.includes('rag-status') && api.data.system_health && 

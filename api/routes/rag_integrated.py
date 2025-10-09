@@ -144,13 +144,13 @@ def build_traffic_context(
                 context += f"壅塞站點：{len(congested)}個（車速<50km/h）\n"
             context += "\n"
 
-    # 震波數據
+    # 衝擊波數據
     if shockwave_data and shockwave_data.get('shockwaves'):
         shockwaves = shockwave_data['shockwaves']
         if shockwaves:
-            context += f"【交通震波警報】偵測到 {len(shockwaves)} 個震波事件\n"
+            context += f"【交通衝擊波警報】偵測到 {len(shockwaves)} 個衝擊波事件\n"
             for i, shock in enumerate(shockwaves[:3], 1):
-                context += f"震波{i}：{shock.get('location_name', '未知')} "
+                context += f"衝擊波{i}：{shock.get('location_name', '未知')} "
                 context += f"(強度{shock.get('intensity', 0)}/10, "
                 context += f"持續{shock.get('shock_duration', 0)}分鐘)\n"
             context += "\n"
@@ -203,7 +203,7 @@ async def rag_chat(request: RAGChatRequest):
         if request.traffic_data:
             confidence_score += 0.1  # 即時數據加成
         if request.shockwave_data:
-            confidence_score += 0.1  # 震波數據加成
+            confidence_score += 0.1  # 衝擊波數據加成
         confidence_score = min(1.0, confidence_score)
 
         # 提取來源（從最近的對話中）

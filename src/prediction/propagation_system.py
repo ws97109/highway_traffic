@@ -9,12 +9,12 @@ warnings.filterwarnings('ignore')
 plt.rcParams['font.sans-serif'] = ['Arial Unicode MS', 'SimHei', 'DejaVu Sans']
 plt.rcParams['axes.unicode_minus'] = False
 
-# 導入我們已經驗證的震波檢測器（使用絕對導入）
+# 導入我們已經驗證的衝擊波檢測器（使用絕對導入）
 from src.detection.final_optimized_detector import FinalOptimizedShockDetector
 
 class RealDataShockWavePropagationAnalyzer:
     """
-    基於實際資料的震波傳播分析器
+    基於實際資料的衝擊波傳播分析器
     
     使用您提供的：
     1. 整合Etag.csv - 站點資訊、經緯度
@@ -145,9 +145,9 @@ class RealDataShockWavePropagationAnalyzer:
     
     def analyze_real_data_propagation(self, df):
         """
-        基於實際資料的震波傳播分析 - 分析所有國道方向
+        基於實際資料的衝擊波傳播分析 - 分析所有國道方向
         """
-        print("\n=== 基於實際資料的震波傳播分析 ===")
+        print("\n=== 基於實際資料的衝擊波傳播分析 ===")
         
         # 分析所有國道方向
         all_directions = [
@@ -176,10 +176,10 @@ class RealDataShockWavePropagationAnalyzer:
                 info = self.station_info[station]
                 print(f"    {i+1}. {station} - {info['start_ic']} → {info['end_ic']}")
             
-            # 1. 為每個站點檢測震波
+            # 1. 為每個站點檢測衝擊波
             station_shocks = {}
             
-            print(f"\n  步驟1: {name} 各站點震波檢測")
+            print(f"\n  步驟1: {name} 各站點衝擊波檢測")
             for i, station in enumerate(station_sequence):
                 print(f"    分析站點 {station} ({i+1}/{len(station_sequence)})")
                 
@@ -188,13 +188,13 @@ class RealDataShockWavePropagationAnalyzer:
                 if len(station_data) > 0:
                     shocks = self.detector.detect_significant_shocks(station_data)
                     station_shocks[station] = shocks
-                    print(f"      發現 {len(shocks)} 個震波事件")
+                    print(f"      發現 {len(shocks)} 個衝擊波事件")
                 else:
                     station_shocks[station] = []
                     print(f"      無資料")
             
-            # 2. 分析震波傳播軌跡
-            print(f"\n  步驟2: {name} 震波傳播軌跡分析")
+            # 2. 分析衝擊波傳播軌跡
+            print(f"\n  步驟2: {name} 衝擊波傳播軌跡分析")
             propagation_events = self._trace_real_propagation(station_shocks, station_sequence)
             
             # 3. 計算傳播統計
@@ -217,10 +217,10 @@ class RealDataShockWavePropagationAnalyzer:
         }
     
     def _trace_real_propagation(self, station_shocks, station_sequence):
-        """基於實際距離追蹤震波傳播"""
+        """基於實際距離追蹤衝擊波傳播"""
         propagation_events = []
         
-        # 對每對相鄰站點分析震波傳播
+        # 對每對相鄰站點分析衝擊波傳播
         for i in range(len(station_sequence) - 1):
             upstream = station_sequence[i]
             downstream = station_sequence[i + 1]
@@ -237,10 +237,10 @@ class RealDataShockWavePropagationAnalyzer:
                 continue
                 
             print(f"    實際距離: {distance:.2f} km")
-            print(f"    上游震波: {len(upstream_shocks)} 個")
-            print(f"    下游震波: {len(downstream_shocks)} 個")
+            print(f"    上游衝擊波: {len(upstream_shocks)} 個")
+            print(f"    下游衝擊波: {len(downstream_shocks)} 個")
             
-            # 匹配震波傳播事件
+            # 匹配衝擊波傳播事件
             matches = self._match_real_shock_events(
                 upstream_shocks, downstream_shocks, upstream, downstream, distance
             )
@@ -252,22 +252,22 @@ class RealDataShockWavePropagationAnalyzer:
     
     def _match_real_shock_events(self, upstream_shocks, downstream_shocks, 
                                 upstream_station, downstream_station, distance):
-        """基於實際資料匹配震波事件"""
+        """基於實際資料匹配衝擊波事件"""
         matches = []
         
         for up_shock in upstream_shocks:
             up_time = pd.to_datetime(up_shock['start_time'])
             
-            # 在合理時間窗口內尋找下游震波
+            # 在合理時間窗口內尋找下游衝擊波
             for down_shock in downstream_shocks:
                 down_time = pd.to_datetime(down_shock['start_time'])
                 
                 # 時間差（分鐘）
                 time_diff = (down_time - up_time).total_seconds() / 60
                 
-                # 震波應該向下游傳播，時間差應為正
+                # 衝擊波應該向下游傳播，時間差應為正
                 if 0 < time_diff < 180:  # 3小時內
-                    # 檢查震波特徵相似性
+                    # 檢查衝擊波特徵相似性
                     if self._is_similar_shock_real(up_shock, down_shock):
                         # 計算實際傳播速度
                         propagation_speed = distance / (time_diff / 60)  # km/h
@@ -297,7 +297,7 @@ class RealDataShockWavePropagationAnalyzer:
         return self._filter_best_matches_real(matches)
     
     def _is_similar_shock_real(self, shock1, shock2):
-        """判斷兩個震波是否相似（基於實際資料）"""
+        """判斷兩個衝擊波是否相似（基於實際資料）"""
         # 速度下降差異
         speed_diff = abs(shock1['speed_drop'] - shock2['speed_drop'])
         
@@ -311,7 +311,7 @@ class RealDataShockWavePropagationAnalyzer:
                 (level_similarity or strength_diff < 25))  # 等級相同或強度差異 < 25%
     
     def _calculate_similarity_real(self, shock1, shock2):
-        """計算震波相似度分數（基於實際資料）"""
+        """計算衝擊波相似度分數（基於實際資料）"""
         # 速度下降相似度
         speed_sim = 1 - min(abs(shock1['speed_drop'] - shock2['speed_drop']) / 60, 1)
         
@@ -376,9 +376,9 @@ class RealDataShockWavePropagationAnalyzer:
     
     def predict_real_shock_arrival_multi(self, results, direction_key, target_station, current_time):
         """
-        基於多方向資料預測震波到達時間
+        基於多方向資料預測衝擊波到達時間
         """
-        print(f"\n=== 震波到達時間預測：{target_station} ===")
+        print(f"\n=== 衝擊波到達時間預測：{target_station} ===")
         
         direction_results = results['all_directions'][direction_key]
         station_sequence = direction_results['station_sequence']
@@ -392,12 +392,12 @@ class RealDataShockWavePropagationAnalyzer:
         
         predictions = []
         
-        # 檢查所有上游站點的最新震波
+        # 檢查所有上游站點的最新衝擊波
         for i in range(target_idx):
             upstream_station = station_sequence[i]
             upstream_shocks = direction_results['station_shocks'].get(upstream_station, [])
             
-            # 找到最近的震波事件
+            # 找到最近的衝擊波事件
             for shock in upstream_shocks[-3:]:  # 檢查最近3個事件
                 shock_time = pd.to_datetime(shock['start_time'])
                 
@@ -469,7 +469,7 @@ def main():
         df = pd.read_csv(traffic_file)
         print(f"載入交通流資料: {len(df)} 筆記錄")
         
-        # 執行基於實際資料的震波傳播分析
+        # 執行基於實際資料的衝擊波傳播分析
         results = analyzer.analyze_real_data_propagation(df)
         
         # 輸出所有方向的結果
@@ -506,7 +506,7 @@ def main():
         print(f"總傳播事件: {total_propagations} 個")
         print(f"分析方向數: {len(results['all_directions'])} 個")
         
-        # 震波到達預測示例（選擇有最多傳播事件的方向）
+        # 衝擊波到達預測示例（選擇有最多傳播事件的方向）
         best_direction = None
         max_propagations = 0
         
@@ -528,14 +528,14 @@ def main():
                     results, best_direction, target_station, current_time
                 )
                 
-                print(f"\n=== 震波到達預測示例 ===")
+                print(f"\n=== 衝擊波到達預測示例 ===")
                 print(f"方向: {direction_results['name']}")
                 print(f"目標站點: {target_station} ({analyzer.station_info[target_station]['start_ic']})")
                 
                 for i, pred in enumerate(predictions[:3]):
                     print(f"預測 {i+1}:")
                     print(f"  來源: {pred['source_station']} ({pred['source_info']['start_ic']})")
-                    print(f"  震波等級: {pred['source_shock']['level']}")
+                    print(f"  衝擊波等級: {pred['source_shock']['level']}")
                     print(f"  總距離: {pred['total_distance']:.1f} km")
                     print(f"  預測速度: {pred['predicted_speed']:.1f} km/h")
                     print(f"  預計到達: {pred['predicted_arrival']}")

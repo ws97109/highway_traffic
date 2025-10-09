@@ -104,7 +104,7 @@ async def initialize_rag_system():
 async def optimize_departure_time(request: DepartureOptimizerRequest):
     """智慧出發時間建議"""
     try:
-        # 這裡應該調用深度學習模型和震波預測系統
+        # 這裡應該調用深度學習模型和衝擊波預測系統
         current_time = datetime.now()
         
         # 計算分析時間範圍
@@ -118,7 +118,7 @@ async def optimize_departure_time(request: DepartureOptimizerRequest):
         for i in range(-request.analysis_range * 2, request.analysis_range * 2 + 1):
             departure_time = base_time + timedelta(minutes=i * 30) - timedelta(hours=1)
             
-            # 模擬交通預測和震波風險評估
+            # 模擬交通預測和衝擊波風險評估
             traffic_score = max(20, 100 - abs(i) * 10 - (i % 3) * 15)
             shockwave_risk = "low" if abs(i) <= 2 else "medium" if abs(i) <= 4 else "high"
             duration = 45 + abs(i) * 5 + (10 if shockwave_risk == "high" else 0)
@@ -172,7 +172,7 @@ async def get_alternative_routes(
 ):
     """獲取替代路線建議"""
     try:
-        # 這裡應該調用路線規劃算法，考慮震波避讓
+        # 這裡應該調用路線規劃算法，考慮衝擊波避讓
         current_time = datetime.now()
         
         # 模擬替代路線
@@ -184,7 +184,7 @@ async def get_alternative_routes(
                 "avoidance_success": 60,
                 "distance": 25.8,
                 "toll_cost": 40,
-                "description": "最短路線，但可能遇到震波",
+                "description": "最短路線，但可能遇到衝擊波",
                 "risk_level": "medium"
             },
             {
@@ -194,7 +194,7 @@ async def get_alternative_routes(
                 "avoidance_success": 85,
                 "distance": 28.5,
                 "toll_cost": 45,
-                "description": "繞行國道3號，可避開大部分震波",
+                "description": "繞行國道3號，可避開大部分衝擊波",
                 "risk_level": "low"
             },
             {
@@ -204,12 +204,12 @@ async def get_alternative_routes(
                 "avoidance_success": 95,
                 "distance": 32.1,
                 "toll_cost": 20,
-                "description": "部分使用省道，完全避開高速公路震波",
+                "description": "部分使用省道，完全避開高速公路衝擊波",
                 "risk_level": "low"
             }
         ]
         
-        # 如果要求避開震波，重新排序
+        # 如果要求避開衝擊波，重新排序
         if avoid_shockwaves:
             routes.sort(key=lambda x: (-x["avoidance_success"], x["additional_time"]))
         
@@ -240,7 +240,7 @@ async def predict_travel_time(
             departure_time = datetime.now()
             
         # 這裡應該調用旅行時間預測模型
-        # 考慮歷史資料、即時交通、震波影響等因素
+        # 考慮歷史資料、即時交通、衝擊波影響等因素
         
         # 計算基礎距離（簡化計算）
         import math
@@ -315,8 +315,8 @@ async def get_traffic_insights(
                 },
                 {
                     "type": "shockwave",
-                    "title": "震波熱點",
-                    "description": "國道1號桃園系統附近最容易產生震波，建議避開",
+                    "title": "衝擊波熱點",
+                    "description": "國道1號桃園系統附近最容易產生衝擊波，建議避開",
                     "confidence": 0.88
                 },
                 {
@@ -335,7 +335,7 @@ async def get_traffic_insights(
             "recommendations": [
                 "考慮使用國道3號作為替代路線",
                 "避開週五下午時段",
-                "關注即時震波警報"
+                "關注即時衝擊波警報"
             ],
             "generated_at": current_time.isoformat()
         }
@@ -402,7 +402,7 @@ async def get_rag_driver_advice(request: DriverAdviceRequest):
             except Exception as e:
                 print(f"獲取交通資料失敗: {e}")
         
-        # 處理震波警報
+        # 處理衝擊波警報
         shockwave_alert = None
         if request.shockwave_alert:
             shockwave_alert = ShockwaveAlert(

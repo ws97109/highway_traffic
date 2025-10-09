@@ -1,4 +1,4 @@
-#  高速公路智慧交通震波預警決策支援系統
+#  高速公路智慧交通衝擊波預警決策支援系統
 **Highway Intelligent Traffic Shockwave Warning and Decision Support System**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -8,21 +8,21 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 [![TensorFlow](https://img.shields.io/badge/TensorFlow-2.x-orange.svg)](https://tensorflow.org/)
 
->  **基於深度學習的創新交通震波預警系統** - 結合地震學理論、傳統交通分析與先進深度學習技術，提供精確的高速公路交通震波檢測、多時步預測與智慧決策支援
+>  **基於深度學習的創新交通衝擊波預警系統** - 結合地震學理論、傳統交通分析與先進深度學習技術，提供精確的高速公路交通衝擊波檢測、多時步預測與智慧決策支援
 
 ## 專案概述
 
 本系統是一個完整的端到端智慧交通管理解決方案，融合理論創新與工程實踐：
 
 ### 核心技術創新
-- ** 交通震波檢測** - 首創將地震學震波傳播理論應用於交通流分析
+- ** 交通衝擊波檢測** - 首創將地震學衝擊波傳播理論應用於交通流分析
 - ** MT-STNet深度學習** - 多任務時空神經網路，同步預測流量/速度/密度
 - ** 17種基準模型** - 包含AGCRN、ASTGCN、DCRNN、Graph-WaveNet等主流時空預測模型
 - ** 混合預測架構** - 傳統物理模型與深度學習模型的智慧融合
-- ** 毫秒級響應** - 即時震波檢測與多時步預測系統
+- ** 毫秒級響應** - 即時衝擊波檢測與多時步預測系統
 
 ###  應用場景
-- ** 智慧導航系統** - 為駕駛者提供即時震波預警與路線優化
+- ** 智慧導航系統** - 為駕駛者提供即時衝擊波預警與路線優化
 - ** 交通管制中心** - 為管理者提供AI決策支援與預防性管制策略
 - ** 學術研究平台** - 支援交通流理論研究與深度學習模型比較
 - ** 智慧城市建設** - 可整合至更大規模的城市交通管理系統
@@ -129,20 +129,20 @@ python tdx_tisc_mix_system.py
 
 | 功能 | URL | 說明 |
 |------|-----|------|
-| 🚗 駕駛者介面 | http://localhost:3000/driver | 智慧導航、震波預警、出發時間建議 |
+| 🚗 駕駛者介面 | http://localhost:3000/driver | 智慧導航、衝擊波預警、出發時間建議 |
 | 🎛️ 管理者介面 | http://localhost:3000/admin | 系統監控、AI決策支援、大屏管理 |
 | 📚 API文檔 | http://localhost:8000/docs | 完整的API說明文檔 |
 | 💊 健康檢查 | http://localhost:8000/health | 系統狀態檢查 |
 
 ## 核心技術架構
 
-### 創新震波檢測技術
+### 創新衝擊波檢測技術
 
 **理論基礎：**
-本系統首創將地震學中的震波傳播理論應用於交通流分析，參考Indiana州的震波研究案例：
-- **後向震波速度**: 4.2 mph (6.7 km/h)
-- **實證數據**: 基於59個震波案例，200小時的壅塞觀測
-- **檢測精度**: 87%準確率，符合實際交通震波發生頻率
+本系統首創將地震學中的衝擊波傳播理論應用於交通流分析，參考Indiana州的衝擊波研究案例：
+- **後向衝擊波速度**: 4.2 mph (6.7 km/h)
+- **實證數據**: 基於59個衝擊波案例，200小時的壅塞觀測
+- **檢測精度**: 87%準確率，符合實際交通衝擊波發生頻率
 
 **檢測算法：**
 ```python
@@ -151,7 +151,7 @@ from src.detection.final_optimized_detector import FinalOptimizedShockDetector
 # 初始化檢測器
 detector = FinalOptimizedShockDetector()
 
-# 震波檢測
+# 衝擊波檢測
 shockwaves = detector.detect_shockwaves(
     traffic_data=traffic_data,
     severity_levels=['mild', 'moderate', 'severe']
@@ -159,7 +159,7 @@ shockwaves = detector.detect_shockwaves(
 
 # 獲取檢測結果
 for shock in shockwaves:
-    print(f"震波強度: {shock.severity}")
+    print(f"衝擊波強度: {shock.severity}")
     print(f"速度下降: {shock.speed_drop} km/h")
     print(f"影響範圍: {shock.affected_stations}")
     print(f"傳播速度: {shock.propagation_speed} km/h")
@@ -203,7 +203,7 @@ density_pred = predictions['density'] # 密度預測
 |---------|---------|------|---------|
 | **圖神經網路** | AGCRN | 自適應圖卷積 | 動態路網結構 |
 | | ASTGCN | 時空注意力機制 | 長期預測 |
-| | DCRNN | 擴散卷積 | 震波傳播建模 |
+| | DCRNN | 擴散卷積 | 衝擊波傳播建模 |
 | | Graph-WaveNet | 自適應鄰接矩陣 | 複雜路網 |
 | | MTGNN | 多任務圖神經網路 | 多變數預測 |
 | | STGNN | 時空圖神經網路 | 一般交通預測 |
@@ -260,18 +260,18 @@ confidence_score = hybrid_result['confidence']
 ### 駕駛者功能
 
 #### 智慧導航系統
-- **震波覆蓋層顯示**: 即時顯示交通震波位置、強度和影響範圍
+- **衝擊波覆蓋層顯示**: 即時顯示交通衝擊波位置、強度和影響範圍
 - **動態路況預測**: AI驅動的未來30-60分鐘交通狀況預測
-- **替代路線建議**: 基於震波預測的智慧路線規劃
+- **替代路線建議**: 基於衝擊波預測的智慧路線規劃
 - **多模態導航**: 整合Google Maps API的精確導航功能
 
-#### ⚡ 震波即時預警系統
+#### ⚡ 衝擊波即時預警系統
 - **分級警報機制**: 
   - 🟢 **輕微** (速度下降6-18 km/h)
   - 🟡 **中等** (速度下降18-30 km/h)  
   - 🟠 **嚴重** (速度下降30+ km/h)
-- **到達時間預測**: 精確計算震波到達用戶位置的時間
-- **影響評估**: 量化震波對行程時間和油耗的影響
+- **到達時間預測**: 精確計算衝擊波到達用戶位置的時間
+- **影響評估**: 量化衝擊波對行程時間和油耗的影響
 - **個人化通知**: 基於用戶位置和路線的客製化警報
 
 #### 智慧出發時間優化
@@ -325,15 +325,15 @@ recommendations = decision_engine.get_traffic_management_advice(
 
 ### ⚡ 即時性能
 - **API響應時間**: < 200ms (95th percentile)
-- **震波檢測延遲**: < 5秒
+- **衝擊波檢測延遲**: < 5秒
 - **預測計算時間**: < 1秒 (單次預測)
 - **前端載入時間**: < 3秒 (首次載入)
-- **資料更新頻率**: 30秒 (震波) / 5分鐘 (交通)
+- **資料更新頻率**: 30秒 (衝擊波) / 5分鐘 (交通)
 
 ### 預測準確度
 | 預測類型 | MAE | RMSE | MAPE | 備註 |
 |---------|-----|------|------|------|
-| 震波檢測 | - | - | 87% | 準確率 |
+| 衝擊波檢測 | - | - | 87% | 準確率 |
 | 交通流量 | 12.3 | 18.7 | 8.5% | veh/5min |
 | 車速預測 | 3.2 | 5.1 | 6.8% | km/h |
 | 密度預測 | 8.9 | 13.4 | 11.2% | veh/km |
@@ -370,10 +370,10 @@ POST /api/traffic/query
 }
 ```
 
-#### 震波檢測API
+#### 衝擊波檢測API
 ```http
 GET /api/shockwave/active
-# 回應: 當前活躍震波
+# 回應: 當前活躍衝擊波
 {
   "active_shockwaves": [
     {
@@ -388,7 +388,7 @@ GET /api/shockwave/active
 }
 
 POST /api/shockwave/predict
-# 請求: 震波預測
+# 請求: 衝擊波預測
 {
   "location": {"lat": 25.0330, "lng": 121.5654},
   "time_horizon": 60
@@ -459,7 +459,7 @@ python tests/performance_test.py
 
 ### 相關研究
 - **MT-STNet論文**: [IEEE Xplore](https://ieeexplore.ieee.org/document/10559778)
-- **交通震波理論**: 參考`Reference/`目錄中的學術文獻
+- **交通衝擊波理論**: 參考`Reference/`目錄中的學術文獻
 - **基準模型比較**: 詳見`src/models/mt_stnet/baselines/`
 
 ### 資料集

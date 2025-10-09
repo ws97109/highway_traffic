@@ -74,7 +74,7 @@ const ShockwaveAlert: React.FC<ShockwaveAlertProps> = ({
           textColor: 'text-red-800',
           iconColor: 'text-red-600',
           pulseColor: 'animate-pulse',
-          title: '🚨 緊急震波警報'
+          title: '🚨 緊急衝擊波警報'
         };
       case 'high':
         return {
@@ -82,7 +82,7 @@ const ShockwaveAlert: React.FC<ShockwaveAlertProps> = ({
           textColor: 'text-orange-800',
           iconColor: 'text-orange-600',
           pulseColor: 'animate-pulse',
-          title: '⚠️ 高風險震波警報'
+          title: '⚠️ 高風險衝擊波警報'
         };
       case 'medium':
         return {
@@ -90,7 +90,7 @@ const ShockwaveAlert: React.FC<ShockwaveAlertProps> = ({
           textColor: 'text-yellow-800',
           iconColor: 'text-yellow-600',
           pulseColor: '',
-          title: '⚡ 中度震波警報'
+          title: '⚡ 中度衝擊波警報'
         };
       default:
         return {
@@ -98,7 +98,7 @@ const ShockwaveAlert: React.FC<ShockwaveAlertProps> = ({
           textColor: 'text-blue-800',
           iconColor: 'text-blue-600',
           pulseColor: '',
-          title: '📍 震波提醒'
+          title: '📍 衝擊波提醒'
         };
     }
   };
@@ -250,7 +250,7 @@ const ShockwaveAlert: React.FC<ShockwaveAlertProps> = ({
                   <div>{new Date(shockwave.estimatedArrivalTime).toLocaleTimeString('zh-TW')}</div>
                 </div>
                 <div>
-                  <span className="font-medium">震波ID:</span>
+                  <span className="font-medium">衝擊波ID:</span>
                   <div className="font-mono text-xs">{shockwave.id.slice(0, 8)}</div>
                 </div>
                 <div>

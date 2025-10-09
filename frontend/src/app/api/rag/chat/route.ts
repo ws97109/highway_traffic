@@ -141,7 +141,7 @@ function buildPrompt(
 2. 提供政府可執行的交通管制策略建議
 3. 評估不同策略的成本、效益和可行性
 4. 考量交通政策、法規和多車輛協調
-5. 解讀預測模型結果和震波偵測資料
+5. 解讀預測模型結果和衝擊波偵測資料
 
 你應該提供的建議類型包括:
 - 🚦 匝道儀控管制 (Ramp Metering): 控制匝道車流進入主線的速率
@@ -179,13 +179,13 @@ function buildPrompt(
       prompt += `- 壅塞比例: ${((congestedCount / trafficData.stations.length) * 100).toFixed(1)}%\n\n`;
     }
 
-    // 加入震波數據
+    // 加入衝擊波數據
     if (shockwaveData?.shockwaves && shockwaveData.shockwaves.length > 0) {
-      prompt += `【交通震波檢測】\n`;
-      prompt += `⚠️ 系統檢測到 ${shockwaveData.shockwaves.length} 個交通震波事件:\n`;
+      prompt += `【交通衝擊波檢測】\n`;
+      prompt += `⚠️ 系統檢測到 ${shockwaveData.shockwaves.length} 個交通衝擊波事件:\n`;
 
       shockwaveData.shockwaves.slice(0, 3).forEach((shock: any, index: number) => {
-        prompt += `\n震波事件 ${index + 1}:\n`;
+        prompt += `\n衝擊波事件 ${index + 1}:\n`;
         prompt += `- 位置: ${shock.location_name || shock.station_name || '未知'}\n`;
         prompt += `- 座標: (${shock.latitude?.toFixed(4) || 'N/A'}, ${shock.longitude?.toFixed(4) || 'N/A'})\n`;
         prompt += `- 嚴重程度: ${shock.intensity || 'N/A'}/10\n`;

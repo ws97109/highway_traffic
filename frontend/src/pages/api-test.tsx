@@ -6,7 +6,7 @@ const APITestPage: React.FC = () => {
 
   const testEndpoints = [
     { name: '交通資料', url: '/api/traffic/current' },
-    { name: '震波資料', url: '/api/shockwave/active' },
+    { name: '衝擊波資料', url: '/api/shockwave/active' },
     { name: '預測資料', url: '/api/prediction/traffic' },
     { name: 'RAG狀態', url: '/api/smart/rag-status' },
   ];

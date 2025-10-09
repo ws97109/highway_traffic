@@ -31,7 +31,7 @@ class TrafficCondition:
 
 @dataclass
 class ShockwaveAlert:
-    """震波預警資料結構"""
+    """衝擊波預警資料結構"""
     intensity: float
     propagation_speed: float
     estimated_arrival: Optional[datetime]
@@ -305,13 +305,13 @@ class IntelligentDriverAdvisor:
 • 壅塞程度：{traffic_data.congestion_level}
 • 資料時間：{traffic_data.timestamp.strftime('%H:%M:%S')}"""
 
-        # 添加震波預警資訊
+        # 添加衝擊波預警資訊
         if shockwave_alert:
             arrival_str = shockwave_alert.estimated_arrival.strftime('%H:%M:%S') if shockwave_alert.estimated_arrival else '未知'
             prompt += f"""
 
-⚠️ 震波預警：
-• 震波強度：{shockwave_alert.intensity}/10
+⚠️ 衝擊波預警：
+• 衝擊波強度：{shockwave_alert.intensity}/10
 • 警告等級：{shockwave_alert.warning_level}
 • 傳播速度：{shockwave_alert.propagation_speed} km/h
 • 預計影響時間：{arrival_str}

@@ -28,17 +28,17 @@ async def chat_with_ollama(request: ChatRequest):
     try:
         # 構建包含交通數據的提示
         system_prompt = """你是一個專業的交通分析助手，專門為台灣的駕駛者提供智能建議。
-你會根據即時交通數據、震波預警和路況信息，提供實用的駕駛建議。
+你會根據即時交通數據、衝擊波預警和路況信息，提供實用的駕駛建議。
 
-當有交通震波事件時，你需要特別關注以下資訊並提供具體建議：
-- 交通震波位置與駕駛者的距離
-- 交通震波強度和影響範圍
-- 交通震波持續時間和預計影響時間
+當有交通衝擊波事件時，你需要特別關注以下資訊並提供具體建議：
+- 交通衝擊波位置與駕駛者的距離
+- 交通衝擊波強度和影響範圍
+- 交通衝擊波持續時間和預計影響時間
 - 駕駛者的當前位置和行駛方向
 
 請提供以下類型的具體建議：
 1. 🛣️ 替代路線：推薦具體的國道或省道替代方案
-2. ⏰ 時間調整：根據交通震波提供建議延緩或提前出發的具體時間
+2. ⏰ 時間調整：根據交通衝擊波提供建議延緩或提前出發的具體時間
 3. 🛑 休息站策略：推薦就近的休息站名稱和等待時間，確認台灣的地點是否有無國道休息站。
 4. ⚠️ 行車注意：前方多少公里後需要降速，建議時速
 5. 🚨 安全措施：緊急情況下的應對方式
@@ -61,10 +61,10 @@ async def chat_with_ollama(request: ChatRequest):
         if request.shockwave_data and request.shockwave_data.get('shockwaves'):
             shockwaves = request.shockwave_data['shockwaves']
             if shockwaves:
-                traffic_summary += f"\n⚠️ 偵測到 {len(shockwaves)} 個交通震波事件："
+                traffic_summary += f"\n⚠️ 偵測到 {len(shockwaves)} 個交通衝擊波事件："
                 
                 for i, shock in enumerate(shockwaves):
-                    # 計算用戶與震波的距離
+                    # 計算用戶與衝擊波的距離
                     distance = None
                     if request.user_location:
                         user_lat = request.user_location.get('lat')
@@ -81,7 +81,7 @@ async def chat_with_ollama(request: ChatRequest):
                             c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
                             distance = R * c
                     
-                    traffic_summary += f"\n  震波{i+1}: {shock.get('location_name', '未知位置')}"
+                    traffic_summary += f"\n  衝擊波{i+1}: {shock.get('location_name', '未知位置')}"
                     traffic_summary += f" (強度{shock.get('intensity', 0)}/10, 影響範圍{shock.get('affected_area', 0)}km"
                     if distance:
                         traffic_summary += f", 距您{distance:.1f}km"

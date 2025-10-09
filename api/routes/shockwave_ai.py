@@ -360,7 +360,7 @@ def convert_simplified_to_traditional(text: str) -> str:
 class ShockwaveAnalysisRequest(BaseModel):
     user_location: Dict[str, float]  # {lat, lng}
     shockwaves: List[Dict[str, Any]]
-    user_message: Optional[str] = "請分析當前的交通震波情況並給予建議"
+    user_message: Optional[str] = "請分析當前的交通衝擊波情況並給予建議"
     destination: Optional[Dict[str, float]] = None
 
 class ShockwaveRecommendation(BaseModel):
@@ -452,7 +452,7 @@ def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
     return R * c
 
 def analyze_shockwave_risk(user_location: Dict[str, float], shockwaves: List[Dict[str, Any]]) -> Dict[str, Any]:
-    """分析震波風險等級和基本建議"""
+    """分析衝擊波風險等級和基本建議"""
     if not shockwaves:
         return {"risk_level": "low", "nearest_shock": None, "recommendations": []}
     
@@ -507,19 +507,19 @@ def generate_recommendations(analysis: Dict[str, Any], shockwaves: List[Dict[str
             type="alternative_route",
             priority="high" if risk_level == "high" else "medium",
             title="建議使用替代路線",
-            description=f"前方{distance:.1f}公里處有強度{intensity}/10的交通震波，建議改走省道或其他國道避開壅塞區域",
+            description=f"前方{distance:.1f}公里處有強度{intensity}/10的交通衝擊波，建議改走省道或其他國道避開壅塞區域",
             location={"lat": nearest_shock.get('latitude'), "lng": nearest_shock.get('longitude')}
         ))
     
     # 2. 時間調整建議
     duration = nearest_shock.get('shock_duration', 30)
     if distance < 20 and intensity >= 5:
-        delay_minutes = max(duration + 10, 20)  # 震波持續時間 + 緩衝時間
+        delay_minutes = max(duration + 10, 20)  # 衝擊波持續時間 + 緩衝時間
         recommendations.append(ShockwaveRecommendation(
             type="timing_adjustment",
             priority="medium",
             title="建議延後出發",
-            description=f"震波預計持續{duration}分鐘，建議延後{delay_minutes}分鐘出發，讓震波通過後再行駛",
+            description=f"衝擊波預計持續{duration}分鐘，建議延後{delay_minutes}分鐘出發，讓衝擊波通過後再行駛",
             action_time=(datetime.now() + timedelta(minutes=delay_minutes)).strftime('%H:%M')
         ))
     
@@ -529,7 +529,7 @@ def generate_recommendations(analysis: Dict[str, Any], shockwaves: List[Dict[str
             type="rest_area",
             priority="high" if risk_level == "high" else "medium",
             title="建議前往休息站等待",
-            description=f"前方{distance:.1f}公里即將遭受震波影響，建議就近尋找休息站或安全區域等待{duration}分鐘",
+            description=f"前方{distance:.1f}公里即將遭受衝擊波影響，建議就近尋找休息站或安全區域等待{duration}分鐘",
             action_time=f"等待約{duration}分鐘"
         ))
     
@@ -540,7 +540,7 @@ def generate_recommendations(analysis: Dict[str, Any], shockwaves: List[Dict[str
             type="speed_warning",
             priority="medium",
             title="前方需要降速",
-            description=f"前方{distance:.1f}公里後車流將受震波影響，建議將車速降至{safe_speed}km/h以下，保持安全跟車距離",
+            description=f"前方{distance:.1f}公里後車流將受衝擊波影響，建議將車速降至{safe_speed}km/h以下，保持安全跟車距離",
             action_time=f"{distance:.1f}公里後"
         ))
     
@@ -550,7 +550,7 @@ def generate_recommendations(analysis: Dict[str, Any], shockwaves: List[Dict[str
             type="emergency",
             priority="urgent",
             title="⚠️ 緊急注意",
-            description="您即將進入高強度震波影響區域，請立即減速並尋找安全地點停車，避免追撞風險",
+            description="您即將進入高強度衝擊波影響區域，請立即減速並尋找安全地點停車，避免追撞風險",
             action_time="立即"
         ))
     
@@ -558,11 +558,11 @@ def generate_recommendations(analysis: Dict[str, Any], shockwaves: List[Dict[str
 
 class SingleShockwaveAnalysisRequest(BaseModel):
     user_location: Dict[str, float]  # {lat, lng}
-    shockwave: Dict[str, Any]  # 單個震波資訊
+    shockwave: Dict[str, Any]  # 單個衝擊波資訊
     
 @router.post("/shockwave-analysis", response_model=ShockwaveAnalysisResponse)
 async def analyze_shockwave_impact(request: ShockwaveAnalysisRequest):
-    """分析交通震波對駕駛者的影響並提供具體建議"""
+    """分析交通衝擊波對駕駛者的影響並提供具體建議"""
     try:
         # 1. 基本風險分析
         analysis = analyze_shockwave_risk(request.user_location, request.shockwaves)
@@ -579,7 +579,7 @@ async def analyze_shockwave_impact(request: ShockwaveAnalysisRequest):
         user_location_name = get_approximate_location(request.user_location['lat'], request.user_location['lng'])
         shock_location_name = get_approximate_location(nearest_shock['latitude'], nearest_shock['longitude']) if nearest_shock else '未知位置'
 
-        # 根據震波位置獲取精確的地理資訊
+        # 根據衝擊波位置獲取精確的地理資訊
         shock_lat = nearest_shock.get('latitude', 0)
         shock_lng = nearest_shock.get('longitude', 0)
         shock_station_id = nearest_shock.get('station_id', '未知測站')
@@ -587,25 +587,25 @@ async def analyze_shockwave_impact(request: ShockwaveAnalysisRequest):
 
         detailed_prompt = f"""你是台灣的專業交通專家，請務必使用繁體中文（Traditional Chinese）進行分析，嚴禁使用簡體字：
 
-【台灣交通震波分析】
+【台灣交通衝擊波分析】
 用戶位置：{user_location_name}
-震波發生位置：{shock_location_name}
-震波精確座標：緯度{shock_lat:.6f}, 經度{shock_lng:.6f}
+衝擊波發生位置：{shock_location_name}
+衝擊波精確座標：緯度{shock_lat:.6f}, 經度{shock_lng:.6f}
 測站編號：{shock_station_id}
 路段名稱：{shock_station_name}
-距離用戶：{distance:.1f}公里處有強度{intensity}/10的震波
+距離用戶：{distance:.1f}公里處有強度{intensity}/10的衝擊波
 風險等級：{analysis['risk_level']}
 
-【重要】請基於震波實際發生位置（{shock_location_name}）提供建議，不要提及與震波位置無關的其他地區路線。
+【重要】請基於衝擊波實際發生位置（{shock_location_name}）提供建議，不要提及與衝擊波位置無關的其他地區路線。
 
-請針對此震波位置用繁體中文提供：
-1. 🛣️ 針對{shock_location_name}震波的具體替代路線（國道/省道）
+請針對此衝擊波位置用繁體中文提供：
+1. 🛣️ 針對{shock_location_name}衝擊波的具體替代路線（國道/省道）
 2. ⏰ 時間調整建議（延後多久出發）
 3. 🅿️ {shock_location_name}附近的休息站或安全停靠點
 4. 🚗 行車速度和安全距離建議
 5. 📱 其他針對性注意事項
 
-重要：請務必使用繁體中文回答，嚴禁使用簡體字，建議必須針對震波實際位置，簡潔回答，200字內："""
+重要：請務必使用繁體中文回答，嚴禁使用簡體字，建議必須針對衝擊波實際位置，簡潔回答，200字內："""
 
         # 4. 使用真實Ollama AI進行分析
         try:
@@ -626,9 +626,9 @@ async def analyze_shockwave_impact(request: ShockwaveAnalysisRequest):
                 converted_ai_response = convert_simplified_to_traditional(raw_ai_response)
                 ai_analysis = f"""🤖 AI智能分析報告
 
-📍 震波位置：{nearest_shock.get('location_name', '未知位置')}
+📍 衝擊波位置：{nearest_shock.get('location_name', '未知位置')}
 📏 距離您的位置：{distance:.1f}公里
-📊 震波強度：{intensity}/10
+📊 衝擊波強度：{intensity}/10
 ⏱️ 預估持續時間：{nearest_shock.get('shock_duration', '未知')}分鐘
 🌊 影響範圍：{nearest_shock.get('affected_area', '未知')}公里
 
@@ -640,7 +640,7 @@ async def analyze_shockwave_impact(request: ShockwaveAnalysisRequest):
                 ai_analysis = f"""⚠️ AI服務暫時不可用
 
 📍 基礎分析報告：
-• 震波位置：{nearest_shock.get('location_name', '未知位置')}
+• 衝擊波位置：{nearest_shock.get('location_name', '未知位置')}
 • 距離：{distance:.1f}公里
 • 強度：{intensity}/10
 • 風險等級：{analysis['risk_level'].upper()}
@@ -652,7 +652,7 @@ async def analyze_shockwave_impact(request: ShockwaveAnalysisRequest):
             ai_analysis = f"""⚠️ AI分析服務連線異常
 
 📍 緊急基礎分析：
-• 檢測到震波距離您{distance:.1f}公里
+• 檢測到衝擊波距離您{distance:.1f}公里
 • 強度等級：{intensity}/10 
 • 風險評估：{analysis['risk_level'].upper()}
 
@@ -664,11 +664,11 @@ async def analyze_shockwave_impact(request: ShockwaveAnalysisRequest):
         min_distance = analysis['min_distance']
         
         if risk_level == "high":
-            summary = f"⚠️ 高風險：檢測到{shock_count}個震波，最近距離{min_distance:.1f}公里，建議立即採取避險措施"
+            summary = f"⚠️ 高風險：檢測到{shock_count}個衝擊波，最近距離{min_distance:.1f}公里，建議立即採取避險措施"
         elif risk_level == "medium":
-            summary = f"⚡ 中等風險：檢測到{shock_count}個震波，最近距離{min_distance:.1f}公里，建議調整行駛計畫"
+            summary = f"⚡ 中等風險：檢測到{shock_count}個衝擊波，最近距離{min_distance:.1f}公里，建議調整行駛計畫"
         else:
-            summary = f"ℹ️ 低風險：檢測到{shock_count}個震波，距離較遠，請持續關注路況變化"
+            summary = f"ℹ️ 低風險：檢測到{shock_count}個衝擊波，距離較遠，請持續關注路況變化"
         
         return ShockwaveAnalysisResponse(
             recommendations=recommendations,
@@ -678,11 +678,11 @@ async def analyze_shockwave_impact(request: ShockwaveAnalysisRequest):
         )
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"震波分析失敗: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"衝擊波分析失敗: {str(e)}")
 
 @router.get("/shockwave-status")
 async def get_shockwave_status():
-    """獲取震波分析系統狀態"""
+    """獲取衝擊波分析系統狀態"""
     try:
         # 檢查Ollama服務
         response = requests.get(f"{OLLAMA_BASE_URL}/api/tags", timeout=5)
@@ -706,7 +706,7 @@ async def get_shockwave_status():
 
 @router.post("/single-shockwave-analysis")
 async def analyze_single_shockwave(request: SingleShockwaveAnalysisRequest):
-    """針對特定震波進行詳細AI分析"""
+    """針對特定衝擊波進行詳細AI分析"""
     try:
         # 計算距離
         user_lat = request.user_location['lat']
@@ -734,9 +734,9 @@ async def analyze_single_shockwave(request: SingleShockwaveAnalysisRequest):
         shock_station_id = shock_info.get('station_id', '未知測站')
         shock_station_name = shock_info.get('station_name', '未知路段')
 
-        ai_prompt = f"""你是台灣的專業交通專家，請務必使用繁體中文（Traditional Chinese）分析以下震波情況並提供專業建議，嚴禁使用簡體字：
+        ai_prompt = f"""你是台灣的專業交通專家，請務必使用繁體中文（Traditional Chinese）分析以下衝擊波情況並提供專業建議，嚴禁使用簡體字：
 
-【震波詳細資訊】
+【衝擊波詳細資訊】
 • 發生位置：{shock_location_name}
 • 測站編號：{shock_station_id}
 • 路段名稱：{shock_station_name}
@@ -752,16 +752,16 @@ async def analyze_single_shockwave(request: SingleShockwaveAnalysisRequest):
 位置：{user_location_name}
 精確座標：緯度{user_lat:.6f}，經度{user_lng:.6f}
 
-【重要】請基於震波實際發生位置（{shock_location_name}）提供建議，不要提及與震波位置無關的其他地區路線。
+【重要】請基於衝擊波實際發生位置（{shock_location_name}）提供建議，不要提及與衝擊波位置無關的其他地區路線。
 
-請針對{shock_location_name}震波用繁體中文提供：
+請針對{shock_location_name}衝擊波用繁體中文提供：
 1. 🛣️ 針對{shock_location_name}的具體替代路線建議（國道/省道）
 2. ⏰ 精確的時間調整建議（何時出發最佳）
 3. 🅿️ {shock_location_name}附近休息站或安全停靠點
 4. 🚗 行車速度和安全距離建議
 5. 📱 其他針對性注意事項
 
-重要：請務必使用繁體中文回答，嚴禁使用任何簡體字，建議必須針對震波實際位置，以專業、簡潔的方式回答，控制在200字內："""
+重要：請務必使用繁體中文回答，嚴禁使用任何簡體字，建議必須針對衝擊波實際位置，以專業、簡潔的方式回答，控制在200字內："""
 
         # 調用真實AI分析
         try:
@@ -787,8 +787,8 @@ async def analyze_single_shockwave(request: SingleShockwaveAnalysisRequest):
             print(f"AI分析失敗: {str(e)}")
             ai_analysis = f"""⚠️ AI服務暫時無法使用，提供基礎分析：
 
-基於震波資料分析：
-• 距離{distance:.1f}公里的{shock_info.get('location_name', '震波區域')}
+基於衝擊波資料分析：
+• 距離{distance:.1f}公里的{shock_info.get('location_name', '衝擊波區域')}
 • 強度{intensity}/10，風險等級：{risk_level.upper()}
 • 建議採取相應的預防措施
 
@@ -801,7 +801,7 @@ async def analyze_single_shockwave(request: SingleShockwaveAnalysisRequest):
                 "type": "alternative_route",
                 "priority": "high" if risk_level == "high" else "medium",
                 "title": "替代路線建議",
-                "description": f"前方{distance:.1f}公里處的{shock_info.get('location_name', '震波區域')}強度達{intensity}/10，建議改走替代路線"
+                "description": f"前方{distance:.1f}公里處的{shock_info.get('location_name', '衝擊波區域')}強度達{intensity}/10，建議改走替代路線"
             })
         
         if distance < 20:
@@ -810,7 +810,7 @@ async def analyze_single_shockwave(request: SingleShockwaveAnalysisRequest):
                 "type": "timing_adjustment", 
                 "priority": "medium",
                 "title": "出行時間調整",
-                "description": f"建議延後{delay_time}分鐘出發，避開震波高峰期"
+                "description": f"建議延後{delay_time}分鐘出發，避開衝擊波高峰期"
             })
         
         return {
@@ -823,4 +823,4 @@ async def analyze_single_shockwave(request: SingleShockwaveAnalysisRequest):
         }
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"單震波分析失敗: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"單衝擊波分析失敗: {str(e)}")

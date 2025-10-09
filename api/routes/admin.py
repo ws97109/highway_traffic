@@ -271,7 +271,7 @@ async def get_active_alerts():
                     "id": f"shock_{shock.get('station_id', 'unknown')}_{shock.get('shock_start_time', '').replace(':', '')}",
                     "type": "shockwave",
                     "severity": severity,
-                    "title": f"{shock.get('location_name', '未知測站')} 震波警報",
+                    "title": f"{shock.get('location_name', '未知測站')} 衝擊波警報",
                     "description": f"檢測到真實交通衝擊波，強度: {shock.get('intensity', 0):.1f}，速度下降: {shock.get('speed_drop', 0):.0f} km/h",
                     "location": {
                         "lat": float(shock.get("latitude", 0)), 

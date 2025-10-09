@@ -52,8 +52,8 @@ export default function Home() {
     },
     {
       icon: BoltIcon,
-      title: '震波預警系統',
-      description: '智慧偵測交通震波，提前預警避免事故',
+      title: '衝擊波預警系統',
+      description: '智慧偵測交通衝擊波，提前預警避免事故',
       color: 'text-purple-600 bg-purple-100'
     },
     {
@@ -115,7 +115,7 @@ export default function Home() {
             </span>
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            運用人工智慧與大數據分析，提供即時交通監控、震波預警與智慧決策支援，
+            運用人工智慧與大數據分析，提供即時交通監控、衝擊波預警與智慧決策支援，
             讓每一次出行都更安全、更順暢。
           </p>
         </div>
@@ -137,7 +137,7 @@ export default function Home() {
             
             <h2 className="text-2xl font-bold text-gray-900 mb-3">駕駛者介面</h2>
             <p className="text-gray-600 mb-6">
-              獲取即時交通資訊、路線規劃建議與震波預警通知，
+              獲取即時交通資訊、路線規劃建議與衝擊波預警通知，
               讓您的每次出行都能避開壅塞，安全抵達目的地。
             </p>
             
@@ -148,7 +148,7 @@ export default function Home() {
               </div>
               <div className="flex items-center text-sm text-gray-600">
                 <div className="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
-                震波預警通知
+                衝擊波預警通知
               </div>
               <div className="flex items-center text-sm text-gray-600">
                 <div className="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>

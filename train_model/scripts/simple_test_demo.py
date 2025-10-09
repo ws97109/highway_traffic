@@ -212,7 +212,7 @@ async def demo_driver_advisor():
                 'alert': None
             },
             {
-                'name': '嚴重壅塞+震波預警',
+                'name': '嚴重壅塞+衝擊波預警',
                 'data': TrafficCondition(
                     station_id='01F0555S',
                     speed=25.0,

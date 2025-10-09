@@ -75,6 +75,8 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
   const [shockwaveOverlays, setShockwaveOverlays] = useState<google.maps.Circle[]>([]);
   const [radarWaves, setRadarWaves] = useState<{ id: string; component: React.ReactElement }[]>([]);
   const shockwaveMarkersRef = useRef<Map<string, google.maps.Marker>>(new Map());
+  const activeInfoWindowRef = useRef<google.maps.InfoWindow | null>(null);
+  const isUserInteractingRef = useRef<boolean>(false); // 追蹤是否為用戶手動操作
 
   // Google Maps API 載入
   useEffect(() => {
@@ -235,6 +237,15 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
       // 添加點擊事件顯示詳細資訊
       centerMarker.addListener('click', () => {
         try {
+          // 標記為用戶手動操作
+          isUserInteractingRef.current = true;
+
+          // 關閉之前開啟的彈窗（重要：防止多個彈窗累積）
+          if (activeInfoWindowRef.current) {
+            activeInfoWindowRef.current.close();
+            activeInfoWindowRef.current = null;
+          }
+
           // 通知父組件更新選中的衝擊波
           if (onShockwaveClick) {
             onShockwaveClick(shockwave.id);
@@ -258,7 +269,16 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
             pixelOffset: new google.maps.Size(0, -10), // 稍微向上偏移
           });
 
+          // 儲存當前彈窗引用
+          activeInfoWindowRef.current = infoWindow;
+
           infoWindow.open(map);
+
+          // 當彈窗被手動關閉時，清除引用並重置互動狀態
+          google.maps.event.addListenerOnce(infoWindow, 'closeclick', () => {
+            activeInfoWindowRef.current = null;
+            isUserInteractingRef.current = false;
+          });
 
           // 等待 InfoWindow 完全載入後再載入 AI 推薦
           google.maps.event.addListenerOnce(infoWindow, 'domready', () => {
@@ -332,6 +352,12 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
   useEffect(() => {
     if (!map || !selectedShockwaveId) return;
 
+    // 如果用戶正在手動操作彈窗，不要自動觸發（避免打斷 AI 分析）
+    if (isUserInteractingRef.current) {
+      console.log('用戶正在查看彈窗，跳過自動觸發');
+      return;
+    }
+
     const selectedShockwave = shockwaves.find(sw => sw.id === selectedShockwaveId);
     if (selectedShockwave) {
       // 平移地圖到選中的衝擊波位置
@@ -339,12 +365,27 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
       map.setZoom(12); // 放大到適合查看衝擊波的縮放級別
 
       // 延遲一下，等待地圖平移完成後再觸發 marker 點擊事件
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
+        // 再次檢查用戶是否開始互動
+        if (isUserInteractingRef.current) {
+          console.log('用戶已開始互動，取消自動觸發');
+          return;
+        }
+
+        // 先關閉當前彈窗，防止重複觸發
+        if (activeInfoWindowRef.current) {
+          activeInfoWindowRef.current.close();
+          activeInfoWindowRef.current = null;
+        }
+
         const marker = shockwaveMarkersRef.current.get(selectedShockwaveId);
         if (marker) {
           google.maps.event.trigger(marker, 'click');
         }
       }, 500); // 等待 500ms 讓平移動畫完成
+
+      // 清理 timeout，防止 effect 重複執行時累積
+      return () => clearTimeout(timeoutId);
     }
   }, [map, selectedShockwaveId, shockwaves]);
 
@@ -710,7 +751,7 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
             lng: position.coords.longitude
           };
 
-          // 調用真實的單震波AI分析API
+          // 調用真實的單衝擊波AI分析API
           const response = await fetch('/api/shockwave-ai/single-shockwave-analysis', {
             method: 'POST',
             headers: {
@@ -719,7 +760,7 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
             body: JSON.stringify({
               user_location: userLocation,
               shockwave: {
-                location_name: shockwave.description || `震波區域 ${shockwave.id}`,
+                location_name: shockwave.description || `衝擊波區域 ${shockwave.id}`,
                 latitude: shockwave.lat,
                 longitude: shockwave.lng,
                 intensity: (shockwave.intensity || 0) * 10, // 轉換為0-10範圍
@@ -774,7 +815,7 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
               <div style="margin-bottom: 8px; color: #ffeb3b;">⚠️ AI服務暫時不可用</div>
               <div style="font-size: 12px; line-height: 1.4;">
                 提供基礎分析建議：<br/>
-                • 震波強度: ${((shockwave.intensity || 0) * 10).toFixed(1)}/10<br/>
+                • 衝擊波強度: ${((shockwave.intensity || 0) * 10).toFixed(1)}/10<br/>
                 • 建議保持謹慎駕駛<br/>
                 • 必要時考慮替代路線
               </div>

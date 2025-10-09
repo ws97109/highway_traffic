@@ -120,7 +120,7 @@ const DepartureTimeOptimizer: React.FC<DepartureTimeOptimizerProps> = ({
           智慧出發時間建議
         </h2>
         <p className="text-sm text-gray-600 mt-1">
-          基於AI預測和震波分析，為您推薦最佳出發時間
+          基於AI預測和衝擊波分析，為您推薦最佳出發時間
         </p>
       </div>
 
@@ -173,7 +173,7 @@ const DepartureTimeOptimizer: React.FC<DepartureTimeOptimizerProps> = ({
                     {formatDuration(slot.duration)}
                   </div>
                   <div className={`text-xs px-2 py-1 rounded-full ${getRiskColor(slot.shockwaveRisk)}`}>
-                    震波風險: {slot.shockwaveRisk}
+                    衝擊波風險: {slot.shockwaveRisk}
                   </div>
                 </div>
               </div>

@@ -101,15 +101,15 @@ TRAFFIC_KNOWLEDGE_BASE = [
     },
     {
         "id": "shockwave_definition",
-        "category": "交通震波知識",
-        "content": "交通震波是指車流中突然的減速波動，會向後傳播造成壅塞。常見原因包括：前方事故、車道縮減、匝道車輛匯入、駕駛急煞車。震波會以15-25公里/小時的速度向後傳播，影響範圍可達數公里。",
-        "keywords": ["交通震波", "減速", "壅塞", "傳播速度", "影響範圍"]
+        "category": "交通衝擊波知識",
+        "content": "交通衝擊波是指車流中突然的減速波動，會向後傳播造成壅塞。常見原因包括：前方事故、車道縮減、匝道車輛匯入、駕駛急煞車。衝擊波會以15-25公里/小時的速度向後傳播，影響範圍可達數公里。",
+        "keywords": ["交通衝擊波", "減速", "壅塞", "傳播速度", "影響範圍"]
     },
     {
         "id": "shockwave_response",
-        "category": "交通震波知識",
-        "content": "遇到交通震波的建議應對方式：1️⃣ 提前減速，保持安全車距（至少50公尺）2️⃣ 避免急煞車，緩慢減速 3️⃣ 考慮改走替代路線或就近休息站等待 4️⃣ 如震波強度高（>7/10），建議延後30分鐘以上出發 5️⃣ 使用即時路況App監控震波移動",
-        "keywords": ["交通震波", "應對", "安全車距", "替代路線", "即時路況"]
+        "category": "交通衝擊波知識",
+        "content": "遇到交通衝擊波的建議應對方式：1️⃣ 提前減速，保持安全車距（至少50公尺）2️⃣ 避免急煞車，緩慢減速 3️⃣ 考慮改走替代路線或就近休息站等待 4️⃣ 如衝擊波強度高（>7/10），建議延後30分鐘以上出發 5️⃣ 使用即時路況App監控衝擊波移動",
+        "keywords": ["交通衝擊波", "應對", "安全車距", "替代路線", "即時路況"]
     },
     {
         "id": "speed_limit_highway",
@@ -120,19 +120,19 @@ TRAFFIC_KNOWLEDGE_BASE = [
     {
         "id": "safe_distance",
         "category": "行車規範",
-        "content": "安全跟車距離計算：在高速公路上，安全車距（公尺）= 車速（公里/小時）- 20。例如時速100公里時，應保持80公尺以上車距。雨天應加倍車距。震波影響區域建議保持至少100公尺以上車距，並隨時準備減速。",
-        "keywords": ["安全車距", "跟車距離", "高速公路", "震波", "雨天"]
+        "content": "安全跟車距離計算：在高速公路上，安全車距（公尺）= 車速（公里/小時）- 20。例如時速100公里時，應保持80公尺以上車距。雨天應加倍車距。衝擊波影響區域建議保持至少100公尺以上車距，並隨時準備減速。",
+        "keywords": ["安全車距", "跟車距離", "高速公路", "衝擊波", "雨天"]
     },
     {
         "id": "etag_system",
         "category": "系統資訊",
-        "content": "eTag是台灣高速公路電子收費系統（ETC）使用的車載單元，採用RFID射頻識別技術。全台設有測站監測車流，包含速度、流量、密度等數據。這些資料可用於交通震波偵測和路況預測。",
+        "content": "eTag是台灣高速公路電子收費系統（ETC）使用的車載單元，採用RFID射頻識別技術。全台設有測站監測車流，包含速度、流量、密度等數據。這些資料可用於交通衝擊波偵測和路況預測。",
         "keywords": ["eTag", "ETC", "電子收費", "RFID", "測站", "車流監測"]
     },
     {
         "id": "weather_impact",
         "category": "天氣影響",
-        "content": "天氣對高速公路的影響：豪大雨時車速應降至60公里/小時以下，濃霧時應開霧燈並降至40公里/小時。強風特報時，大型車、機車應避免上國道。颱風天建議避免非必要行駛。雨天震波傳播速度較慢但影響時間較長。",
+        "content": "天氣對高速公路的影響：豪大雨時車速應降至60公里/小時以下，濃霧時應開霧燈並降至40公里/小時。強風特報時，大型車、機車應避免上國道。颱風天建議避免非必要行駛。雨天衝擊波傳播速度較慢但影響時間較長。",
         "keywords": ["天氣", "豪雨", "濃霧", "強風", "颱風", "安全駕駛"]
     },
     {
@@ -277,12 +277,12 @@ async def rag_chat(request: RAGChatRequest):
             if congested:
                 traffic_summary += f"壅塞站點：{len(congested)}個（車速<50km/h）\n"
 
-        # 4️⃣ 震波數據摘要
+        # 4️⃣ 衝擊波數據摘要
         shockwave_summary = ""
         if request.shockwave_data and request.shockwave_data.get('shockwaves'):
             shockwaves = request.shockwave_data['shockwaves']
             if shockwaves:
-                shockwave_summary = f"\n【交通震波警報】\n偵測到 {len(shockwaves)} 個震波事件：\n"
+                shockwave_summary = f"\n【交通衝擊波警報】\n偵測到 {len(shockwaves)} 個衝擊波事件：\n"
 
                 for i, shock in enumerate(shockwaves[:3], 1):  # 只取前3個
                     distance = None
@@ -303,7 +303,7 @@ async def rag_chat(request: RAGChatRequest):
                         c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
                         distance = R * c
 
-                    shockwave_summary += f"震波{i}：{shock.get('location_name', '未知位置')} "
+                    shockwave_summary += f"衝擊波{i}：{shock.get('location_name', '未知位置')} "
                     shockwave_summary += f"(強度{shock.get('intensity', 0)}/10"
                     if distance:
                         shockwave_summary += f", 距離{distance:.1f}km"
@@ -326,7 +326,7 @@ async def rag_chat(request: RAGChatRequest):
 
 【回答格式】
 🛣️ 路線建議：（具體的替代路線名稱和方向）
-⏰ 時間建議：（根據交通震波建議出發時間或等待時間）
+⏰ 時間建議：（根據交通衝擊波建議出發時間或等待時間）
 🅿️ 休息站建議：（最近的休息站名稱和距離）
 ⚠️ 安全注意：（車速、車距等具體數值）
 """
@@ -376,7 +376,7 @@ async def rag_chat(request: RAGChatRequest):
         if traffic_summary:
             confidence_score += 0.1  # 即時數據加成
         if shockwave_summary:
-            confidence_score += 0.1  # 震波數據加成
+            confidence_score += 0.1  # 衝擊波數據加成
         confidence_score = min(1.0, confidence_score)
 
         return RAGChatResponse(

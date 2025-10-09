@@ -11,11 +11,11 @@ plt.rcParams['axes.unicode_minus'] = False
 
 class FinalOptimizedShockDetector:
     """
-    最終優化版震波檢測器
+    最終優化版衝擊波檢測器
     
     基於文獻校準：
-    - 印第安納州研究：後向震波速度 4.2 mph (6.7 km/h)
-    - 59個震波案例，200小時壅塞
+    - 印第安納州研究：後向衝擊波速度 4.2 mph (6.7 km/h)
+    - 59個衝擊波案例，200小時壅塞
     - 更嚴格的檢測標準以符合實際頻率
     """
     
@@ -126,7 +126,7 @@ class FinalOptimizedShockDetector:
         return flow / speed
     
     def detect_significant_shocks(self, station_data):
-        """檢測顯著震波事件 - 支援間隔資料"""
+        """檢測顯著衝擊波事件 - 支援間隔資料"""
         data = station_data.copy().reset_index(drop=True)
         data['density'] = self.calculate_density(data['flow'], data['median_speed'])
         
@@ -200,7 +200,7 @@ class FinalOptimizedShockDetector:
         return shocks
     
     def _detect_strict_shocks(self, data, level, criteria):
-        """嚴格震波檢測"""
+        """嚴格衝擊波檢測"""
         shocks = []
         i = 0
         
@@ -211,7 +211,7 @@ class FinalOptimizedShockDetector:
                 shock_analysis = self._analyze_shock_strictly(data, i, criteria)
                 
                 if shock_analysis['is_valid']:
-                    # 額外驗證：檢查震波是否符合物理特性
+                    # 額外驗證：檢查衝擊波是否符合物理特性
                     if self._validate_shock_physics(shock_analysis):
                         shock_event = {
                             'level': level,
@@ -243,7 +243,7 @@ class FinalOptimizedShockDetector:
         return shocks
     
     def _is_significant_shock_start(self, data, idx, criteria):
-        """檢查是否為顯著震波起始點 - 適應真實資料特性"""
+        """檢查是否為顯著衝擊波起始點 - 適應真實資料特性"""
         if idx >= len(data) - 1:
             return False
         
@@ -274,7 +274,7 @@ class FinalOptimizedShockDetector:
         return False
     
     def _analyze_shock_strictly(self, data, start_idx, criteria):
-        """嚴格分析震波"""
+        """嚴格分析衝擊波"""
         initial_speed = data.iloc[start_idx]['median_speed']
         initial_density = data.iloc[start_idx]['density']
         
@@ -299,7 +299,7 @@ class FinalOptimizedShockDetector:
         return best_shock
     
     def _analyze_shock_window(self, data, start_idx, end_idx, criteria):
-        """分析震波窗口"""
+        """分析衝擊波窗口"""
         window_data = data.iloc[start_idx:end_idx+1]
         
         initial_speed = window_data.iloc[0]['median_speed']
@@ -344,7 +344,7 @@ class FinalOptimizedShockDetector:
         }
     
     def _check_monotonic_trend(self, window_data):
-        """檢查震波的單調性 - 放寬條件適應真實資料"""
+        """檢查衝擊波的單調性 - 放寬條件適應真實資料"""
         speeds = window_data['median_speed'].values
         
         if len(speeds) < 2:
@@ -353,7 +353,7 @@ class FinalOptimizedShockDetector:
         # 檢查是否有明顯的速度下降
         speed_drop = speeds[0] - speeds[-1]
         
-        # 如果總體下降超過10 km/h，就認為符合震波特徵
+        # 如果總體下降超過10 km/h，就認為符合衝擊波特徵
         if speed_drop >= 10:
             return True
             
@@ -374,7 +374,7 @@ class FinalOptimizedShockDetector:
             return 0
         
         # 使用簡化的Rankine-Hugoniot條件
-        # 參考文獻：後向震波速度約 4-7 km/h
+        # 參考文獻：後向衝擊波速度約 4-7 km/h
         flow_i = rho_i * u_i
         flow_f = rho_f * u_f
         
@@ -384,7 +384,7 @@ class FinalOptimizedShockDetector:
         return max(-15, min(15, raw_speed))
     
     def _validate_shock_physics(self, shock_analysis):
-        """驗證震波的物理合理性"""
+        """驗證衝擊波的物理合理性"""
         # 檢查波速是否在合理範圍內
         if abs(shock_analysis['wave_speed']) > 20:
             return False
@@ -455,7 +455,7 @@ def main():
     # 初始化最終優化檢測器
     detector = FinalOptimizedShockDetector()
     
-    print("=== 最終優化版震波檢測器 ===")
+    print("=== 最終優化版衝擊波檢測器 ===")
     print("適用於日常交通波的調整標準：")
     for level, criteria in detector.shock_criteria.items():
         print(f"  {level}: 速度下降 {criteria['speed_drop_min']}-{criteria['speed_drop_max']} km/h, "
@@ -468,11 +468,11 @@ def main():
     
     station_data = df[df['station'] == test_station].sort_values(['date', 'hour', 'minute'])
     
-    # 震波檢測
+    # 衝擊波檢測
     shocks = detector.detect_significant_shocks(station_data)
     
     print(f"\n=== 最終檢測結果 ===")
-    print(f"顯著震波事件: {len(shocks)} 個")
+    print(f"顯著衝擊波事件: {len(shocks)} 個")
     
     # 統計分析
     stats = detector.calculate_final_statistics(shocks)
@@ -484,13 +484,13 @@ def main():
         print(f"平均速度下降: {stats['avg_speed_drop']:.1f} km/h")
         print(f"平均密度增加: {stats['avg_density_increase']:.1f} veh/km")
         print(f"平均波速: {stats['avg_wave_speed']:.1f} km/h")
-        print(f"平均震波強度: {stats['avg_shock_strength']:.1f}%")
+        print(f"平均衝擊波強度: {stats['avg_shock_strength']:.1f}%")
         print(f"波速範圍: {stats['wave_speed_range'][0]:.1f} - {stats['wave_speed_range'][1]:.1f} km/h")
         
         # 計算頻率
         total_days = len(station_data) / 288
         daily_rate = len(shocks) / total_days
-        print(f"\n每日震波頻率: {daily_rate:.2f} 個/天")
+        print(f"\n每日衝擊波頻率: {daily_rate:.2f} 個/天")
         
         # 與文獻比較
         print(f"\n=== 與文獻比較 ===")
@@ -505,9 +505,9 @@ def main():
             print("⚠️ 波速需要進一步校準")
     
     # 詳細事件
-    print(f"\n=== 顯著震波事件詳情 ===")
+    print(f"\n=== 顯著衝擊波事件詳情 ===")
     for i, shock in enumerate(shocks[:5]):
-        print(f"\n震波 {i+1} ({shock['level']}):")
+        print(f"\n衝擊波 {i+1} ({shock['level']}):")
         print(f"  時間: {shock['start_time']} - {shock['end_time']}")
         print(f"  持續: {shock['duration']} 分鐘")
         print(f"  速度: {shock['initial_speed']:.1f} → {shock['final_speed']:.1f} km/h "

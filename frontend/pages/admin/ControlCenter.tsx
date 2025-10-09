@@ -291,7 +291,7 @@ const ControlCenter: React.FC<ControlCenterProps> = () => {
           <nav className="flex space-x-8">
             {[
               { key: 'overview', label: '總覽', icon: ChartBarIcon },
-              { key: 'shockwaves', label: '震波監控', icon: BoltIcon },
+              { key: 'shockwaves', label: '衝擊波監控', icon: BoltIcon },
               { key: 'predictions', label: '預測分析', icon: CpuChipIcon },
               { key: 'control', label: '交通管制', icon: SignalIcon },
             ].map(({ key, label, icon: Icon }) => (
@@ -335,7 +335,7 @@ const ControlCenter: React.FC<ControlCenterProps> = () => {
               
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">活躍震波</span>
+                  <span className="text-sm text-gray-600">活躍衝擊波</span>
                   <span className="font-bold text-lg text-red-600">
                     {shockwaves.length}
                   </span>
@@ -485,7 +485,7 @@ const ControlCenter: React.FC<ControlCenterProps> = () => {
                         <div className="w-3 h-3 bg-red-500 rounded-full"></div>
                         <span>阻塞</span>
                         <div className="w-3 h-3 bg-purple-500 rounded-full animate-pulse"></div>
-                        <span>震波</span>
+                        <span>衝擊波</span>
                       </div>
                     </div>
                   </div>
@@ -812,7 +812,7 @@ const ControlCenter: React.FC<ControlCenterProps> = () => {
           <nav className="flex space-x-8">
             {[
               { key: 'overview', label: '總覽', icon: ChartBarIcon },
-              { key: 'shockwaves', label: '震波監控', icon: BoltIcon },
+              { key: 'shockwaves', label: '衝擊波監控', icon: BoltIcon },
               { key: 'predictions', label: '預測分析', icon: CpuChipIcon },
               { key: 'control', label: '交通管制', icon: SignalIcon },
             ].map(({ key, label, icon: Icon }) => (
@@ -856,7 +856,7 @@ const ControlCenter: React.FC<ControlCenterProps> = () => {
               
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">活躍震波</span>
+                  <span className="text-sm text-gray-600">活躍衝擊波</span>
                   <span className="font-bold text-lg text-red-600">
                     {shockwaves.length}
                   </span>
@@ -1007,7 +1007,7 @@ const ControlCenter: React.FC<ControlCenterProps> = () => {
                         <div className="w-3 h-3 bg-red-500 rounded-full"></div>
                         <span>阻塞</span>
                         <div className="w-3 h-3 bg-purple-500 rounded-full animate-pulse"></div>
-                        <span>震波</span>
+                        <span>衝擊波</span>
                       </div>
                     </div>
                   </div>

@@ -78,19 +78,19 @@ export const useShockwaveData = (userLocation?: { lat: number; lng: number }): S
     setError(null);
     
     try {
-      console.log('🌊 正在獲取震波資料...');
+      console.log('🌊 正在獲取衝擊波資料...');
       
-      // 獲取震波資料
+      // 獲取衝擊波資料
       const shockwaveResponse = await fetch('/api/shockwave/active');
-      console.log('📡 震波 API 回應狀態:', shockwaveResponse.status);
+      console.log('📡 衝擊波 API 回應狀態:', shockwaveResponse.status);
       
       if (!shockwaveResponse.ok) {
-        throw new Error(`震波資料獲取失敗: ${shockwaveResponse.status}`);
+        throw new Error(`衝擊波資料獲取失敗: ${shockwaveResponse.status}`);
       }
       const shockwaveData = await shockwaveResponse.json();
-      console.log('📊 收到震波資料:', shockwaveData);
+      console.log('📊 收到衝擊波資料:', shockwaveData);
       
-      // 檢查和轉換震波資料格式
+      // 檢查和轉換衝擊波資料格式
       let formattedShockwaves: ShockwaveData[] = [];
       if (shockwaveData.shockwaves && Array.isArray(shockwaveData.shockwaves)) {
         formattedShockwaves = shockwaveData.shockwaves.map((sw: any) => ({
@@ -106,7 +106,7 @@ export const useShockwaveData = (userLocation?: { lat: number; lng: number }): S
           affectedArea: sw.affected_area,
           shock_duration: sw.shock_duration,  // 持續時間（分鐘）
           severity: determineSeverity(sw.intensity, sw.propagation_speed),
-          description: sw.description || `在 ${sw.location_name} 檢測到交通震波`,
+          description: sw.description || `在 ${sw.location_name} 檢測到交通衝擊波`,
           recommendations: generateRecommendations(sw.intensity, sw.propagation_speed),
           alternativeRoutes: sw.alternative_routes || [],
           shockOccurrenceTime: sw.shock_occurrence_time,
@@ -118,8 +118,8 @@ export const useShockwaveData = (userLocation?: { lat: number; lng: number }): S
           queueGrowthRate: sw.queue_growth_rate  // 隊列增長率
         }));
       } else {
-        console.log('⚠️ 沒有震波資料，使用模擬資料');
-        // 創建一些模擬震波資料
+        console.log('⚠️ 沒有衝擊波資料，使用模擬資料');
+        // 創建一些模擬衝擊波資料
         formattedShockwaves = [
           {
             id: 'mock-sw-001',
@@ -131,7 +131,7 @@ export const useShockwaveData = (userLocation?: { lat: number; lng: number }): S
             estimatedArrivalTime: new Date(Date.now() + 15 * 60 * 1000), // 15分鐘後
             affectedArea: 5,
             severity: 'medium',
-            description: '模擬震波事件 - 中等強度',
+            description: '模擬衝擊波事件 - 中等強度',
             recommendations: ['建議減速慢行', '保持安全車距'],
             alternativeRoutes: [],
             shockOccurrenceTime: new Date().toISOString(),
@@ -141,7 +141,7 @@ export const useShockwaveData = (userLocation?: { lat: number; lng: number }): S
       }
 
       setShockwaves(formattedShockwaves);
-      console.log('✅ 成功處理震波資料:', formattedShockwaves.length, '個事件');
+      console.log('✅ 成功處理衝擊波資料:', formattedShockwaves.length, '個事件');
 
       // 獲取預測資料
       try {
@@ -205,11 +205,11 @@ export const useShockwaveData = (userLocation?: { lat: number; lng: number }): S
       console.log('📢 生成警告:', generatedAlerts.length, '個警告');
 
     } catch (err) {
-      setError(err instanceof Error ? err.message : '獲取震波資料失敗');
-      console.error('❌ 獲取震波資料失敗:', err);
+      setError(err instanceof Error ? err.message : '獲取衝擊波資料失敗');
+      console.error('❌ 獲取衝擊波資料失敗:', err);
       
       // 載入備用模擬資料
-      console.log('📋 載入模擬震波資料');
+      console.log('📋 載入模擬衝擊波資料');
       const mockShockwaves = [
         {
           id: 'mock-sw-fallback',
@@ -221,7 +221,7 @@ export const useShockwaveData = (userLocation?: { lat: number; lng: number }): S
           estimatedArrivalTime: new Date(Date.now() + 20 * 60 * 1000),
           affectedArea: 3,
           severity: 'medium' as const,
-          description: '備用模擬震波資料',
+          description: '備用模擬衝擊波資料',
           recommendations: ['系統模擬模式', '實際使用請檢查API連接'],
           alternativeRoutes: [],
           shockOccurrenceTime: new Date().toISOString(),
@@ -268,7 +268,7 @@ export const useShockwaveData = (userLocation?: { lat: number; lng: number }): S
   useEffect(() => {
     fetchShockwaveData();
     
-    // 每30秒更新一次震波資料
+    // 每30秒更新一次衝擊波資料
     const interval = setInterval(fetchShockwaveData, 30 * 1000);
     
     return () => clearInterval(interval);
@@ -286,7 +286,7 @@ export const useShockwaveData = (userLocation?: { lat: number; lng: number }): S
   };
 };
 
-// 輔助函數：判斷震波嚴重程度
+// 輔助函數：判斷衝擊波嚴重程度
 function determineSeverity(intensity: number, propagationSpeed: number): 'low' | 'medium' | 'high' | 'critical' {
   if (intensity >= 8 || propagationSpeed >= 25) {
     return 'critical';
@@ -314,7 +314,7 @@ function generateRecommendations(intensity: number, propagationSpeed: number): s
   }
   
   if (propagationSpeed >= 20) {
-    recommendations.push('震波傳播速度較快，請提前做好準備');
+    recommendations.push('衝擊波傳播速度較快，請提前做好準備');
   }
   
   return recommendations;
@@ -339,7 +339,7 @@ function generateAlerts(shockwaves: ShockwaveData[], userLocation?: { lat: numbe
     }
     
     // 如果沒有用戶位置（管理者介面），顯示所有警告
-    // 如果有用戶位置，只對附近的震波生成警告（50km內）
+    // 如果有用戶位置，只對附近的衝擊波生成警告（50km內）
     if (!userLocation || !distance || distance <= 50) {
       const timeToArrival = Math.max(0, (sw.estimatedArrivalTime.getTime() - Date.now()) / (1000 * 60));
       
@@ -347,7 +347,7 @@ function generateAlerts(shockwaves: ShockwaveData[], userLocation?: { lat: numbe
       if (!userLocation || timeToArrival <= 60) {
         alerts.push({
           id: `alert-${sw.id}`,
-          title: userLocation ? `${sw.location} 震波警報` : `${sw.location} 衝擊波監測`,
+          title: userLocation ? `${sw.location} 衝擊波警報` : `${sw.location} 衝擊波監測`,
           description: userLocation ? 
             `預計 ${Math.round(timeToArrival)} 分鐘後到達您的位置` :
             `檢測到真實交通衝擊波，強度: ${sw.intensity.toFixed(1)}，速度下降: ${sw.speedDrop || 0} km/h`,

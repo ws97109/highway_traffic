@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 /**
  * Shockwave AI Analysis API Route
- * 提供震波專業分析
+ * 提供衝擊波專業分析
  */
 export async function POST(request: NextRequest) {
   try {
@@ -20,10 +20,10 @@ export async function POST(request: NextRequest) {
     const ollamaUrl = process.env.NEXT_PUBLIC_OLLAMA_URL || 'http://localhost:11434';
     const model = 'qwen2.5:7b';
 
-    // 建立震波分析提示詞
+    // 建立衝擊波分析提示詞
     const analysisPrompt = buildShockwaveAnalysisPrompt(user_location, shockwaves, user_message);
 
-    console.log('🚨 發送震波分析請求到 Ollama:', {
+    console.log('🚨 發送衝擊波分析請求到 Ollama:', {
       url: ollamaUrl,
       model,
       shockwaveCount: shockwaves.length,
@@ -63,12 +63,12 @@ export async function POST(request: NextRequest) {
     const ollamaResult = await ollamaResponse.json();
     const aiAnalysis = ollamaResult.response || '抱歉，無法生成分析。';
 
-    console.log('✅ 震波分析完成:', {
+    console.log('✅ 衝擊波分析完成:', {
       responseLength: aiAnalysis.length,
       model: ollamaResult.model
     });
 
-    // 分析震波風險等級
+    // 分析衝擊波風險等級
     const riskLevel = calculateRiskLevel(shockwaves, user_location);
 
     // 生成建議
@@ -100,22 +100,22 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * 建立震波分析提示詞
+ * 建立衝擊波分析提示詞
  */
 function buildShockwaveAnalysisPrompt(
   userLocation: any,
   shockwaves: any[],
   userMessage: string
 ): string {
-  let prompt = `你是台灣高速公路交通震波專家，負責分析交通震波對駕駛人的影響並提供專業建議。請用繁體中文進行分析。\n\n`;
+  let prompt = `你是台灣高速公路交通衝擊波專家，負責分析交通衝擊波對駕駛人的影響並提供專業建議。請用繁體中文進行分析。\n\n`;
 
   // 使用者位置
   prompt += `【駕駛人位置】\n`;
   prompt += `緯度: ${userLocation.lat.toFixed(4)}, 經度: ${userLocation.lng.toFixed(4)}\n\n`;
 
-  // 震波詳細資訊
-  prompt += `【檢測到的交通震波】\n`;
-  prompt += `總計: ${shockwaves.length} 個震波事件\n\n`;
+  // 衝擊波詳細資訊
+  prompt += `【檢測到的交通衝擊波】\n`;
+  prompt += `總計: ${shockwaves.length} 個衝擊波事件\n\n`;
 
   shockwaves.forEach((shock: any, index: number) => {
     const distance = calculateDistance(
@@ -125,7 +125,7 @@ function buildShockwaveAnalysisPrompt(
       shock.longitude
     );
 
-    prompt += `震波 ${index + 1}:\n`;
+    prompt += `衝擊波 ${index + 1}:\n`;
     prompt += `- 位置: ${shock.location_name || shock.station_name || '未知位置'}\n`;
     prompt += `- 座標: (${shock.latitude?.toFixed(4) || 'N/A'}, ${shock.longitude?.toFixed(4) || 'N/A'})\n`;
     prompt += `- 與駕駛人距離: ${distance.toFixed(2)} 公里\n`;
@@ -148,13 +148,13 @@ function buildShockwaveAnalysisPrompt(
 
   // 分析要求
   prompt += `【分析任務】\n`;
-  prompt += `請基於以上交通震波數據，提供以下分析:\n\n`;
-  prompt += `1. 🚨 整體風險評估 - 評估這些震波對駕駛人的總體影響程度\n`;
-  prompt += `2. 📍 最危險交通震波識別 - 指出哪個交通震波最需要注意及原因\n`;
-  prompt += `3. ⏰ 時間建議 - 根據交通震波提供建議是否需要延遲出發，或在何時出發最安全\n`;
+  prompt += `請基於以上交通衝擊波數據，提供以下分析:\n\n`;
+  prompt += `1. 🚨 整體風險評估 - 評估這些衝擊波對駕駛人的總體影響程度\n`;
+  prompt += `2. 📍 最危險交通衝擊波識別 - 指出哪個交通衝擊波最需要注意及原因\n`;
+  prompt += `3. ⏰ 時間建議 - 根據交通衝擊波提供建議是否需要延遲出發，或在何時出發最安全\n`;
   prompt += `4. 🛣️ 路線建議 - 如果有替代路線，請說明\n`;
   prompt += `5. 🛑 應對措施 - 具體的駕駛策略和注意事項\n`;
-  prompt += `6. 📊 預測分析 - 交通震波可能的發展趨勢\n\n`;
+  prompt += `6. 📊 預測分析 - 交通衝擊波可能的發展趨勢\n\n`;
   prompt += `請提供詳細且實用的專業分析（使用繁體中文）:\n`;
 
   return prompt;
@@ -239,7 +239,7 @@ function generateRecommendations(
       type: 'route_change',
       priority: 'urgent',
       title: '建議更換路線',
-      description: '前方有高風險交通震波，強烈建議選擇替代路線或延後出發。',
+      description: '前方有高風險交通衝擊波，強烈建議選擇替代路線或延後出發。',
       action_time: '立即'
     });
 
@@ -247,7 +247,7 @@ function generateRecommendations(
       type: 'time_delay',
       priority: 'high',
       title: '延後出發',
-      description: '建議延後 30-60 分鐘出發，等待震波消散。',
+      description: '建議延後 30-60 分鐘出發，等待衝擊波消散。',
       action_time: '30-60 分鐘後'
     });
   } else if (riskLevel === 'medium') {
@@ -255,8 +255,8 @@ function generateRecommendations(
       type: 'speed_adjustment',
       priority: 'medium',
       title: '降低車速',
-      description: '前方有中等強度震波，建議降低車速並保持安全距離。',
-      action_time: '接近震波區域前 5 公里'
+      description: '前方有中等強度衝擊波，建議降低車速並保持安全距離。',
+      action_time: '接近衝擊波區域前 5 公里'
     });
 
     recommendations.push({
@@ -276,7 +276,7 @@ function generateRecommendations(
     });
   }
 
-  // 基於最近震波的建議
+  // 基於最近衝擊波的建議
   const nearestShock = shockwaves
     .map(shock => ({
       ...shock,
@@ -293,8 +293,8 @@ function generateRecommendations(
     recommendations.push({
       type: 'specific_warning',
       priority: 'high',
-      title: `${nearestShock.location_name || '前方'} 震波警告`,
-      description: `距離您約 ${nearestShock.distance.toFixed(1)} 公里處有交通震波，強度 ${nearestShock.intensity || 'N/A'}/10。建議提前減速並準備應對。`,
+      title: `${nearestShock.location_name || '前方'} 衝擊波警告`,
+      description: `距離您約 ${nearestShock.distance.toFixed(1)} 公里處有交通衝擊波，強度 ${nearestShock.intensity || 'N/A'}/10。建議提前減速並準備應對。`,
       action_time: '前方 ' + nearestShock.distance.toFixed(1) + ' 公里'
     });
   }
@@ -309,7 +309,7 @@ function generateSummary(shockwaves: any[], riskLevel: string): string {
   const count = shockwaves.length;
   const avgIntensity = shockwaves.reduce((sum, s) => sum + (s.intensity || 0), 0) / count;
 
-  let summary = `檢測到 ${count} 個交通震波事件，`;
+  let summary = `檢測到 ${count} 個交通衝擊波事件，`;
 
   if (riskLevel === 'high') {
     summary += `整體風險等級為「高」，平均強度 ${avgIntensity.toFixed(1)}/10。強烈建議更換路線或延後出發。`;

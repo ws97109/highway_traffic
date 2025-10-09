@@ -550,7 +550,7 @@ class ProductionRealtimeSystem:
             self.is_running = False
 
     def get_shock_detection_data(self, station, min_points=6):
-        """為震波檢測提供資料"""
+        """為衝擊波檢測提供資料"""
         if station not in self.data_buffer:
             return pd.DataFrame()
         

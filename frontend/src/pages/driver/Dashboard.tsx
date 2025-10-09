@@ -30,6 +30,11 @@ const DriverDashboard: React.FC = () => {
   const [shockwaveAnalysis, setShockwaveAnalysis] = useState<any>(null);
   const [showShockwaveAnalysis, setShowShockwaveAnalysis] = useState(false);
   const [shockwaveAILoading, setShockwaveAILoading] = useState(false);
+  const [selectedShockwaveId, setSelectedShockwaveId] = useState<string | null>(null);
+
+  // 使用 refs 來管理衝擊波列表的滾動
+  const shockwaveListRef = React.useRef<HTMLDivElement>(null);
+  const shockwaveItemRefs = React.useRef<Map<string, HTMLDivElement>>(new Map());
 
   // Google 服務 Hooks
   const { 
@@ -55,7 +60,17 @@ const DriverDashboard: React.FC = () => {
 
   // 交通資料 Hooks
   const { trafficData, loading: trafficLoading, error: trafficError } = useTrafficData();
-  const { shockwaves, predictions, alerts, loading: shockwaveLoading, error: shockwaveError } = useShockwaveData(userLocation);
+  const { shockwaves, predictions, alerts, loading: shockwaveLoading, error: shockwaveError } = useShockwaveData(userLocation || undefined);
+
+  // 當選中的衝擊波改變時，滾動列表到該項目
+  useEffect(() => {
+    if (selectedShockwaveId && shockwaveListRef.current) {
+      const selectedElement = shockwaveItemRefs.current.get(selectedShockwaveId);
+      if (selectedElement) {
+        selectedElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+  }, [selectedShockwaveId]);
 
   // 調試：打印數據狀態
   useEffect(() => {
@@ -567,7 +582,7 @@ const DriverDashboard: React.FC = () => {
               </h2>
 
               {shockwaves.length > 0 ? (
-                <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
+                <div ref={shockwaveListRef} className="space-y-3 max-h-80 overflow-y-auto pr-2">
                   {/* 按距離排序震波 */}
                   {shockwaves
                     .map((shockwave: any) => {
@@ -599,11 +614,20 @@ const DriverDashboard: React.FC = () => {
 
                       const severity = shockwave.severity || 'medium';
                       const config = severityConfig[severity as keyof typeof severityConfig] || severityConfig.medium;
+                      const isSelected = selectedShockwaveId === shockwave.id;
 
                       return (
                         <div
                           key={shockwave.id || index}
-                          className={`rounded-lg p-4 border-l-4 cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-[1.02] ${config.bg}`}
+                          ref={(el) => {
+                            if (el && shockwave.id) {
+                              shockwaveItemRefs.current.set(shockwave.id, el);
+                            }
+                          }}
+                          onClick={() => setSelectedShockwaveId(shockwave.id)}
+                          className={`rounded-lg p-4 border-l-4 cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-[1.02] ${config.bg} ${
+                            isSelected ? 'ring-2 ring-blue-500 shadow-lg' : ''
+                          }`}
                         >
                           <div className="flex items-start justify-between mb-2">
                             <div className="flex items-center space-x-2">
@@ -783,6 +807,8 @@ const DriverDashboard: React.FC = () => {
                   onLocationUpdate={setCustomLocation}
                   showTrafficLayer={true}
                   showShockwaveOverlay={true}
+                  selectedShockwaveId={selectedShockwaveId}
+                  onShockwaveClick={(id) => setSelectedShockwaveId(id)}
                 />
                 
                 {/* 地圖控制按鈕 */}

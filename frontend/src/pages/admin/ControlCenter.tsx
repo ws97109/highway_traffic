@@ -507,12 +507,6 @@ const ControlCenter: React.FC<ControlCenterProps> = () => {
                               <span className="font-medium">{selectedShockwave.propagationSpeed.toFixed(1)} km/h</span>
                             </div>
                           )}
-                          {selectedShockwave.waveSpeed !== undefined && (
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">波速</span>
-                              <span className="font-medium">{selectedShockwave.waveSpeed.toFixed(1)} km/h</span>
-                            </div>
-                          )}
                           {selectedShockwave.waveDirection && (
                             <div className="flex justify-between">
                               <span className="text-gray-600">波向</span>
@@ -579,44 +573,6 @@ const ControlCenter: React.FC<ControlCenterProps> = () => {
                   <p className="text-gray-400 text-xs mt-1">點擊左側列表或地圖上的衝擊波查看詳細資訊</p>
                 </div>
               )}
-            </div>
-
-            {/* AI建議行動 */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <BoltIcon className="w-5 h-5 mr-2 text-purple-600" />
-                AI決策建議
-              </h2>
-              
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {(Array.isArray(recommendedActions) ? recommendedActions : []).slice(0, 5).map((action) => (
-                  <div key={action.id} className={`border-l-4 p-3 rounded ${getPriorityColor(action.priority)}`}>
-                    <div className="flex justify-between items-start mb-2">
-                      <h4 className="font-medium text-sm">{action.title}</h4>
-                      <span className={`text-xs px-2 py-1 rounded ${
-                        action.priority === 'high' ? 'bg-red-200 text-red-800' :
-                        action.priority === 'medium' ? 'bg-yellow-200 text-yellow-800' :
-                        'bg-blue-200 text-blue-800'
-                      }`}>
-                        {action.priority === 'high' ? '高' : action.priority === 'medium' ? '中' : '低'}
-                      </span>
-                    </div>
-                    
-                    <p className="text-xs text-gray-600 mb-2">{action.description}</p>
-                    
-                    <div className="flex justify-between items-center text-xs text-gray-500">
-                      <span>預期效果: {action.expectedImpact}</span>
-                    </div>
-                    
-                    <button
-                      onClick={() => executeAction(action.id)}
-                      className="mt-2 w-full bg-blue-600 text-white py-1 px-2 rounded text-xs hover:bg-blue-700 transition-colors"
-                    >
-                      執行建議
-                    </button>
-                  </div>
-                ))}
-              </div>
             </div>
           </div>
 

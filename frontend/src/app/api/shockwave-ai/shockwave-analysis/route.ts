@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
 
     // 從環境變數取得 Ollama URL
     const ollamaUrl = process.env.NEXT_PUBLIC_OLLAMA_URL || 'http://localhost:11434';
-    const model = 'qwen2.5:7b';
+    const model = 'qwen2.5:14b';
 
     // 建立衝擊波分析提示詞
     const analysisPrompt = buildShockwaveAnalysisPrompt(user_location, shockwaves, user_message);

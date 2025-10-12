@@ -739,7 +739,7 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
       recommendationElement.innerHTML = `
         <div style="display: flex; align-items: center; color: rgba(255,255,255,0.8);">
           <div style="margin-right: 8px;">🤖</div>
-          <div>真實AI正在深度分析中...</div>
+          <div>正在深度分析中...</div>
         </div>
       `;
 
@@ -802,7 +802,7 @@ const TrafficMap: React.FC<TrafficMapProps> = ({
                 </div>
               `).join('')}
               <div style="margin-top: 8px; font-size: 10px; opacity: 0.7; text-align: center;">
-                ⚠️ 此為真實AI運算結果，請結合實際路況謹慎駕駛
+                ⚠️ 此為AI運算結果，請結合實際路況謹慎駕駛
               </div>
             </div>
           `;

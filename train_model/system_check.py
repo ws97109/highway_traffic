@@ -142,7 +142,7 @@ async def check_ollama_service(checker: HealthChecker):
                 
                 # 檢查推薦模型
                 model_names = [model['name'] for model in models]
-                recommended_models = ['deepseek-r1:32b', 'deepseek-r1:32b', 'llama3:latest']
+                recommended_models = ['qwen2.5:14b', 'qwen2.5:14b', 'llama3:latest']
                 
                 found_model = False
                 for rec_model in recommended_models:

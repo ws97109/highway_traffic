@@ -58,7 +58,7 @@ class ConfigManager:
         default_config = {
             'ollama': {
                 'base_url': 'http://localhost:11434',
-                'model': 'deepseek-r1:32b',  # 改為較小的模型
+                'model': 'qwen2.5:14b',  # 改為較小的模型
                 'timeout': 300,
                 'max_tokens': 2048,
                 'temperature': 0.1

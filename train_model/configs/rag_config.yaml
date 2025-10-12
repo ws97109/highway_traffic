@@ -3,7 +3,7 @@
 # Ollama 設定
 ollama:
   base_url: "http://localhost:11434"
-  model: "deepseek-r1:32b"
+  model: "qwen2.5:14b"
   timeout: 300
   max_tokens: 2048
   temperature: 0.1

@@ -52,7 +52,7 @@ class EnvironmentSetup:
         logger.info("Ollama 安裝說明:")
         logger.info("1. macOS/Linux: curl -fsSL https://ollama.ai/install.sh | sh")
         logger.info("2. Windows: 下載並安裝 https://ollama.ai/download")
-        logger.info("3. 安裝後執行: ollama pull deepseek-r1:32b")
+        logger.info("3. 安裝後執行: ollama pull qwen2.5:14b")
     
     async def check_ollama_service(self):
         """檢查 Ollama 服務狀態"""
@@ -67,9 +67,9 @@ class EnvironmentSetup:
                     available_models = [m['name'] for m in models.get('models', [])]
                     logger.info(f"Ollama 服務正常，可用模型: {available_models} ✓")
                     
-                    if 'deepseek-r1:32b' not in available_models:
-                        logger.warning("未找到 deepseek-r1:32b 模型")
-                        logger.info("請執行: ollama pull deepseek-r1:32b")
+                    if 'qwen2.5:14b' not in available_models:
+                        logger.warning("未找到 qwen2.5:14b 模型")
+                        logger.info("請執行: ollama pull qwen2.5:14b")
                         return False
                     
                     return True

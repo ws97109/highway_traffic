@@ -1,0 +1,11 @@
+cd frontend
+npm run dev
+
+
+cd api
+python main.py
+
+
+cd src/data
+python tdx_tisc_mix_system.py
+

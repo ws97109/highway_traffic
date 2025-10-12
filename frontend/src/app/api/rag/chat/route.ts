@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
 
     // 從環境變數取得 Ollama URL (優先使用 NEXT_PUBLIC_)
     const ollamaUrl = process.env.NEXT_PUBLIC_OLLAMA_URL || process.env.OLLAMA_URL || 'http://localhost:11434';
-    const model = 'qwen2.5:7b';
+    const model = 'qwen2.5:14b';
 
     console.log('🔧 使用配置:', { ollamaUrl, model });
 

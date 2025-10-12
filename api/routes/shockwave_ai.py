@@ -11,7 +11,7 @@ router = APIRouter()
 
 # Ollama 設定
 OLLAMA_BASE_URL = os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')
-OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'qwen2.5:7b')
+OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'qwen2.5:14b')
 
 # 簡繁轉換對照表 (包含交通相關常用詞彙)
 SIMPLIFIED_TO_TRADITIONAL = {
@@ -612,7 +612,7 @@ async def analyze_shockwave_impact(request: ShockwaveAnalysisRequest):
             ollama_response = requests.post(
                 f"{OLLAMA_BASE_URL}/api/generate",
                 json={
-                    "model": "qwen2.5:7b",
+                    "model": "qwen2.5:14b",
                     "prompt": detailed_prompt,
                     "stream": False
                 },
@@ -768,7 +768,7 @@ async def analyze_single_shockwave(request: SingleShockwaveAnalysisRequest):
             ollama_response = requests.post(
                 f"{OLLAMA_BASE_URL}/api/generate",
                 json={
-                    "model": "qwen2.5:7b",
+                    "model": "qwen2.5:14b",
                     "prompt": ai_prompt,
                     "stream": False
                 },

@@ -1,6 +1,6 @@
 # RAG 訓練系統
 
-基於 Ollama deepseek-r1:32b 模型和台灣國道資料的檢索增強生成 (RAG) 系統。
+基於 Ollama qwen2.5:14b 模型和台灣國道資料的檢索增強生成 (RAG) 系統。
 
 ## 🚀 快速開始
 
@@ -10,8 +10,8 @@
 # 安裝 Ollama (如果尚未安裝)
 curl -fsSL https://ollama.ai/install.sh | sh
 
-# 拉取 deepseek-r1:32b 模型
-ollama pull deepseek-r1:32b
+# 拉取 qwen2.5:14b 模型
+ollama pull qwen2.5:14b
 
 # 安裝 Python 依賴
 pip install -r requirements.txt
@@ -24,7 +24,7 @@ pip install -r requirements.txt
 ```env
 # Ollama 設定
 OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=deepseek-r1:32b
+OLLAMA_MODEL=qwen2.5:14b
 ```
 
 ### 3. 訓練 RAG 系統
@@ -106,7 +106,7 @@ train_model/
 ```yaml
 # Ollama 設定
 ollama:
-  model: "deepseek-r1:32b"          # 使用的模型
+  model: "qwen2.5:14b"          # 使用的模型
   temperature: 0.1               # 生成溫度
   max_tokens: 2048              # 最大生成長度
 

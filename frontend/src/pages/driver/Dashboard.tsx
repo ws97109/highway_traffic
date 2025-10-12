@@ -110,7 +110,7 @@ const DriverDashboard: React.FC = () => {
           system_health: 'healthy', 
           ollama_connected: true,
           available_models: data.models?.length || 0,
-          current_model: 'qwen2.5:7b'
+          current_model: 'qwen2.5:14b'
         });
       } else {
         setRagStatus({ system_health: 'unavailable', error: 'Ollama 連接失敗' });
@@ -305,7 +305,7 @@ const DriverDashboard: React.FC = () => {
         type: 'assistant', 
         content: result.response || '抱歉，AI 無法生成回應。', 
         timestamp: new Date(),
-        source: 'Ollama AI (qwen2.5:7b)'
+        source: 'Ollama AI (qwen2.5:14b)'
       }]);
     } catch (error) {
       console.error('❌ AI 對話失敗:', error);

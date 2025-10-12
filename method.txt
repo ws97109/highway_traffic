@@ -1,0 +1,940 @@
+
+## 目錄
+1. MT-STNet 模型架構概述
+2. 核心技術與方法
+3. 交通衝擊波建立方法
+4. 數學公式與理論基礎
+5. 資料處理流程
+6. 模型訓練與預測流程
+
+================================================================================
+
+## 一、MT-STNet 模型架構概述
+
+MT-STNet (Multi-Task Spatiotemporal Network) 是一個用於高速公路交通流量預測的深度學習模型，
+專門設計用於捕捉交通網路中的時空依賴關係。
+
+### 模型主要特點：
+- 多任務學習架構
+- 時空注意力機制
+- 圖卷積網路 (GCN) 整合
+- 物理信息融合（距離、度數、最短路徑）
+
+### 資料來源：
+- 66 個 ETC 智慧監測站點
+  * 13 個收費站（每站有入口和出口）：26 個節點
+  * 20 個龍門架（每架有上下行方向）：40 個節點
+- 時間粒度：5 分鐘
+- 資料期間：2021年6月1日至8月31日
+
+================================================================================
+
+## 二、核心技術與方法
+
+### 2.1 時空嵌入 (Spatiotemporal Embedding)
+
+模型使用多種嵌入來捕捉不同層面的信息：
+
+**時間嵌入 (Temporal Embedding)：**
+- 星期幾嵌入 (Day of Week): vocab_size=7, emb_size=64
+- 分鐘嵌入 (Minute of Day): vocab_size=288 (24*60/5), emb_size=64
+
+**空間嵌入 (Spatial Embedding)：**
+- 位置嵌入 (Position): vocab_size=站點數, emb_size=64
+- 最短路徑嵌入 (Shortest Path): vocab_size=邊數+1, emb_size=64
+- 入度嵌入 (In-degree): vocab_size=5, emb_size=64
+- 出度嵌入 (Out-degree): vocab_size=5, emb_size=64
+
+### 2.2 空間注意力機制 (Spatial Attention)
+
+**公式：**
+```
+Query = FC_relu(X + STE + DEG)
+Key = FC_relu(X + STE + DEG)
+Value = FC_relu(X + STE + DEG)
+
+Attention = softmax((Query × Key^T) / √d + Distance + ShortestPath)
+Output = Attention × Value
+```
+
+**其中：**
+- X: 輸入交通流量 [batch_size, num_step, N, D]
+- STE: 時空嵌入
+- DEG: 度數嵌入 (入度 + 出度)
+- d: 注意力頭維度
+- Distance: 站點間實際距離矩陣
+- ShortestPath: 站點間最短路徑嵌入
+
+**物理信息融合：**
+1. 距離矩陣 (dis): [N, N] → [1, 1, N, N]
+2. 最短路徑 (sp): [N*N, 15, dim] → 經過加權平均 → [1, 1, N, N]
+3. 兩者加入注意力分數中，使模型考慮實際道路網路拓撲
+
+### 2.3 時間注意力機制 (Temporal Attention)
+
+**公式：**
+```
+Query = FC_relu(X + STE + DEG)  [K×batch, N, num_step, d]
+Key = FC_relu(X + STE + DEG)    [K×batch, N, d, num_step]
+Value = FC_relu(X + STE + DEG)  [K×batch, N, num_step, d]
+
+Attention = softmax((Query × Key) / √d)
+若使用 mask: Attention = where(mask, Attention, -2^15+1)
+Output = Attention × Value
+```
+
+**Mask 機制：**
+- 使用下三角矩陣確保預測時只能看到過去的時間步
+- 防止資訊洩漏，保證因果關係
+
+### 2.4 圖卷積網路 (GCN)
+
+**鄰接矩陣處理：**
+```
+A_hat = A + I                    # 加入自環
+D_hat = Σ A_hat                  # 度矩陣
+D_hat^(-1/2) × A_hat × D_hat^(-1/2)  # 對稱歸一化
+```
+
+**GCN 層計算：**
+```
+H^(l+1) = σ(D_hat^(-1/2) × A_hat × D_hat^(-1/2) × H^(l) × W^(l))
+```
+
+**Chebyshev 多項式近似（可選）：**
+```
+g_θ * x ≈ Σ(k=0 to K) θ_k T_k(L_tilde) x
+```
+其中：
+- L_tilde = 2L/λ_max - I
+- T_k: k階 Chebyshev 多項式
+- max_degree = 3
+
+### 2.5 融合門控機制 (Fusion Gate)
+
+用於融合空間注意力和 GCN 的輸出：
+
+**公式：**
+```
+z = sigmoid(HS ⊙ GS)
+H = z ⊙ HS + (1-z) ⊙ GS
+```
+
+其中：
+- HS: 空間注意力輸出
+- GS: GCN 輸出
+- z: 門控權重
+- ⊙: 元素乘法
+
+### 2.6 時空注意力塊 (STAttBlock)
+
+**處理流程：**
+```
+1. HT = TemporalAttention(X, STE)
+2. GS = GCN(HT)
+3. HS = SpatialAttention(HT, STE)
+4. H = FusionGate(HS, GS)
+5. Output = X + H  # 殘差連接
+```
+
+### 2.7 橋接轉換 (Bridge Transformation)
+
+用於從編碼器輸出生成解碼器的預測：
+
+**公式：**
+```
+Query = FC_relu(STE_Q)    [batch, Q, N, K×d]
+Key = FC_relu(STE_P)      [batch, P, N, K×d]
+Value = FC_relu(X_E)      [batch, P, N, K×d]
+
+轉置後：
+Query: [K×batch, N, Q, d]
+Key:   [K×batch, N, d, P]
+Value: [K×batch, N, P, d]
+
+Attention = softmax((Query × Key) / √d)  [K×batch, N, Q, P]
+Output = Attention × Value                [batch, Q, N, D]
+```
+
+其中：
+- P: 輸入時間步數 (12)
+- Q: 輸出時間步數 (12)
+- X_E: 編碼器輸出
+
+================================================================================
+
+## 三、交通衝擊波建立方法
+
+### 3.1 交通衝擊波概念
+
+交通衝擊波 (Traffic Shockwave) 是指交通流中的擾動傳播現象，類似於物理學中的波動。
+當交通密度突然變化時，會形成一個擾動波向上游或下游傳播。
+
+### 3.2 在 MT-STNet 中的體現
+
+雖然程式碼中沒有明確標註"shockwave"，但模型透過以下機制捕捉衝擊波現象：
+
+**1. 時空依賴關係捕捉：**
+- 時間注意力：捕捉同一站點在不同時間的流量變化模式
+- 空間注意力：捕捉相鄰站點間的流量傳遞
+- 兩者結合：識別擾動如何在時空中傳播
+
+**2. 圖結構建模：**
+```
+Station_i (t) → Station_j (t+Δt)
+```
+透過鄰接矩陣和 GCN，模型學習：
+- 上游站點的擁堵如何影響下游
+- 擾動傳播速度（透過時間延遲）
+- 空間傳播範圍（透過多跳鄰接）
+
+**3. 物理約束整合：**
+- 距離矩陣：擾動傳播與距離相關
+- 最短路徑：擾動沿主要路徑傳播
+- 度數信息：交匯處更容易產生/放大衝擊波
+
+### 3.3 衝擊波速度估計
+
+理論上，衝擊波速度可由以下公式計算：
+
+**LWR 模型（Lighthill-Whitham-Richards）：**
+```
+v_shock = Δq / Δk = (q_2 - q_1) / (k_2 - k_1)
+```
+
+其中：
+- v_shock: 衝擊波速度
+- q: 交通流量 (vehicles/hour)
+- k: 交通密度 (vehicles/km)
+- 下標1,2表示衝擊波前後的狀態
+
+**模型學習的隱式表示：**
+MT-STNet 透過注意力權重隱式學習衝擊波傳播：
+```
+Attention(i,j,t,t') 表示：
+站點 i 在時間 t 的狀態，對站點 j 在時間 t' 的影響程度
+```
+
+### 3.4 衝擊波傳播流程
+
+```
+[流程圖]
+
+時刻 t0: Station A 發生擁堵
+         ↓ (空間傳播)
+時刻 t1: Station B 開始受影響
+         ├→ (繼續空間傳播) Station C
+         └→ (時間延續) Station B 狀態持續
+         ↓
+時刻 t2: Station C 受影響
+         ↓
+時刻 t3: 擁堵逐漸消散
+
+
+[數學表示]
+
+Flow(A, t0) → [空間注意力] → Flow(B, t1)
+                            ↓ [GCN 傳播]
+                            Flow(C, t2)
+                            ↓ [時間注意力]
+                            Flow(C, t3)
+```
+
+### 3.5 多任務學習對衝擊波的建模
+
+模型將66個站點分為三組進行預測：
+1. 入口收費站 (0-12)：13個站點
+2. 出口收費站 (13-25)：13個站點
+3. 龍門架 (26-65)：40個站點
+
+每組使用獨立的全連接層：
+```
+pre1 = FC(X[:,:,:13])      # 入口站點預測
+pre2 = FC(X[:,:,13:26])    # 出口站點預測
+pre3 = FC(X[:,:,26:])      # 龍門架預測
+pre = concat([pre1, pre2, pre3])
+```
+
+**意義：**
+- 不同類型站點的交通模式不同
+- 入口站點：車輛進入高速公路，初始擾動源
+- 龍門架：中間傳播節點，衝擊波傳遞
+- 出口站點：車輛離開，擾動消散
+
+================================================================================
+
+## 四、數學公式與理論基礎
+
+### 4.1 多頭注意力機制
+
+**Scaled Dot-Product Attention:**
+```
+Attention(Q, K, V) = softmax(QK^T / √d_k) V
+```
+
+**Multi-Head Attention:**
+```
+head_i = Attention(QW_i^Q, KW_i^K, VW_i^V)
+MultiHead(Q,K,V) = Concat(head_1,...,head_h)W^O
+```
+
+其中：
+- h = num_heads = 8
+- d_k = d_model / h = 64 / 8 = 8
+- W^Q, W^K, W^V, W^O: 可訓練權重矩陣
+
+### 4.2 殘差連接與層歸一化
+
+**殘差連接：**
+```
+Output = LayerNorm(X + SubLayer(X))
+```
+
+**批次歸一化：**
+```
+y = γ((x - μ_B) / √(σ_B^2 + ε)) + β
+```
+
+動態調整：
+```
+bn_momentum = 0.5 × 0.5^(step / decay_step)
+bn_decay = min(0.99, 1 - bn_momentum)
+```
+
+### 4.3 損失函數
+
+**平均絕對誤差 (MAE)：**
+```
+Loss = (1/n) Σ|y_pred - y_true|
+```
+
+**評估指標：**
+
+1. MAE (Mean Absolute Error):
+```
+MAE = (1/n) Σ|y_pred - y_true|
+```
+
+2. RMSE (Root Mean Square Error):
+```
+RMSE = √((1/n) Σ(y_pred - y_true)^2)
+```
+
+3. MAPE (Mean Absolute Percentage Error):
+```
+MAPE = (100/n) Σ|((y_true - y_pred) / y_true)|
+```
+
+### 4.4 資料歸一化
+
+**Z-score 歸一化：**
+```
+x_norm = (x - mean) / std
+x_denorm = x_norm × std + mean
+```
+
+程式碼中的應用：
+```python
+pre = pre * self.std + self.mean  # 反歸一化
+```
+
+### 4.5 學習率衰減
+
+**指數衰減：**
+```
+learning_rate = initial_lr × decay_rate^(global_step / decay_steps)
+learning_rate = max(learning_rate, 1e-5)
+```
+
+參數設定：
+- initial_lr = 0.001
+- decay_rate = 0.7
+- decay_steps = decay_epoch × num_train / batch_size
+- decay_epoch = 5
+
+================================================================================
+
+## 五、資料處理流程
+
+### 5.1 原始資料結構
+
+**train.py 處理的資料：**
+```
+原始檔案：
+1. toll_station/in_flow.csv   - 入口收費站流量
+2. toll_station/out_flow.csv  - 出口收費站流量
+3. dragon_station/dragon_flow.csv - 龍門架流量
+
+欄位：
+['station', 'date', 'hour', 'minute', 'flow']
+```
+
+**站點映射：**
+```python
+in_toll_stations: {站點ID: 0-12}   # 13個入口
+out_toll_stations: {站點ID: 13-25} # 13個出口
+dragon_stations: {站點ID: 26-65}   # 40個龍門架
+```
+
+### 5.2 資料轉換流程
+
+```
+[流程圖]
+
+步驟1: 讀取三個 CSV 檔案
+       ↓
+步驟2: 依站點 ID 建立字典 {mapped_id: data}
+       ↓
+步驟3: 按時間順序逐行處理
+       For each timestamp:
+         For each station (0-65):
+           提取該站點該時刻的資料
+       ↓
+步驟4: 輸出格式
+       ['station', 'date', 'day', 'hour', 'minute', 'flow']
+       station: 0-65 (映射後的 ID)
+       day: 日期中的「日」
+       flow: 交通流量值
+```
+
+**程式碼邏輯：**
+```python
+# 按時間對齊所有站點的資料
+for i in range(rows):  # 對每個時間點
+    for station_index in range(66):  # 對每個站點
+        writer.writerow([
+            station_index,
+            date,
+            day,
+            hour,
+            minute,
+            flow
+        ])
+```
+
+### 5.3 時間序列構建
+
+**滑動窗口：**
+```
+Input:  [t-11, t-10, ..., t-1, t]  (12 步)
+Output: [t+1, t+2, ..., t+12]      (12 步)
+
+同時保存：
+X_all: [t-11, ..., t, t+1, ..., t+12]  (24 步)
+用於提供完整的時間上下文
+```
+
+**資料形狀：**
+```
+trainX:    [num_samples, 12, 66, 1]
+trainL:    [num_samples, 66, 12]
+trainXAll: [num_samples, 24, 66, 1]
+```
+
+### 5.4 輔助資料準備
+
+**1. 鄰接矩陣 (adjacent_fully.csv)：**
+```
+欄位：[src_FID, nbr_FID]
+表示：src_FID 站點連接到 nbr_FID 站點
+構建：adj[src_FID-1][nbr_FID-1] = 1  # 轉為 0-based indexing
+```
+
+**2. 距離矩陣 (dis.csv)：**
+```
+[N×N] 矩陣
+dis[i][j] = 站點 i 到站點 j 的實際距離（公里）
+```
+
+**3. 最短路徑 (sp.csv)：**
+```
+每對站點 (i,j) 的最短路徑上的節點序列
+最多記錄 15 個節點
+格式：[src, dst, node1, node2, ..., node15]
+```
+
+**4. 度數資訊：**
+```
+in_deg.csv:  [1×N] 入度（有多少站點指向該站點）
+out_deg.csv: [1×N] 出度（該站點指向多少站點）
+```
+
+================================================================================
+
+## 六、模型訓練與預測流程
+
+### 6.1 整體架構流程
+
+```
+[完整流程圖]
+
+┌─────────────────────────────────────────────────────────────┐
+│                    資料載入與預處理                            │
+├─────────────────────────────────────────────────────────────┤
+│ 1. 載入 train.csv (時間序列資料)                              │
+│ 2. 載入輔助資料：adj, dis, sp, in_deg, out_deg               │
+│ 3. 資料歸一化：Z-score                                        │
+│ 4. 分割：訓練集(70%) / 驗證集(10%) / 測試集(20%)              │
+│ 5. 構建滑動窗口：input_len=12, output_len=12                 │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│                      嵌入層初始化                              │
+├─────────────────────────────────────────────────────────────┤
+│ • 時間嵌入：day_of_week (7), minute_of_day (288)             │
+│ • 空間嵌入：position (66), sp (145), in_deg (5), out_deg (5) │
+│ • 維度：每個嵌入 64 維                                         │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│                    編碼器 (Encoder)                           │
+├─────────────────────────────────────────────────────────────┤
+│ 輸入：X [batch, 12, 66, 1], X_all [batch, 24, 66, 1]         │
+│                                                              │
+│ Step 1: 特徵映射                                              │
+│   X = FC(concat([X, X_all[:,:12]]))  → [batch, 12, 66, 64]  │
+│                                                              │
+│ Step 2: L 層 STAttBlock (預設 L=1)                           │
+│   For layer in range(L):                                     │
+│     ┌──────────────────────────────────┐                    │
+│     │    時間注意力 (Temporal)          │                    │
+│     │    HT = TemporalAttention(X)     │                    │
+│     └──────────────────────────────────┘                    │
+│                 ↓                                            │
+│     ┌──────────────────────────────────┐                    │
+│     │    圖卷積 (GCN)                   │                    │
+│     │    GS = GCN(HT)                   │                    │
+│     └──────────────────────────────────┘                    │
+│                 ↓                                            │
+│     ┌──────────────────────────────────┐                    │
+│     │    空間注意力 (Spatial)           │                    │
+│     │    HS = SpatialAttention(HT)     │                    │
+│     └──────────────────────────────────┘                    │
+│                 ↓                                            │
+│     ┌──────────────────────────────────┐                    │
+│     │    融合門控 (Fusion Gate)         │                    │
+│     │    H = Gate(HS, GS)               │                    │
+│     │    X = X + H  (殘差)              │                    │
+│     └──────────────────────────────────┘                    │
+│                                                              │
+│ 輸出：X_E [batch, 12, 66, 64]                                │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│                    解碼器 (Decoder)                           │
+├─────────────────────────────────────────────────────────────┤
+│ 準備：X_Q = FC(X_all[:,12:])  → [batch, 12, 66, 64]          │
+│       S = pre_len = 6 (前6步作為條件)                         │
+│                                                              │
+│ Step 1: num_blocks 層 STAttBlock (預設=1)                    │
+│   輸入：concat([X_E[:,-6:], X_Q], axis=1)  → [batch, 18, 66] │
+│   使用 mask=True (防止看到未來)                               │
+│                                                              │
+│ 輸出：X_D [batch, 12, 66, 64]  (取最後12步)                  │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│            橋接轉換 (Bridge Transformation)                   │
+├─────────────────────────────────────────────────────────────┤
+│ 自迴歸生成：逐步生成 12 個未來時間步                           │
+│                                                              │
+│ For i in range(12):                                          │
+│   ┌────────────────────────────────────────┐                │
+│   │ Query:  STE_Q[:,i:i+1] + X_E[:,-1:]    │                │
+│   │ Key:    X_E                             │                │
+│   │ Value:  X_E                             │                │
+│   │                                         │                │
+│   │ Attention = softmax(Q×K^T / √d)         │                │
+│   │ Output = Attention × Value              │                │
+│   │                                         │                │
+│   │ 更新：X_E = concat([X_E, Output+STE_Q]) │                │
+│   └────────────────────────────────────────┘                │
+│                                                              │
+│ 最終：取最後 12 步 → [batch, 12, 66, 64]                     │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│                  多任務預測頭 (Multi-Task Heads)              │
+├─────────────────────────────────────────────────────────────┤
+│ pre1 = FC(X[:,:,:13])     → [batch, 12, 13, 1]  入口收費站   │
+│ pre2 = FC(X[:,:,13:26])   → [batch, 12, 13, 1]  出口收費站   │
+│ pre3 = FC(X[:,:,26:])     → [batch, 12, 40, 1]  龍門架       │
+│                                                              │
+│ pre = concat([pre1, pre2, pre3], axis=2)                     │
+│     → [batch, 12, 66, 1]                                     │
+│                                                              │
+│ 反歸一化：pre = pre × std + mean                             │
+│ 轉置：pre = transpose(pre, [0,2,1])  → [batch, 66, 12]      │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│                      損失計算與優化                            │
+├─────────────────────────────────────────────────────────────┤
+│ Loss = MAE(pre, labels)                                      │
+│      = mean(|pre - labels|)                                  │
+│                                                              │
+│ 優化器：Adam                                                  │
+│   learning_rate = 0.001 × 0.7^(step / decay_steps)           │
+│   learning_rate = max(learning_rate, 1e-5)                   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 6.2 訓練流程詳細步驟
+
+```
+初始化階段：
+├─ 建立 TensorFlow 計算圖
+├─ 初始化所有權重（Xavier/Glorot 初始化）
+├─ 載入訓練/驗證/測試資料
+└─ 設定超參數（batch_size=128, epochs=100）
+
+訓練迴圈：
+For epoch in range(epochs):
+
+    1. 資料打亂
+       permutation = random_permutation()
+       trainX = trainX[permutation]
+
+    2. 批次訓練
+       For batch in range(num_batches):
+
+           a) 準備批次資料
+              xs = trainX[start:end]          # [batch, 12, 66, 1]
+              labels = trainL[start:end]      # [batch, 66, 12]
+              xs_all = trainXAll[start:end]   # [batch, 24, 66, 1]
+
+           b) 構建 feed_dict
+              feed_dict = {
+                  'features': xs,
+                  'x_all': xs_all,
+                  'labels': labels,
+                  'day_of_week': day_of_week,
+                  'minute_of_day': minute_of_day,
+                  'sp': sp,
+                  'dis': dis,
+                  'in_deg': in_deg,
+                  'out_deg': out_deg,
+                  'supports': sparse_adj,
+                  'dropout': 0.4,
+                  'is_training': True
+              }
+
+           c) 前向傳播 + 反向傳播
+              loss, _ = session.run([loss_op, train_op], feed_dict)
+
+    3. 驗證
+       val_mae = evaluate(valX, valL, ...)
+
+       If val_mae < best_mae:
+           保存模型權重到 save_path
+           best_mae = val_mae
+```
+
+### 6.3 推論流程
+
+```
+載入模型：
+├─ saver.restore(session, save_path)
+└─ 載入訓練好的權重
+
+預測：
+For batch in test_batches:
+
+    1. 準備輸入
+       xs = testX[start:end]
+       xs_all = testXAll[start:end]
+
+    2. 構建 feed_dict
+       feed_dict = {
+           ...
+           'dropout': 0.0,        # 關閉 dropout
+           'is_training': False   # 批次歸一化使用移動平均
+       }
+
+    3. 執行預測
+       pres = session.run(pre, feed_dict)  # [batch, 66, 12]
+
+    4. 收集結果
+       predictions.append(pres)
+       labels.append(testL[start:end])
+
+評估：
+├─ 計算 MAE, RMSE, MAPE
+├─ 對每個時間步（1-12）分別計算
+└─ 保存預測結果到 .npz 檔案
+```
+
+### 6.4 超參數配置
+
+```
+資料相關：
+├─ site_num: 62 (台灣) / 66 (銀川)
+├─ edge_num: 144
+├─ input_length: 12 (60分鐘)
+├─ output_length: 12 (60分鐘)
+├─ pre_len: 6 (30分鐘)
+└─ granularity: 5 (分鐘)
+
+模型架構：
+├─ emb_size: 64
+├─ num_heads: 8
+├─ num_blocks: 1
+├─ hidden1: 32
+├─ gcn_output_size: 64
+└─ max_degree: 3 (Chebyshev)
+
+訓練相關：
+├─ batch_size: 128
+├─ epochs: 100
+├─ learning_rate: 0.001
+├─ dropout: 0.4
+├─ weight_decay: 5e-4
+├─ decay_epoch: 5
+└─ normalize: True
+
+資料分割：
+├─ train_ratio: 0.7
+├─ validate_ratio: 0.1
+└─ test_ratio: 0.2
+```
+
+================================================================================
+
+## 七、交通衝擊波的數學建模
+
+### 7.1 LWR 宏觀交通流模型
+
+**守恆方程：**
+```
+∂ρ/∂t + ∂q/∂x = 0
+```
+
+其中：
+- ρ(x,t): 密度 (vehicles/km)
+- q(x,t): 流量 (vehicles/hour)
+- x: 空間位置
+- t: 時間
+
+**流量-密度關係（Greenshields 模型）：**
+```
+q = ρ × v = ρ × v_f × (1 - ρ/ρ_max)
+```
+
+其中：
+- v: 速度
+- v_f: 自由流速度
+- ρ_max: 阻塞密度
+
+### 7.2 衝擊波形成條件
+
+當上下游密度不連續時，形成衝擊波：
+
+**Rankine-Hugoniot 條件：**
+```
+v_shock = (q_downstream - q_upstream) / (ρ_downstream - ρ_upstream)
+```
+
+**典型場景：**
+
+1. 停止衝擊波（紅燈、事故）：
+```
+上游：ρ_1 = 30 veh/km, q_1 = 1500 veh/h
+下游：ρ_2 = 120 veh/km, q_2 = 0 veh/h
+
+v_shock = (0 - 1500) / (120 - 30) = -16.7 km/h
+```
+負值表示向上游傳播
+
+2. 啟動衝擊波（綠燈、解除擁堵）：
+```
+上游：ρ_1 = 120 veh/km, q_1 = 0 veh/h
+下游：ρ_2 = 60 veh/km, q_2 = 1800 veh/h
+
+v_shock = (1800 - 0) / (60 - 120) = -30 km/h
+```
+加速向上游傳播，消除擁堵
+
+### 7.3 在神經網路中的隱式學習
+
+MT-STNet 透過以下方式學習衝擊波：
+
+**1. 時空注意力權重的物理意義：**
+```
+α_spatial(i,j) = softmax((q_i × k_j^T) / √d + distance + sp)
+
+高權重 → 站點 i 和 j 的流量高度相關
+         → 衝擊波在它們之間傳播
+
+α_temporal(t,t') = softmax((q_t × k_t'^T) / √d)
+
+高權重 → 時刻 t 和 t' 的流量高度相關
+         → 衝擊波的時間傳播延遲 = |t - t'|
+```
+
+**2. 衝擊波速度的隱式表示：**
+```
+假設模型學到：
+α_spatial(A,B) = 0.8
+α_temporal(t, t+2) = 0.7
+
+物理解釋：
+站點 A 的擾動經過 2×5=10 分鐘後影響站點 B
+若 distance(A,B) = 5 km
+則隱含的衝擊波速度 ≈ 5/(10/60) = 30 km/h
+```
+
+**3. GCN 的多跳傳播：**
+```
+GCN^1: 一階鄰居的直接影響
+GCN^2: 二階鄰居的間接影響
+...
+
+對應：衝擊波的逐站點傳播
+```
+
+================================================================================
+
+## 八、模型輸出解讀
+
+### 8.1 預測結果格式
+
+```
+prediction.shape: [num_samples, 66, 12]
+truth.shape:      [num_samples, 66, 12]
+
+維度解釋：
+- num_samples: 測試樣本數（約 20% 的總資料）
+- 66: 站點數
+- 12: 未來 12 個時間步（60 分鐘）
+
+每個值：該站點在該時刻的預測流量（vehicles / 5-min）
+```
+
+### 8.2 評估指標解讀
+
+**示例輸出：**
+```
+                MAE     RMSE    MAPE
+step: 01        2.345   4.123   8.5%
+step: 02        2.567   4.456   9.2%
+...
+step: 12        3.891   6.234   12.3%
+average:        2.987   5.123   10.1%
+```
+
+**指標意義：**
+- MAE: 平均預測誤差（vehicles）
+- RMSE: 強調大誤差的指標
+- MAPE: 相對誤差百分比
+
+**預測難度遞增：**
+- 短期（1-3步，5-15分鐘）：誤差小，易預測
+- 中期（4-8步，20-40分鐘）：誤差增加
+- 長期（9-12步，45-60分鐘）：誤差最大，不確定性高
+
+### 8.3 衝擊波視覺化（建議）
+
+雖然程式碼未實作，但可透過以下方式視覺化衝擊波：
+
+**時空熱圖：**
+```
+Y軸：站點 ID (0-65)
+X軸：時間步 (t, t+1, ..., t+12)
+顏色：流量值或流量變化率
+
+觀察：
+- 對角線移動的顏色變化 → 衝擊波傳播
+- 斜率 → 衝擊波速度
+```
+
+**差分圖：**
+```
+Δflow(i,t) = flow(i,t) - flow(i,t-1)
+
+正值（紅色）：流量增加
+負值（藍色）：流量減少
+
+觀察空間上相鄰站點的 Δflow 傳播模式
+```
+
+================================================================================
+
+## 九、總結
+
+### 9.1 MT-STNet 的核心貢獻
+
+1. **多尺度時空建模**
+   - 時間注意力：捕捉時間依賴
+   - 空間注意力：捕捉空間依賴
+   - GCN：圖結構傳播
+
+2. **物理信息融合**
+   - 距離矩陣：實際道路距離
+   - 最短路徑：路網拓撲
+   - 度數：節點重要性
+
+3. **多任務學習**
+   - 針對不同類型站點的特化預測
+   - 提高整體預測精度
+
+4. **自迴歸生成**
+   - 橋接轉換機制
+   - 逐步生成未來序列
+
+### 9.2 交通衝擊波建模的實現
+
+雖然程式碼中沒有明確的"衝擊波"計算，但模型透過以下機制隱式學習：
+
+1. **時空注意力**：學習擾動在時空中的傳播模式
+2. **圖卷積**：學習基於路網拓撲的傳播
+3. **物理約束**：距離和路徑約束擾動傳播
+4. **殘差連接**：保留原始擾動信號
+
+### 9.3 實際應用價值
+
+1. **即時交通管理**
+   - 預測未來 60 分鐘的交通狀況
+   - 提前識別潛在擁堵
+   - 優化交通信號控制
+
+2. **事件影響評估**
+   - 事故發生後的影響範圍
+   - 施工的交通影響預測
+   - 大型活動的交通規劃
+
+3. **駕駛者服務**
+   - 路線規劃優化
+   - 到達時間預測
+   - 擁堵警告
+
+================================================================================
+
+## 參考文獻
+
+[1] Zou, G., Lai, Z., Wang, T., Liu, Z., & Li, Y. (2024).
+    MT-STNet: A Novel Multi-Task Spatiotemporal Network for
+    Highway Traffic Flow Prediction.
+    IEEE Transactions on Intelligent Transportation Systems.
+    DOI: 10.1109/TITS.2024.3411638
+
+[2] Lighthill, M. J., & Whitham, G. B. (1955).
+    On kinematic waves II. A theory of traffic flow on long crowded roads.
+    Proceedings of the Royal Society of London. Series A.
+
+[3] Richards, P. I. (1956).
+    Shock waves on the highway.
+    Operations Research, 4(1), 42-51.
+
+[4] Vaswani, A., et al. (2017).
+    Attention is all you need.
+    Advances in Neural Information Processing Systems.
+
+[5] Kipf, T. N., & Welling, M. (2017).
+    Semi-supervised classification with graph convolutional networks.
+    International Conference on Learning Representations.
+
+================================================================================
+
+文件建立日期：2025年
+模型版本：MT-STNet
+資料來源：台灣高速公路 ETC 監測系統

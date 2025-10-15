@@ -1,5 +1,5 @@
-#  高速公路智慧交通衝擊波預警決策支援系統
-**Highway Intelligent Traffic Shockwave Warning and Decision Support System**
+#  高速公路智慧交通衝擊波預警AI決策支援系統
+**Highway Intelligent Traffic Shockwave Warning and AI Decision Support System**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/downloads/)
@@ -20,7 +20,8 @@
 - ** 17種基準模型** - 包含AGCRN、ASTGCN、DCRNN、Graph-WaveNet等主流時空預測模型
 - ** 混合預測架構** - 傳統物理模型與深度學習模型的智慧融合
 - ** 毫秒級響應** - 即時衝擊波檢測與多時步預測系統
-
+- ** AI技術結合** - RAG智能體，學習道路幾何資料、及時數值、預測數值根據當前情況值提供資訊
+  
 ###  應用場景
 - ** 智慧導航系統** - 為駕駛者提供即時衝擊波預警與路線優化
 - ** 交通管制中心** - 為管理者提供AI決策支援與預防性管制策略
@@ -70,6 +71,12 @@ cp .env.example .env
 # nano .env  # 或使用您喜歡的編輯器
 ```
 
+```bush
+# AI模型請使用ollama-qwen2.5:7b模型
+ollama pull qwen2.5:7b
+```
+
+
 **必要的API憑證：**
 ```bash
 # 交通部TDX API (必須) - 前往 https://tdx.transportdata.tw/ 申請
@@ -92,17 +99,6 @@ cd ..
 ```
 
 ### 啟動系統
-
-#### 方法一：使用一鍵部署腳本（推薦）
-```bash
-# 確保腳本有執行權限
-chmod +x deploy.sh
-
-# 啟動完整系統
-./deploy.sh
-```
-
-#### 方法二：手動啟動
 
 **啟動後端API服務：**
 ```bash
@@ -319,6 +315,7 @@ recommendations = decision_engine.get_traffic_management_advice(
 # - 預期效果評估
 # - 風險評估
 # - 執行時機建議
+# - 替代路線
 ```
 
 ## 系統效能指標

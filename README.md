@@ -510,8 +510,18 @@ npm run dev
 
 ---
 
+## 🔑 關鍵技術
+
+- **Traffic Shockwave Detection** (交通衝擊波檢測)
+- **Spatiotemporal Neural Networks** (時空神經網路)
+- **Real-time Traffic Prediction** (即時交通預測)
+- **Intelligent Transportation Systems** (智慧運輸系統)
+- **Deep Learning for Traffic** (深度學習交通應用)
+- **Graph Neural Networks** (圖神經網路)
+- **Time Series Forecasting** (時間序列預測)
+- **Smart City Solutions** (智慧城市解決方案)
+
 <div align="center">
 
 ** 體驗革命性的智慧交通管理系統！**
-
 </div>

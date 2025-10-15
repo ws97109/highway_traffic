@@ -41,7 +41,7 @@
 
 #### 1. 複製專案
 ```bash
-git clone https://github.com/timwei0801/Highway_trafficwave.git
+git clone https://github.com/ws97109/Highway_trafficwave.git
 cd Highway_trafficwave
 ```
 
@@ -474,7 +474,7 @@ python tests/performance_test.py
 ### �️ 開發環境設定
 ```bash
 # 複製開發分支
-git clone -b develop https://github.com/timwei0801/Highway_trafficwave.git
+git clone -b develop https://github.com/ws97109/Highway_trafficwave.git
 
 # 安裝開發依賴
 pip install -r requirements.txt
@@ -499,13 +499,6 @@ npm run dev
 3. 相關日誌檔案 (`data/logs/`)
 4. 預期行為與實際行為的差異
 
-## 聯絡資訊與支援
-
-- **專案首頁**: [GitHub Repository](https://github.com/timwei0801/Highway_trafficwave)
-- **問題回報**: [GitHub Issues](https://github.com/timwei0801/Highway_trafficwave/issues)
-- **開發者**: timwei0801
-- **許可證**: MIT License
-
 ##  致謝
 
 感謝以下開源專案和研究團隊的貢獻：
@@ -520,10 +513,5 @@ npm run dev
 <div align="center">
 
 ** 體驗革命性的智慧交通管理系統！**
-
-[![GitHub stars](https://img.shields.io/github/stars/timwei0801/Highway_trafficwave.svg?style=social&label=Star)](https://github.com/timwei0801/Highway_trafficwave)
-[![GitHub forks](https://img.shields.io/github/forks/timwei0801/Highway_trafficwave.svg?style=social&label=Fork)](https://github.com/timwei0801/Highway_trafficwave/fork)
-
-*讓AI為您的出行保駕護航，基於尖端科學研究的智慧交通解決方案* 🛣️✨
 
 </div>

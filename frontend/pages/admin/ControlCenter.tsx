@@ -522,22 +522,22 @@ export default ControlCenter;
 // 'use client';
 
 // import React, { useState, useEffect } from 'react';
-import { 
-  ChartBarIcon, 
-  ExclamationTriangleIcon, 
-  MapIcon, 
-  ClockIcon,
-  CpuChipIcon,
-  SignalIcon,
-  BoltIcon,
-  UserGroupIcon,
-  ChatBubbleLeftRightIcon
-} from '@heroicons/react/24/outline';
-import TrafficMap from '../../components/maps/TrafficMap';
-import MTSTNetPredictor from '../../components/prediction/MTSTNetPredictor';
-import { useShockwaveData } from '../../hooks/useShockwaveData';
-import { useTrafficData } from '../../hooks/useTrafficData';
-import RAGChatbot from '@/components/chat/RagChatbot'; // 修正後的路徑
+// import { 
+//   ChartBarIcon, 
+//   ExclamationTriangleIcon, 
+//   MapIcon, 
+//   ClockIcon,
+//   CpuChipIcon,
+//   SignalIcon,
+//   BoltIcon,
+//   UserGroupIcon,
+//   ChatBubbleLeftRightIcon
+// } from '@heroicons/react/24/outline';
+// import TrafficMap from '../../components/maps/TrafficMap';
+// import MTSTNetPredictor from '../../components/prediction/MTSTNetPredictor';
+// import { useShockwaveData } from '../../hooks/useShockwaveData';
+// import { useTrafficData } from '../../hooks/useTrafficData';
+// import RAGChatbot from '@/components/chat/RagChatbot'; // 修正後的路徑
 
 interface ControlCenterProps {}
 

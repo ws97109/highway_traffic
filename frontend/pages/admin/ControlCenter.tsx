@@ -570,16 +570,16 @@ interface RecommendedAction {
   confidence: number;
 }
 
-const ControlCenter: React.FC<ControlCenterProps> = () => {
-  const [systemStatus, setSystemStatus] = useState<SystemStatus>({
-    overallHealth: 'healthy',
-    activeShockwaves: 0,
-    monitoringStations: 62,
-    predictionsAccuracy: 0,
-    systemLoad: 0,
-    lastUpdate: new Date()
-  });
-
+// const ControlCenter: React.FC<ControlCenterProps> = () => {
+//   const [systemStatus, setSystemStatus] = useState<SystemStatus>({
+//     overallHealth: 'healthy',
+//     activeShockwaves: 0,
+//     monitoringStations: 62,
+//     predictionsAccuracy: 0,
+//     systemLoad: 0,
+//     lastUpdate: new Date()
+//   });
+  
   const [trafficMetrics, setTrafficMetrics] = useState<TrafficMetrics>({
     totalFlow: 0,
     averageSpeed: 0,

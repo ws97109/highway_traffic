@@ -519,7 +519,7 @@ const ControlCenter: React.FC<ControlCenterProps> = () => {
 };
 
 export default ControlCenter;
-'use client';
+// 'use client';
 
 import React, { useState, useEffect } from 'react';
 import { 
